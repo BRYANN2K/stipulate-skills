@@ -10,6 +10,11 @@ This repository contains original skills written as a synthesis of public engine
 - [anthropics/skills](https://github.com/anthropics/skills) — self-contained skill packaging and resource layout.
 - [obra/superpowers](https://github.com/obra/superpowers) — composable workflows, hard gates, and verification before completion.
 
+## Agent execution and completion
+
+- [obra/superpowers — verification-before-completion](https://github.com/obra/superpowers/tree/main/skills/verification-before-completion), MIT — fresh evidence before completion claims. The workflow here extends that principle with requirement-level proof, a cumulative implementation-to-publication ladder, remote readback, and a deterministic consistency guard.
+- [SLSA provenance](https://slsa.dev/provenance/) — verifiable statements that tie an artifact to how and where it was produced. This repository adapts only the general provenance principle, not the SLSA predicate format.
+
 ## Infrastructure and DevOps
 
 - [antonbabenko/terraform-skill](https://github.com/antonbabenko/terraform-skill), Apache-2.0 — Terraform/OpenTofu engineering, testing, state, and CI patterns. The material here is substantially reorganized, shortened, and extended with change-risk gates.

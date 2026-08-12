@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "task": "Describe the exact requested scope",
+  "outcome": "COMPLETE",
+  "target_level": "VERIFIED",
+  "claimed_level": "VERIFIED",
+  "changed_at": "{{LAST_RELEVANT_MUTATION_ISO8601}}",
+  "blockers": [],
+  "requirements": [
+    {
+      "id": "R1",
+      "statement": "The requested artifact exists and satisfies its acceptance criteria",
+      "status": "SATISFIED",
+      "required_level": "VERIFIED",
+      "evidence": [
+        {
+          "kind": "artifact",
+          "status": "PASSED",
+          "observed_at": "{{ARTIFACT_OBSERVED_AT_ISO8601}}",
+          "locator": "path: relative/path/to/artifact",
+          "summary": "Current artifact inspected"
+        },
+        {
+          "kind": "test",
+          "status": "PASSED",
+          "observed_at": "{{TEST_OBSERVED_AT_ISO8601}}",
+          "locator": "command: project test command; exit=0",
+          "summary": "Relevant acceptance test passed"
+        }
+      ]
+    }
+  ]
+}

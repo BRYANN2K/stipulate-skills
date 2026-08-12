@@ -4,7 +4,7 @@
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-10-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-11-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
@@ -31,6 +31,12 @@ Every skill should earn its place by changing how an agent works:
 The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md](NOTICE.md) records the standards and public projects that materially informed them.
 
 ## Skill catalog
+
+### Agent workflows
+
+| Skill | Use it for |
+|---|---|
+| [verified-completion](agent-workflows/verified-completion) | Require fresh evidence for every completion claim; distinguish implemented, executed, verified, and published work without overstating results |
 
 ### Creator
 
@@ -73,7 +79,7 @@ npx skills add BRYANN2K/skills
 Or install one skill:
 
 ```bash
-npx skills add BRYANN2K/skills --skill build-in-public-journal
+npx skills add BRYANN2K/skills --skill verified-completion
 ```
 
 Manual project-local installation:
@@ -81,7 +87,7 @@ Manual project-local installation:
 ```bash
 git clone https://github.com/BRYANN2K/skills.git /tmp/bryann2k-skills
 mkdir -p .agents/skills
-cp -R /tmp/bryann2k-skills/creator/build-in-public-journal .agents/skills/
+cp -R /tmp/bryann2k-skills/agent-workflows/verified-completion .agents/skills/
 ```
 
 Common discovery paths vary by client:
@@ -112,14 +118,15 @@ flowchart LR
     DevOps["DevOps"] --> Operate
     Docs["Documentation"] --> Document
     Creator["Creator"] --> Share
+    Agent["Agent workflows"] --> Verify
 
     classDef core fill:#17112b,stroke:#a78bfa,color:#fafafa,stroke-width:2px;
     classDef domain fill:#0f172a,stroke:#475569,color:#e2e8f0;
     class Evidence,Decide,Build,Verify,Operate,Document,Share core;
-    class Infra,DevOps,Docs,Creator domain;
+    class Infra,DevOps,Docs,Creator,Agent domain;
 ```
 
-Skills remain independent and composable. A single project can move from architecture review to delivery, incident investigation, documentation, and build-in-public idea capture without loading one monolithic prompt.
+Skills remain independent and composable. A project can verify completion claims, move from architecture review to delivery and incident investigation, document the result, and capture build-in-public ideas without loading one monolithic prompt.
 
 ## Design contract
 
@@ -137,6 +144,8 @@ Every skill in this repository must:
 
 ```text
 .
+├── agent-workflows/
+│   └── verified-completion/
 ├── creator/
 │   └── build-in-public-journal/
 ├── infrastructure/

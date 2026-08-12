@@ -33,11 +33,7 @@
     <path d="M64 0V320M128 0V320M192 0V320M256 0V320M320 0V320M384 0V320M448 0V320M512 0V320M576 0V320M640 0V320M704 0V320M768 0V320M832 0V320M896 0V320M960 0V320M1024 0V320M1088 0V320M1152 0V320"/>
   </g>
 
-  <g transform="translate(70 58)">
-    <rect width="46" height="46" rx="13" fill="#17112b" stroke="#a78bfa" stroke-width="1.5"/>
-    <path d="M15 14h16M15 23h10M15 32h16" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
-  </g>
-  <text x="132" y="91" fill="#c4b5fd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="700" letter-spacing="3">BRYANN2K / SKILLS</text>
+  <text x="70" y="91" fill="#c4b5fd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="700" letter-spacing="3">BRYANN2K / SKILLS</text>
   <text x="70" y="165" fill="#fafafa" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="760" letter-spacing="-2">Workflows for real work.</text>
   <text x="72" y="210" fill="#cbd5e1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21">Build · Operate · Document · Share</text>
   <rect x="70" y="242" width="492" height="3" rx="1.5" fill="url(#accent)"/>
