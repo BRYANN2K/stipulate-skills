@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "repository": "BRYANN2K/skills",
+  "skills": [
+    {"name": "terraform-change-safety", "category": "infrastructure", "path": "infrastructure/terraform-change-safety"},
+    {"name": "kubernetes-production-engineering", "category": "infrastructure", "path": "infrastructure/kubernetes-production-engineering"},
+    {"name": "cloud-architecture-review", "category": "infrastructure", "path": "infrastructure/cloud-architecture-review"},
+    {"name": "sre-incident-investigation", "category": "devops", "path": "devops/sre-incident-investigation"},
+    {"name": "gitops-operations", "category": "devops", "path": "devops/gitops-operations"},
+    {"name": "delivery-pipeline-engineering", "category": "devops", "path": "devops/delivery-pipeline-engineering"},
+    {"name": "developer-documentation", "category": "doc-writer", "path": "doc-writer/developer-documentation"},
+    {"name": "architecture-decision-records", "category": "doc-writer", "path": "doc-writer/architecture-decision-records"},
+    {"name": "software-architecture-diagrams", "category": "doc-writer", "path": "doc-writer/software-architecture-diagrams"}
+  ]
+}

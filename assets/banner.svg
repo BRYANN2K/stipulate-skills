@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">BRYANN2K Skills</title>
+  <desc id="desc">Production-grade agent skills for infrastructure, DevOps, and developer documentation.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#09090b"/>
+      <stop offset="0.55" stop-color="#17112b"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="24"/></filter>
+  </defs>
+  <rect width="1200" height="320" rx="24" fill="url(#bg)"/>
+  <circle cx="1020" cy="80" r="125" fill="#7c3aed" opacity=".22" filter="url(#glow)"/>
+  <circle cx="130" cy="290" r="110" fill="#2563eb" opacity=".18" filter="url(#glow)"/>
+  <g fill="none" stroke="#8b5cf6" opacity=".22">
+    <path d="M860 65h185l80 80-80 80H860l-80-80z"/>
+    <path d="M900 90h105l55 55-55 55H900l-55-55z"/>
+    <circle cx="952" cy="145" r="23"/>
+  </g>
+  <text x="72" y="122" fill="url(#accent)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" font-weight="700" letter-spacing="4">BRYANN2K / AGENT SKILLS</text>
+  <text x="72" y="190" fill="#fafafa" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="750">Build. Ship. Explain.</text>
+  <text x="74" y="238" fill="#cbd5e1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22">Infrastructure · DevOps · Developer documentation</text>
+  <rect x="72" y="268" width="430" height="3" rx="2" fill="url(#accent)"/>
+</svg>
