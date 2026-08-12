@@ -21,7 +21,8 @@ A good proposal answers:
 category/skill-name/
 ├── SKILL.md
 ├── references/   # optional
-└── templates/    # optional
+├── templates/    # optional
+└── scripts/      # optional; deterministic helpers with tests
 ```
 
 `SKILL.md` must:
@@ -34,6 +35,7 @@ category/skill-name/
 - link bulky or conditional material under `references/`;
 - define safety boundaries, output format, pitfalls, and verification;
 - avoid vendor telemetry, hidden network calls, and credentials;
+- keep private journals and personal state out of the skill repository;
 - never treat a dry-run, plan, or successful command as authorization for a production mutation.
 
 ## Writing principles
@@ -49,6 +51,7 @@ category/skill-name/
 
 ```bash
 python3 scripts/validate_skills.py
+python3 scripts/run_skill_tests.py
 ```
 
 All checks must pass. If a required external tool is unavailable, document the skipped validation honestly rather than fabricating a successful result.

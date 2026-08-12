@@ -32,4 +32,16 @@ This repository contains original skills written as a synthesis of public engine
 - [OpenAPI Specification](https://spec.openapis.org/oas/latest.html) — API reference contracts.
 - [Google developer documentation style guide](https://developers.google.com/style) — clear, reader-centered technical prose.
 
+## Creator workflows
+
+- [vindicatenyc/build-in-public-plugin](https://github.com/vindicatenyc/build-in-public-plugin), MIT — session-aware development activity capture. Its post-generation behavior is intentionally excluded here.
+- [GauravRatnawat/journal-recorder-agent](https://github.com/GauravRatnawat/journal-recorder-agent), MIT — capture at natural session boundaries and journal deduplication patterns.
+- [toddlevy/tl-agent-skills](https://github.com/toddlevy/tl-agent-skills), MIT — project-local, Git-ignored development journal mode.
+- [jonocbell/agent-decision-log](https://github.com/jonocbell/agent-decision-log), Apache-2.0 — in-the-moment decision capture, alternatives, rationale, and supersession.
+- [Keep a Changelog](https://keepachangelog.com) — notable-change filtering rather than raw commit dumps.
+- [Google SRE postmortem culture](https://sre.google/sre-book/postmortem-culture/) — significance thresholds, evidence, and reusable learning from failures.
+- [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) — data minimization, sanitization, and sensitive-data exclusions.
+- [Git documentation for gitignore](https://git-scm.com/docs/gitignore) — ignore semantics and the tracked-file boundary.
+- [LinkedIn Sharing Guide](https://content.linkedin.com/content/dam/help/linkedin/en-us/LinkedIn-Sharing-Guide.pdf) and [IndieWeb POSSE](https://indieweb.org/POSSE) — platform-purpose and owned-canonical-content distinctions.
+
 Upstream project names and trademarks belong to their respective owners. Inclusion here does not imply endorsement.

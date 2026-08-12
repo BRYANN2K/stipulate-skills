@@ -5,13 +5,14 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "skill-registry.json"
-CATEGORIES = {"infrastructure", "devops", "doc-writer"}
+OPERATIONAL_CATEGORIES = {"infrastructure", "devops"}
 REQUIRED_FIELDS = {"name", "description", "license"}
 REQUIRED_METADATA_FIELDS = {"version", "author", "category", "tags"}
 ALLOWED_FIELDS = {
@@ -102,9 +103,45 @@ def validate_markdown(path: Path, text: str, errors: list[str]) -> None:
     if text.count("```") % 2:
         fail(errors, path, "unbalanced triple-backtick fences")
     validate_local_links(path, text, errors)
-    match = SECRET_RE.search(text)
-    if match:
-        fail(errors, path, f"possible hard-coded secret near {match.group(0)[:24]!r}")
+    if SECRET_RE.search(text):
+        fail(errors, path, "possible hard-coded secret pattern matched")
+
+
+def markdown_files_to_validate(errors: list[str]) -> list[Path]:
+    candidates: list[Path] = []
+    for path in ROOT.rglob("*.md"):
+        relative = path.relative_to(ROOT)
+        if any(part in {".git", ".build-in-public"} for part in relative.parts):
+            continue
+        candidates.append(path)
+
+    probe = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "--is-inside-work-tree"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if probe.returncode != 0 or not candidates:
+        return candidates
+
+    relative_paths = [path.relative_to(ROOT).as_posix() for path in candidates]
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), "check-ignore", "-z", "--stdin"],
+        input="\0".join(relative_paths) + "\0",
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode not in {0, 1}:
+        detail = result.stderr.strip() or "unknown Git error"
+        fail(errors, ROOT, f"could not determine ignored Markdown files: {detail}")
+        return candidates
+    ignored = {item for item in result.stdout.split("\0") if item}
+    return [
+        path
+        for path, relative in zip(candidates, relative_paths, strict=True)
+        if relative not in ignored
+    ]
 
 
 def main() -> int:
@@ -128,20 +165,20 @@ def main() -> int:
         if not name or name in registered:
             fail(errors, REGISTRY, f"missing or duplicate skill name: {name!r}")
         registered[name] = item
-        if item.get("category") not in CATEGORIES:
-            fail(errors, REGISTRY, f"invalid category for {name}: {item.get('category')!r}")
-        expected = f"{item.get('category')}/{name}"
+        category = item.get("category", "")
+        if not NAME_RE.fullmatch(category):
+            fail(errors, REGISTRY, f"invalid category for {name}: {category!r}")
+        elif not (ROOT / category).is_dir():
+            fail(errors, REGISTRY, f"category directory for {name} is missing: {category!r}")
+        expected = f"{category}/{name}"
         if item.get("path") != expected:
             fail(errors, REGISTRY, f"path for {name} must be {expected!r}")
 
-    skill_files = sorted(
-        path for category in CATEGORIES
-        for path in (ROOT / category).glob("*/SKILL.md")
-    )
-    if len(skill_files) != 9:
-        fail(errors, ROOT, f"expected 9 skills, found {len(skill_files)}")
+    skill_files = sorted(ROOT.glob("*/*/SKILL.md"))
+    if not skill_files:
+        fail(errors, ROOT, "no skills discovered")
 
-    discovered: set[str] = set()
+    discovered: dict[str, Path] = {}
     for path in skill_files:
         text = path.read_text(encoding="utf-8")
         metadata, nested_metadata, body = parse_frontmatter(path, text, errors)
@@ -165,7 +202,11 @@ def main() -> int:
             )
 
         name = metadata.get("name", "")
-        discovered.add(name)
+        if name in discovered:
+            first = discovered[name].relative_to(ROOT).as_posix()
+            fail(errors, path, f"duplicate skill name {name!r}; first found at {first}")
+        else:
+            discovered[name] = path
         if name != path.parent.name:
             fail(errors, path, f"name {name!r} must match directory {path.parent.name!r}")
         if len(name) > 64 or not NAME_RE.fullmatch(name):
@@ -192,9 +233,9 @@ def main() -> int:
         category = path.parents[1].name
         if nested_metadata.get("category") != category:
             fail(errors, path, "metadata.category must match the top-level directory")
-        if category in {"infrastructure", "devops"} and "<HARD-GATE>" not in body:
+        if category in OPERATIONAL_CATEGORIES and "<HARD-GATE>" not in body:
             fail(errors, path, "operational skill requires a <HARD-GATE>")
-        if category in {"infrastructure", "devops"}:
+        if category in OPERATIONAL_CATEGORIES:
             lowered = body.lower()
             if not any(term in lowered for term in MUTATION_TERMS):
                 warnings.append(f"{path.relative_to(ROOT)}: no mutation vocabulary found")
@@ -203,9 +244,10 @@ def main() -> int:
 
         validate_markdown(path, text, errors)
 
-    if discovered != set(registered):
-        missing_registry = sorted(discovered - set(registered))
-        missing_disk = sorted(set(registered) - discovered)
+    discovered_names = set(discovered)
+    if discovered_names != set(registered):
+        missing_registry = sorted(discovered_names - set(registered))
+        missing_disk = sorted(set(registered) - discovered_names)
         if missing_registry:
             fail(errors, REGISTRY, f"unregistered skills: {', '.join(missing_registry)}")
         if missing_disk:
@@ -219,11 +261,11 @@ def main() -> int:
     if readme.exists():
         readme_text = readme.read_text(encoding="utf-8")
         validate_markdown(readme, readme_text, errors)
-        for name in sorted(discovered):
+        for name in sorted(discovered_names):
             if name not in readme_text:
                 fail(errors, readme, f"catalog does not mention {name}")
 
-    for path in ROOT.rglob("*.md"):
+    for path in markdown_files_to_validate(errors):
         if path.name == "SKILL.md" or path == readme:
             continue
         validate_markdown(path, path.read_text(encoding="utf-8"), errors)

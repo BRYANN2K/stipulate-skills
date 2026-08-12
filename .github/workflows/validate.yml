@@ -18,6 +18,8 @@ jobs:
           python-version: "3.12"
       - name: Validate skill structure and links
         run: python3 scripts/validate_skills.py
+      - name: Test deterministic skill scripts
+        run: python3 scripts/run_skill_tests.py
       - name: Install official Agent Skills reference validator
         run: >-
           python3 -m pip install
@@ -28,5 +30,5 @@ jobs:
           status=0
           while IFS= read -r -d '' skill_file; do
             skills-ref validate "$(dirname "$skill_file")" || status=1
-          done < <(find infrastructure devops doc-writer -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
+          done < <(find . -mindepth 3 -maxdepth 3 -name SKILL.md -not -path './.git/*' -print0)
           exit "$status"

@@ -1,73 +1,79 @@
 <div align="center">
-  <img src="assets/banner.svg" alt="BRYANN2K Skills — production-grade skills for infrastructure, DevOps, and developer documentation" width="100%">
+  <img src="assets/banner.svg" alt="BRYANN2K Skills — a personal collection of composable agent workflows" width="100%">
 
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-9-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-10-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
-  **Production-grade workflows for infrastructure, DevOps, and developer documentation.**
+  **Agent workflows I use to build, operate, document, and share software.**
 
   Built for Claude Code, Codex, Cursor, OpenCode, Hermes, and any client that supports the open [Agent Skills](https://agentskills.io) format.
 </div>
 
 ---
 
-## Why this repository exists
+## About this repository
 
-Most public skills are either giant reference dumps or short checklists. Both fail under pressure: the first wastes context, the second skips the decisions that matter.
+This is my growing collection of reusable Agent Skills. It is not tied to one stack or job: the catalog follows the work I do, from infrastructure and delivery to documentation, product building, and creator workflows.
 
-This collection takes a different approach:
+Every skill should earn its place by changing how an agent works:
 
-- **Evidence before conclusions** — inspect real plans, manifests, telemetry, code, and docs.
-- **Read-only first** — investigation never silently becomes deployment or remediation.
-- **Progressive disclosure** — compact workflows load focused references only when needed.
-- **Explicit safety gates** — risky mutations require scope, impact, rollback, and approval.
-- **Verifiable completion** — every skill defines observable success criteria.
-- **Vendor-aware, not vendor-locked** — use native tools when present and portable fallbacks otherwise.
+- inspect evidence before reaching a conclusion;
+- distinguish facts, hypotheses, decisions, and actions;
+- keep risky mutations behind explicit approval;
+- load detailed references only when they are relevant;
+- produce artifacts with observable verification;
+- preserve the human's judgment, voice, and ownership.
 
-These are original, rebuilt workflows. They combine the strongest patterns found across respected public skill repositories and engineering standards instead of concatenating upstream prompts. See [NOTICE.md](NOTICE.md) for design lineage and attribution.
+The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md](NOTICE.md) records the standards and public projects that materially informed them.
 
 ## Skill catalog
 
+### Creator
+
+| Skill | Use it for |
+|---|---|
+| [build-in-public-journal](creator/build-in-public-journal) | Keep a private evidence journal of meaningful bugs, failed approaches, decisions, experiments, and results; identify safe ideas for X, LinkedIn, and a personal blog without drafting posts |
+
 ### Infrastructure
 
-| Skill | Use it for | Rebuilt from the best ideas in |
-|---|---|---|
-| [terraform-change-safety](infrastructure/terraform-change-safety) | Terraform/OpenTofu authoring, plan review, state migrations, production change verdicts | Terraform engineering + plan review + production pre-flight |
-| [kubernetes-production-engineering](infrastructure/kubernetes-production-engineering) | Kubernetes generation, review, hardening, validation, and live diagnosis | Failure-mode-first K8s + GitOps validation + SRE troubleshooting |
-| [cloud-architecture-review](infrastructure/cloud-architecture-review) | Evidence-based reviews across AWS, Azure, GCP, and hybrid systems | Well-Architected + resilience modeling + cross-cloud architecture review |
+| Skill | Use it for |
+|---|---|
+| [terraform-change-safety](infrastructure/terraform-change-safety) | Terraform/OpenTofu authoring, plan review, state migrations, and production change verdicts |
+| [kubernetes-production-engineering](infrastructure/kubernetes-production-engineering) | Kubernetes generation, review, hardening, validation, and live diagnosis |
+| [cloud-architecture-review](infrastructure/cloud-architecture-review) | Evidence-based reviews across AWS, Azure, GCP, and hybrid systems |
 
 ### DevOps
 
-| Skill | Use it for | Rebuilt from the best ideas in |
-|---|---|---|
-| [sre-incident-investigation](devops/sre-incident-investigation) | Triage, hypothesis-driven investigation, mitigation, and postmortems | Incident command + metrics/logs/traces + query discipline |
-| [gitops-operations](devops/gitops-operations) | Static GitOps repository audits and read-only live cluster debugging | Flux repository audit + dependency-chain debugging + change safety |
-| [delivery-pipeline-engineering](devops/delivery-pipeline-engineering) | CI/CD design, supply-chain security, rollout strategy, and deployment readiness | Pipeline engineering + production pre-flight + progressive delivery |
+| Skill | Use it for |
+|---|---|
+| [sre-incident-investigation](devops/sre-incident-investigation) | Triage, hypothesis-driven investigation, mitigation, and postmortems |
+| [gitops-operations](devops/gitops-operations) | Static GitOps repository audits and read-only live cluster debugging |
+| [delivery-pipeline-engineering](devops/delivery-pipeline-engineering) | CI/CD design, supply-chain security, rollout strategy, and deployment readiness |
 
 ### Documentation
 
-| Skill | Use it for | Rebuilt from the best ideas in |
-|---|---|---|
-| [developer-documentation](doc-writer/developer-documentation) | READMEs, tutorials, how-to guides, API docs, runbooks, migration guides, and docs audits | Diátaxis + docs-as-code + executable examples + API-first documentation |
-| [architecture-decision-records](doc-writer/architecture-decision-records) | Proposed, accepted, deprecated, and superseded ADRs with real trade-offs | MADR + lightweight ADRs + decision governance |
-| [software-architecture-diagrams](doc-writer/software-architecture-diagrams) | Mermaid C4-style, sequence, flow, state, ER, and deployment diagrams | Mermaid syntax + C4 thinking + architecture-first diagram design |
+| Skill | Use it for |
+|---|---|
+| [developer-documentation](doc-writer/developer-documentation) | READMEs, tutorials, how-to guides, API docs, runbooks, migration guides, and documentation audits |
+| [architecture-decision-records](doc-writer/architecture-decision-records) | Proposed, accepted, deprecated, and superseded ADRs with real trade-offs |
+| [software-architecture-diagrams](doc-writer/software-architecture-diagrams) | Mermaid C4-style, sequence, flow, state, ER, and deployment diagrams |
 
 ## Quick start
 
-Install the full collection with a compatible skills client:
+Install the collection with a compatible skills client:
 
 ```bash
 npx skills add BRYANN2K/skills
 ```
 
-Or select one skill:
+Or install one skill:
 
 ```bash
-npx skills add BRYANN2K/skills --skill sre-incident-investigation
+npx skills add BRYANN2K/skills --skill build-in-public-journal
 ```
 
 Manual project-local installation:
@@ -75,7 +81,7 @@ Manual project-local installation:
 ```bash
 git clone https://github.com/BRYANN2K/skills.git /tmp/bryann2k-skills
 mkdir -p .agents/skills
-cp -R /tmp/bryann2k-skills/devops/sre-incident-investigation .agents/skills/
+cp -R /tmp/bryann2k-skills/creator/build-in-public-journal .agents/skills/
 ```
 
 Common discovery paths vary by client:
@@ -88,42 +94,51 @@ Common discovery paths vary by client:
 | OpenCode | `.opencode/skills/<skill-name>/` |
 | Hermes | `~/.hermes/skills/<category>/<skill-name>/` |
 
-Restart the client or open a new session if it caches the skill index.
+Restart the client or open a new session if it caches its skill index.
 
-## How the skills fit together
+## How the collection fits together
 
 ```mermaid
 flowchart LR
-    Plan["Architecture or change"] --> Infra["Infrastructure review"]
-    Infra --> Delivery["Delivery readiness"]
-    Delivery --> Runtime["Production runtime"]
-    Runtime --> Incident["Incident investigation"]
-    Incident --> Learning["Postmortem and decisions"]
-    Learning --> Docs["Docs, ADRs, and diagrams"]
-    Docs --> Plan
+    Evidence["Inspect evidence"] --> Decide["Make a decision"]
+    Decide --> Build["Build and change"]
+    Build --> Verify["Test and verify"]
+    Verify --> Operate["Operate and learn"]
+    Operate --> Document["Document the result"]
+    Document --> Share["Share what is useful"]
+    Share --> Evidence
 
-    classDef core fill:#17112b,stroke:#8b5cf6,color:#f5f3ff,stroke-width:2px;
-    class Plan,Infra,Delivery,Runtime,Incident,Learning,Docs core;
+    Infra["Infrastructure"] --> Build
+    DevOps["DevOps"] --> Operate
+    Docs["Documentation"] --> Document
+    Creator["Creator"] --> Share
+
+    classDef core fill:#17112b,stroke:#a78bfa,color:#fafafa,stroke-width:2px;
+    classDef domain fill:#0f172a,stroke:#475569,color:#e2e8f0;
+    class Evidence,Decide,Build,Verify,Operate,Document,Share core;
+    class Infra,DevOps,Docs,Creator domain;
 ```
 
-The skills are composable, not monolithic. A Terraform rollout may load `terraform-change-safety`, then `delivery-pipeline-engineering`; a production failure may load `sre-incident-investigation`, then `architecture-decision-records` to preserve the resulting decision.
+Skills remain independent and composable. A single project can move from architecture review to delivery, incident investigation, documentation, and build-in-public idea capture without loading one monolithic prompt.
 
 ## Design contract
 
-Every skill in this repository must satisfy the same contract:
+Every skill in this repository must:
 
-1. **Trigger precisely.** The description states both capability and use conditions.
-2. **Gather context.** Never infer versions, environments, or topology when they can be inspected.
-3. **Separate facts from hypotheses.** Label confidence and cite the evidence used.
-4. **Default to observation.** Commands that change state are outside read-only investigation.
-5. **Gate mutations.** A mutation requires explicit authorization, blast-radius analysis, and rollback.
-6. **Validate the artifact.** Prefer parsers, linters, dry-runs, tests, and rendered output over visual guessing.
-7. **Report honestly.** Distinguish passed, failed, skipped, unavailable, and not applicable checks.
+1. **Trigger precisely.** Its description says what it does and when to load it.
+2. **Gather context.** It inspects available source material instead of guessing.
+3. **Preserve boundaries.** It separates observation from mutation and private material from public output.
+4. **Gate risk.** High-impact or privacy-sensitive actions require explicit scope and approval.
+5. **Use progressive disclosure.** The main workflow stays compact; detailed branches live in references and templates.
+6. **Verify the artifact.** Tests, parsers, linters, dry-runs, rendered output, or other observable checks back completion claims.
+7. **Report honestly.** Passed, failed, skipped, unavailable, and not applicable are different results.
 
 ## Repository structure
 
 ```text
-skills/
+.
+├── creator/
+│   └── build-in-public-journal/
 ├── infrastructure/
 │   ├── terraform-change-safety/
 │   ├── kubernetes-production-engineering/
@@ -136,28 +151,33 @@ skills/
 │   ├── developer-documentation/
 │   ├── architecture-decision-records/
 │   └── software-architecture-diagrams/
-├── scripts/validate_skills.py
+├── scripts/
+│   ├── validate_skills.py
+│   └── run_skill_tests.py
+├── skill-registry.json
 └── .github/workflows/validate.yml
 ```
 
-Each skill is self-contained:
+A skill can include progressively disclosed resources:
 
 ```text
 skill-name/
-├── SKILL.md       # Compact execution workflow
-├── references/    # Deep guidance loaded only when relevant
-└── templates/     # Reusable output contracts
+├── SKILL.md       # Execution workflow and boundaries
+├── references/    # Detailed guidance loaded when needed
+├── templates/     # Reusable artifact contracts
+└── scripts/       # Optional deterministic helpers and tests
 ```
 
 ## Validation
 
-Run the same checks as CI:
+Run the repository checks:
 
 ```bash
 python3 scripts/validate_skills.py
+python3 scripts/run_skill_tests.py
 ```
 
-The validator checks frontmatter, directory/name alignment, description quality, file size, registry coverage, local Markdown links, and unsafe production-action wording.
+CI also validates every skill against the official Agent Skills reference implementation. The local validator checks frontmatter, directory/name alignment, description quality, registry coverage, local Markdown links, and operational safety contracts.
 
 ## Contributing
 
@@ -165,7 +185,7 @@ Contributions should improve agent behavior, not add generic prose. Read [CONTRI
 
 ## Security
 
-These skills can guide high-impact infrastructure work. Read [SECURITY.md](SECURITY.md). A successful dry-run is not approval to deploy, and a skill is not a substitute for an accountable engineer.
+Some skills guide high-impact operational work; others handle private working material. Read [SECURITY.md](SECURITY.md). A skill is not authorization to deploy, publish, or expose sensitive data.
 
 ## License
 

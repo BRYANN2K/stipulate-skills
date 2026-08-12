@@ -2,7 +2,7 @@
 
 ## Operational boundary
 
-These skills provide engineering workflows, not autonomous authorization. They default to read-only discovery and analysis.
+These skills provide reusable workflows, not autonomous authorization. Operational skills default to read-only discovery and analysis.
 
 The following actions require explicit, scoped user authorization at execution time:
 
@@ -18,6 +18,8 @@ Authorization to review a plan is not authorization to execute it.
 ## Secrets
 
 Skills must never print, store, commit, or transmit secret values. Mask tokens, private keys, credentials, cookies, kubeconfig data, Terraform state values, and Kubernetes Secret contents. Prefer metadata and key names when diagnosis does not require values.
+
+Private journals created by a skill remain sensitive local data. A `.gitignore` rule only reduces accidental commits; it is not encryption or access control. A journaling workflow must verify that its file is ignored and untracked, minimize retained data, and refuse secrets, customer data, sensitive personal information, confidential infrastructure details, and unresolved exploit details.
 
 ## Reporting a vulnerability
 

@@ -10,6 +10,7 @@
     {"name": "delivery-pipeline-engineering", "category": "devops", "path": "devops/delivery-pipeline-engineering"},
     {"name": "developer-documentation", "category": "doc-writer", "path": "doc-writer/developer-documentation"},
     {"name": "architecture-decision-records", "category": "doc-writer", "path": "doc-writer/architecture-decision-records"},
-    {"name": "software-architecture-diagrams", "category": "doc-writer", "path": "doc-writer/software-architecture-diagrams"}
+    {"name": "software-architecture-diagrams", "category": "doc-writer", "path": "doc-writer/software-architecture-diagrams"},
+    {"name": "build-in-public-journal", "category": "creator", "path": "creator/build-in-public-journal"}
   ]
 }

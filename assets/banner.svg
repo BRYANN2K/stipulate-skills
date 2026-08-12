@@ -1,28 +1,77 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
   <title id="title">BRYANN2K Skills</title>
-  <desc id="desc">Production-grade agent skills for infrastructure, DevOps, and developer documentation.</desc>
+  <desc id="desc">A personal collection of composable agent workflows for building, operating, documenting, and sharing software.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#09090b"/>
-      <stop offset="0.55" stop-color="#17112b"/>
-      <stop offset="1" stop-color="#0f172a"/>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050507"/>
+      <stop offset="0.52" stop-color="#11101a"/>
+      <stop offset="1" stop-color="#0b1220"/>
     </linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="0.5" stop-color="#8b5cf6"/>
       <stop offset="1" stop-color="#60a5fa"/>
     </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="24"/></filter>
+    <radialGradient id="orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".35"/>
+    </filter>
   </defs>
-  <rect width="1200" height="320" rx="24" fill="url(#bg)"/>
-  <circle cx="1020" cy="80" r="125" fill="#7c3aed" opacity=".22" filter="url(#glow)"/>
-  <circle cx="130" cy="290" r="110" fill="#2563eb" opacity=".18" filter="url(#glow)"/>
-  <g fill="none" stroke="#8b5cf6" opacity=".22">
-    <path d="M860 65h185l80 80-80 80H860l-80-80z"/>
-    <path d="M900 90h105l55 55-55 55H900l-55-55z"/>
-    <circle cx="952" cy="145" r="23"/>
+
+  <rect width="1200" height="320" rx="24" fill="url(#background)"/>
+  <circle cx="1022" cy="140" r="180" fill="url(#orb)" filter="url(#blur)"/>
+  <circle cx="90" cy="314" r="120" fill="#2563eb" opacity=".08" filter="url(#blur)"/>
+
+  <g opacity=".13" stroke="#94a3b8" stroke-width="1">
+    <path d="M0 64H1200M0 128H1200M0 192H1200M0 256H1200"/>
+    <path d="M64 0V320M128 0V320M192 0V320M256 0V320M320 0V320M384 0V320M448 0V320M512 0V320M576 0V320M640 0V320M704 0V320M768 0V320M832 0V320M896 0V320M960 0V320M1024 0V320M1088 0V320M1152 0V320"/>
   </g>
-  <text x="72" y="122" fill="url(#accent)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" font-weight="700" letter-spacing="4">BRYANN2K / AGENT SKILLS</text>
-  <text x="72" y="190" fill="#fafafa" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="750">Build. Ship. Explain.</text>
-  <text x="74" y="238" fill="#cbd5e1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22">Infrastructure · DevOps · Developer documentation</text>
-  <rect x="72" y="268" width="430" height="3" rx="2" fill="url(#accent)"/>
+
+  <g transform="translate(70 58)">
+    <rect width="46" height="46" rx="13" fill="#17112b" stroke="#a78bfa" stroke-width="1.5"/>
+    <path d="M15 14h16M15 23h10M15 32h16" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="132" y="91" fill="#c4b5fd" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="700" letter-spacing="3">BRYANN2K / SKILLS</text>
+  <text x="70" y="165" fill="#fafafa" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="58" font-weight="760" letter-spacing="-2">Workflows for real work.</text>
+  <text x="72" y="210" fill="#cbd5e1" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21">Build · Operate · Document · Share</text>
+  <rect x="70" y="242" width="492" height="3" rx="1.5" fill="url(#accent)"/>
+
+  <g transform="translate(770 45)" filter="url(#soft-shadow)">
+    <path d="M88 65L172 25L256 65L172 105Z" fill="#17112b" stroke="#475569"/>
+    <path d="M88 65V145L172 185V105Z" fill="#0f172a" stroke="#475569"/>
+    <path d="M256 65V145L172 185V105Z" fill="#111827" stroke="#475569"/>
+
+    <g transform="translate(34 10)">
+      <rect width="108" height="54" rx="14" fill="#181229" stroke="#a78bfa"/>
+      <circle cx="22" cy="20" r="5" fill="#a78bfa"/>
+      <path d="M36 18h48M36 31h32" stroke="#c4b5fd" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(204 10)">
+      <rect width="108" height="54" rx="14" fill="#0f1928" stroke="#60a5fa"/>
+      <path d="M21 17l10 10-10 10M40 37h30" fill="none" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g transform="translate(34 178)">
+      <rect width="108" height="54" rx="14" fill="#141827" stroke="#818cf8"/>
+      <path d="M24 16h58v25H24zM33 24h40M33 32h27" fill="none" stroke="#a5b4fc" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(204 178)">
+      <rect width="108" height="54" rx="14" fill="#1a1225" stroke="#c084fc"/>
+      <path d="M26 38c9-22 20-22 28 0 8-22 19-22 28 0" fill="none" stroke="#d8b4fe" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <g fill="none" stroke-width="2">
+      <path d="M142 49C157 49 157 67 172 67" stroke="#a78bfa"/>
+      <path d="M204 49C188 49 189 67 172 67" stroke="#60a5fa"/>
+      <path d="M142 205C157 205 157 183 172 183" stroke="#818cf8"/>
+      <path d="M204 205C188 205 189 183 172 183" stroke="#c084fc"/>
+    </g>
+    <circle cx="172" cy="67" r="5" fill="#a78bfa"/>
+    <circle cx="172" cy="183" r="5" fill="#8b5cf6"/>
+  </g>
 </svg>
