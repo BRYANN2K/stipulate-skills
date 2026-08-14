@@ -2,6 +2,8 @@
 
 Production infrastructure workflows built around read-only discovery, explicit blast-radius analysis, and reversible change plans.
 
+For root or nested repository instructions, use the cross-domain [`agents-md-authoring`](../agent-workflows/agents-md-authoring) workflow. It derives infrastructure commands, state/backend and environment boundaries, generated-file ownership, and plan/apply policy from repository evidence without reading live state or authorizing mutation.
+
 | Skill | Focus |
 |---|---|
 | [infrastructure-project-bootstrap](infrastructure-project-bootstrap) | Constraint-first, non-destructive initialization and adoption of infrastructure repositories |

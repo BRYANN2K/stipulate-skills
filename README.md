@@ -4,7 +4,7 @@
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-18-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-19-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
@@ -37,6 +37,7 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 | Skill | Use it for |
 |---|---|
 | [verified-completion](agent-workflows/verified-completion) | Require fresh evidence for every completion claim; distinguish implemented, executed, verified, and published work without overstating results |
+| [agents-md-authoring](agent-workflows/agents-md-authoring) | Create, adapt, audit, and split evidence-backed `AGENTS.md` instructions across software, infrastructure, platform, data, and documentation repositories without inventing commands, live state, or mutation authority |
 
 ### Creator
 
@@ -158,7 +159,8 @@ Every skill in this repository must:
 ```text
 .
 ├── agent-workflows/
-│   └── verified-completion/
+│   ├── verified-completion/
+│   └── agents-md-authoring/
 ├── creator/
 │   └── build-in-public-journal/
 ├── infrastructure/

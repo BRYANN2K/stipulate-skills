@@ -41,7 +41,17 @@ This repository contains original skills written as a synthesis of public engine
 
 ## Software and product engineering
 
-- BRYANN2K's earlier Anvil software handbook — project-type discovery, discussion-first planning, explicit verification phases, and interface-specific checklists. The six software-development skills are new agent-agnostic implementations; they exclude private paths, editor adapters, automatic commits, mutating diagnosis, stack-imposed scaffolds, and personal defaults.
+- BRYANN2K's earlier Anvil software handbook — project-type discovery, discussion-first planning, explicit verification phases, and interface-specific checklists. The software-development skills are new agent-agnostic implementations; they exclude private paths, editor adapters, automatic commits, mutating diagnosis, stack-imposed scaffolds, and personal defaults.
+- [AGENTS.md open format](https://agents.md/) — portable repository instructions, ordinary Markdown, and nearest-file scope precedence.
+- [OpenAI Codex — custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md/) — root-to-working-directory discovery, scoped overrides, and instruction-source diagnosis.
+- [kubernetes/kubernetes `AGENTS.md`](https://github.com/kubernetes/kubernetes/blob/master/AGENTS.md) — concise repository-specific commands, generated-file constraints, and source-of-truth boundaries.
+- [getsentry/sentry `AGENTS.md`](https://github.com/getsentry/sentry/blob/master/AGENTS.md) — global commands at root, scoped backend/test/frontend instructions, and delegation of longer workflows to skills.
+- [openai/openai-agents-python `AGENTS.md`](https://github.com/openai/openai-agents-python/blob/main/AGENTS.md) — scope discipline, explicit compatibility contracts, verification tiers, and skill delegation.
+- [opentofu/opentofu `AGENTS.md`](https://github.com/opentofu/opentofu/blob/main/AGENTS.md) — concise, high-authority contribution and licensing boundaries; its project-specific prohibition on LLM-generated contributions is not generalized.
+- [fluxcd/flux2 `AGENTS.md`](https://github.com/fluxcd/flux2/blob/main/AGENTS.md) — generated-manifest ownership, live-cluster test boundaries, secret-safe output, and explicit compatibility contracts.
+- [helm/helm `AGENTS.md`](https://github.com/helm/helm/blob/main/AGENTS.md) — public SDK/CLI compatibility, exact build/test targets, and branch-aware support policy.
+- [ansible/ansible `AGENTS.md`](https://github.com/ansible/ansible/blob/devel/AGENTS.md) — authoritative licensing context, specialized test guidance, and separation of automated sanity checks from human review.
+- [GitHub analysis of 2,500+ agent instruction files](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/) — evidence for exact commands, examples, boundaries, project structure, tests, style, and Git guidance. Its custom-agent examples are treated separately from the root `AGENTS.md` format.
 - [mhattingpete/claude-skills-marketplace — project-bootstrapper](https://github.com/mhattingpete/claude-skills-marketplace/tree/b5b34bcf4c920bb72cee1c391b54a33cb5353c12), Apache-2.0 — discovery, plan, approval, and new-versus-existing project distinctions.
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills/tree/be42637c5af93fdc8526b68ec2f2651b930f316c), MIT — frontend architecture, browser-runtime verification, measurement-first performance, and web security boundaries.
 - [ibelick/ui-skills](https://github.com/ibelick/ui-skills/tree/146fcd0b34fca2d80333b120d67f5009ccf58b28), MIT — design-system preservation, accessibility, metadata, responsive UI, and motion-performance constraints.

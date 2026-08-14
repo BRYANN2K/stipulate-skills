@@ -223,6 +223,8 @@ Report:
 - validations actually executed separately from declarations;
 - explicit non-actions: no provider mutation, deployment, Git publication, or tool installation.
 
+Use the cross-domain `agents-md-authoring` skill at `agent-workflows/agents-md-authoring` to audit or propose richer repository instructions once real IaC commands, provider/module locks, generated-file rules, state/backend ownership, environment or cluster boundaries, and scoped subprojects exist. It must keep static validation, connected plan/preview, and live mutation separate; it must not read state or infer apply authorization. The bootstrap owns its generated `AGENTS.md` and doctor verifies it exactly. Before writing an adapted root file, either update the owning bootstrap contract/generator or obtain an explicit transfer of ownership and report that subsequent doctor output will show intentional drift. Never break bootstrap ownership silently.
+
 Use specialized skills for the next phase. A bootstrap is ready for implementation only when structural decisions needed by that implementation are resolved.
 
 **Complete when:** another agent or human can distinguish repository scaffolding from implemented, executed, verified, or deployed infrastructure.

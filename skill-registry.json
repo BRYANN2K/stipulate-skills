@@ -10,6 +10,7 @@
     {"name": "gitops-operations", "category": "devops", "path": "devops/gitops-operations"},
     {"name": "delivery-pipeline-engineering", "category": "devops", "path": "devops/delivery-pipeline-engineering"},
     {"name": "software-project-bootstrap", "category": "software-development", "path": "software-development/software-project-bootstrap"},
+    {"name": "agents-md-authoring", "category": "agent-workflows", "path": "agent-workflows/agents-md-authoring"},
     {"name": "website-production-engineering", "category": "software-development", "path": "software-development/website-production-engineering"},
     {"name": "web-application-engineering", "category": "software-development", "path": "software-development/web-application-engineering"},
     {"name": "dashboard-application-engineering", "category": "software-development", "path": "software-development/dashboard-application-engineering"},

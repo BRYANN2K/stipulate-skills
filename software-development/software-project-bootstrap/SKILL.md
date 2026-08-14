@@ -183,6 +183,8 @@ Route the next slice by product interface:
 | Imported library or package | No library/package specialist is included in this pack; hand off to the repository's package workflow and preserve its public programming interface. |
 | `other` or an interface not yet classified | Record the missing interface/workflow as an open decision; do not infer a specialist or begin product implementation. |
 
+Use the cross-domain `agents-md-authoring` skill at `agent-workflows/agents-md-authoring` to audit or propose richer repository instructions once real commands, conventions, compatibility boundaries, and subproject differences exist. The bootstrap owns its generated `AGENTS.md` and doctor verifies it exactly. Before writing an adapted root file, either update the owning bootstrap contract/generator or obtain an explicit transfer of ownership and report that subsequent doctor output will show intentional drift. Never break bootstrap ownership silently.
+
 Use documentation, architecture, delivery, and completion skills only for their own contracts. Bootstrap completion does not imply feature completion. Stop bootstrap after the repository is structurally inspectable and the authorized minimal wiring is applied and diagnosed; product implementation begins in the selected surface skill.
 
 ## Output contract

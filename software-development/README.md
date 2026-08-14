@@ -10,7 +10,7 @@ Product-engineering workflows that preserve repository conventions, define obser
 
 Classify the **unit of work**, not the whole repository or framework. One repository may use website engineering for a public pricing route, web-application engineering for an account flow, the dashboard specialization for an operations route, and CLI/TUI skills for separate executable modes. Load the dashboard specialization only when at least two dashboard-specific dimensions are first-class: metric/source semantics, dense query-and-drill-down behavior, privileged mutations, or independently failing and reconciling data regions.
 
-Cross-cutting ownership remains separate: `verified-completion` governs claims and evidence; `delivery-pipeline-engineering` owns CI/CD, packaging, release, and deployment; documentation skills own durable docs, ADRs, and diagrams; infrastructure skills own runtime and platform provisioning.
+Cross-cutting ownership remains separate: `agents-md-authoring` owns evidence-backed repository instructions across domains; `verified-completion` governs claims and evidence; `delivery-pipeline-engineering` owns CI/CD, packaging, release, and deployment; documentation skills own durable docs, ADRs, and diagrams; infrastructure skills own runtime and platform provisioning.
 
 | Skill | Focus |
 |---|---|
