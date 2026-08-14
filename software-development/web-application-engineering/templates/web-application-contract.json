@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "kind": "web-application",
+  "project": {
+    "name": "example-app",
+    "primary_user": "Authenticated operator",
+    "core_outcome": "Complete the primary workflow safely"
+  },
+  "routes": [
+    {
+      "id": "login",
+      "path": "/login",
+      "purpose": "Authenticate",
+      "access": "public",
+      "roles": []
+    },
+    {
+      "id": "workspace",
+      "path": "/workspace",
+      "purpose": "Complete the core workflow",
+      "access": "role-gated",
+      "roles": [
+        "operator"
+      ]
+    }
+  ],
+  "state_domains": [
+    {
+      "id": "workspace-filter",
+      "owner": "url",
+      "source_of_truth": "URL query parameters",
+      "stale_policy": "Revalidate on navigation"
+    },
+    {
+      "id": "workspace-data",
+      "owner": "server",
+      "source_of_truth": "Application API",
+      "stale_policy": "Invalidate after successful mutation"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "core-workflow",
+      "actor": "operator",
+      "steps": [
+        {
+          "route": "login",
+          "action": "Authenticate",
+          "expected": "Workspace opens"
+        },
+        {
+          "route": "workspace",
+          "action": "Complete the primary action",
+          "expected": "Server state and UI reconcile"
+        }
+      ],
+      "success": "Outcome is confirmed",
+      "failure_states": [
+        "Unauthorized",
+        "Validation failed",
+        "Service unavailable"
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "id": "primary-action",
+      "route": "workspace",
+      "permission": "operator",
+      "optimistic": false,
+      "rollback": "Wait for server before changing durable UI state",
+      "success_feedback": "Confirm the completed outcome",
+      "error_feedback": "Preserve context and offer a safe retry"
+    }
+  ],
+  "quality": {
+    "accessibility_target": "WCAG 2.2 AA",
+    "browsers": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "viewports": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "verification": [
+    {
+      "id": "core-e2e",
+      "claim": "Authorized users can complete the core workflow and recover from failure",
+      "evidence": "Real-browser E2E for success, authorization denial, validation error, and service failure"
+    }
+  ]
+}

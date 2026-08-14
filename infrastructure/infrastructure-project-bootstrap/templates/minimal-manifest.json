@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "name": "example-infrastructure",
+    "summary": "Infrastructure owned by the example project."
+  },
+  "profile": "minimal",
+  "stacks": [
+    "opentofu"
+  ],
+  "environments": [
+    "dev"
+  ],
+  "deployment_targets": [
+    "cloud"
+  ],
+  "documentation": [
+    "architecture"
+  ],
+  "spec_workflow": "none",
+  "validation": [
+    {
+      "id": "format",
+      "command": "tofu fmt -check -recursive"
+    },
+    {
+      "id": "validate",
+      "command": "tofu validate"
+    }
+  ],
+  "constraints": [],
+  "open_decisions": []
+}

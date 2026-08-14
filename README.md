@@ -4,7 +4,7 @@
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-11-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-18-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
@@ -48,6 +48,7 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 
 | Skill | Use it for |
 |---|---|
+| [infrastructure-project-bootstrap](infrastructure/infrastructure-project-bootstrap) | Start or safely adopt an infrastructure repository through constraint discovery, reviewable non-destructive scaffolding, minimal agent rules, and structural diagnosis |
 | [terraform-change-safety](infrastructure/terraform-change-safety) | Terraform/OpenTofu authoring, plan review, state migrations, and production change verdicts |
 | [kubernetes-production-engineering](infrastructure/kubernetes-production-engineering) | Kubernetes generation, review, hardening, validation, and live diagnosis |
 | [cloud-architecture-review](infrastructure/cloud-architecture-review) | Evidence-based reviews across AWS, Azure, GCP, and hybrid systems |
@@ -59,6 +60,17 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 | [sre-incident-investigation](devops/sre-incident-investigation) | Triage, hypothesis-driven investigation, mitigation, and postmortems |
 | [gitops-operations](devops/gitops-operations) | Static GitOps repository audits and read-only live cluster debugging |
 | [delivery-pipeline-engineering](devops/delivery-pipeline-engineering) | CI/CD design, supply-chain security, rollout strategy, and deployment readiness |
+
+### Software development
+
+| Skill | Use it for |
+|---|---|
+| [software-project-bootstrap](software-development/software-project-bootstrap) | Start or safely adopt a software repository through project discovery, digest-bound non-destructive scaffolding, minimal agent rules, and read-only diagnosis |
+| [website-production-engineering](software-development/website-production-engineering) | Build public websites around approved content, conversion paths, SEO continuity, accessibility, responsive behavior, and real-browser evidence |
+| [web-application-engineering](software-development/web-application-engineering) | Build stateful browser applications with explicit routes, permissions, state ownership, mutations, failure recovery, and E2E verification |
+| [dashboard-application-engineering](software-development/dashboard-application-engineering) | Specialize web applications for analytical and operational dashboards with source, metric, resource, filter, role, action, partial-failure, and reconciliation contracts |
+| [terminal-ui-engineering](software-development/terminal-ui-engineering) | Build full-screen terminal applications with deterministic state, focus, resize, async work, cleanup, compatibility, and PTY evidence |
+| [command-line-tool-engineering](software-development/command-line-tool-engineering) | Build scriptable CLIs with stable streams, formats, exit codes, config precedence, mutation safety, signals, and black-box probes |
 
 ### Documentation
 
@@ -115,6 +127,7 @@ flowchart LR
     Share --> Evidence
 
     Infra["Infrastructure"] --> Build
+    Software["Software development"] --> Build
     DevOps["DevOps"] --> Operate
     Docs["Documentation"] --> Document
     Creator["Creator"] --> Share
@@ -123,7 +136,7 @@ flowchart LR
     classDef core fill:#17112b,stroke:#a78bfa,color:#fafafa,stroke-width:2px;
     classDef domain fill:#0f172a,stroke:#475569,color:#e2e8f0;
     class Evidence,Decide,Build,Verify,Operate,Document,Share core;
-    class Infra,DevOps,Docs,Creator,Agent domain;
+    class Infra,Software,DevOps,Docs,Creator,Agent domain;
 ```
 
 Skills remain independent and composable. A project can verify completion claims, move from architecture review to delivery and incident investigation, document the result, and capture build-in-public ideas without loading one monolithic prompt.
@@ -149,6 +162,7 @@ Every skill in this repository must:
 ├── creator/
 │   └── build-in-public-journal/
 ├── infrastructure/
+│   ├── infrastructure-project-bootstrap/
 │   ├── terraform-change-safety/
 │   ├── kubernetes-production-engineering/
 │   └── cloud-architecture-review/
@@ -156,6 +170,13 @@ Every skill in this repository must:
 │   ├── sre-incident-investigation/
 │   ├── gitops-operations/
 │   └── delivery-pipeline-engineering/
+├── software-development/
+│   ├── software-project-bootstrap/
+│   ├── website-production-engineering/
+│   ├── web-application-engineering/
+│   ├── dashboard-application-engineering/
+│   ├── terminal-ui-engineering/
+│   └── command-line-tool-engineering/
 ├── doc-writer/
 │   ├── developer-documentation/
 │   ├── architecture-decision-records/

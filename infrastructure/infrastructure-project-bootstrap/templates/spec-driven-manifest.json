@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "name": "example-platform",
+    "summary": "Infrastructure and orchestration for the example platform."
+  },
+  "profile": "spec-driven",
+  "stacks": [
+    "opentofu",
+    "kubernetes",
+    "helm"
+  ],
+  "environments": [
+    "dev",
+    "prod"
+  ],
+  "deployment_targets": [
+    "cloud",
+    "cluster"
+  ],
+  "documentation": [
+    "architecture",
+    "adr",
+    "runbooks"
+  ],
+  "spec_workflow": "generic",
+  "validation": [
+    {
+      "id": "iac-format",
+      "command": "tofu fmt -check -recursive"
+    },
+    {
+      "id": "iac-validate",
+      "command": "tofu validate"
+    },
+    {
+      "id": "helm-lint",
+      "command": "helm lint ./infra/helm"
+    }
+  ],
+  "constraints": [
+    "Production changes require a reviewed plan and explicit authorization.",
+    "Secret values must remain outside the repository."
+  ],
+  "open_decisions": [
+    "Choose the remote state backend before the first shared environment plan."
+  ]
+}
