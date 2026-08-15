@@ -4,7 +4,7 @@
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-19-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-25-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
@@ -73,6 +73,17 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 | [terminal-ui-engineering](software-development/terminal-ui-engineering) | Build full-screen terminal applications with deterministic state, focus, resize, async work, cleanup, compatibility, and PTY evidence |
 | [command-line-tool-engineering](software-development/command-line-tool-engineering) | Build scriptable CLIs with stable streams, formats, exit codes, config precedence, mutation safety, signals, and black-box probes |
 
+### Design
+
+| Skill | Use it for |
+|---|---|
+| [web-craft](design/web-craft) | Orchestrate product truth, copy, direction, design-system review, explicit human approval, project-local UI instructions, frontend implementation, motion, and anti-slop verification |
+| [product-story-and-copy](design/product-story-and-copy) | Turn product evidence into positioning, claims, message hierarchy, conversion copy, state microcopy, and marketing requirements without invented proof |
+| [design-direction](design/design-direction) | Convert cited visual, system, motion, and data references into one original product-specific direction and no-go list without cloning |
+| [design-system-first](design/design-system-first) | Define foundations, semantic tokens, composition, components, states, responsive/accessibility behavior, review evidence, and a project-local UI contract before frontend code |
+| [interface-motion](design/interface-motion) | Design and verify motion that serves causality, feedback, orientation, continuity, progression, or hierarchy with interruption and reduced-motion behavior |
+| [anti-slop-review](design/anti-slop-review) | Produce evidence-linked findings across copy, composition, system fidelity, data, states, motion, accessibility, responsive, marketing, and runtime quality |
+
 ### Documentation
 
 | Skill | Use it for |
@@ -133,11 +144,14 @@ flowchart LR
     Docs["Documentation"] --> Document
     Creator["Creator"] --> Share
     Agent["Agent workflows"] --> Verify
+    Design["Design"] --> Decide
+    Design --> Build
+    Design --> Verify
 
     classDef core fill:#17112b,stroke:#a78bfa,color:#fafafa,stroke-width:2px;
     classDef domain fill:#0f172a,stroke:#475569,color:#e2e8f0;
     class Evidence,Decide,Build,Verify,Operate,Document,Share core;
-    class Infra,Software,DevOps,Docs,Creator,Agent domain;
+    class Infra,Software,DevOps,Docs,Creator,Agent,Design domain;
 ```
 
 Skills remain independent and composable. A project can verify completion claims, move from architecture review to delivery and incident investigation, document the result, and capture build-in-public ideas without loading one monolithic prompt.
@@ -179,6 +193,13 @@ Every skill in this repository must:
 │   ├── dashboard-application-engineering/
 │   ├── terminal-ui-engineering/
 │   └── command-line-tool-engineering/
+├── design/
+│   ├── web-craft/
+│   ├── product-story-and-copy/
+│   ├── design-direction/
+│   ├── design-system-first/
+│   ├── interface-motion/
+│   └── anti-slop-review/
 ├── doc-writer/
 │   ├── developer-documentation/
 │   ├── architecture-decision-records/
