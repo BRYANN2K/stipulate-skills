@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -185,6 +186,33 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("approved artifact changed", result.stderr)
 
+    def test_approve_rejects_artifact_changed_after_ready(self) -> None:
+        self.assertEqual(self.init().returncode, 0)
+        self.write_artifacts()
+        self.assertEqual(self.run_flow("ready").returncode, 0)
+        design = self.root / ".design-flow" / "artifacts" / "DESIGN.md"
+        design.write_text(design.read_text() + "\nUnreviewed mutation.\n", encoding="utf-8")
+        result = self.run_flow(
+            "approve",
+            "--approver",
+            "human",
+            "--approval-ref",
+            "chat:explicit-design-approval",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("changed after ready", result.stderr)
+
+    def test_manifest_scope_change_invalidates_approval(self) -> None:
+        self.ready_and_approve()
+        self.assertEqual(self.run_flow("compile").returncode, 0)
+        path = self.root / ".design-flow" / "workflow.json"
+        manifest = json.loads(path.read_text())
+        manifest["ui_roots"] = ["not-ui"]
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        result = self.run_flow("check-build")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("reviewed workflow scope changed", result.stderr)
+
     def test_compile_refuses_untracked_existing_skill(self) -> None:
         self.ready_and_approve()
         destination = self.root / ".agents" / "skills" / "example-product-ui" / "SKILL.md"
@@ -196,6 +224,32 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         replaced = self.run_flow("compile", "--replace")
         self.assertEqual(replaced.returncode, 0, replaced.stderr)
 
+    def test_compile_rejects_hard_linked_managed_skill(self) -> None:
+        self.ready_and_approve()
+        self.assertEqual(self.run_flow("compile").returncode, 0)
+        destination = self.root / ".agents" / "skills" / "example-product-ui" / "SKILL.md"
+        external = self.root.parent / f"{self.root.name}-external-skill.md"
+        external.write_bytes(destination.read_bytes())
+        self.addCleanup(lambda: external.unlink(missing_ok=True))
+        destination.unlink()
+        os.link(external, destination)
+        source = self.root / ".design-flow" / "artifacts" / "PROJECT-UI.md"
+        source.write_text(source.read_text() + "\nA reviewed contract change.\n", encoding="utf-8")
+        self.assertEqual(self.run_flow("ready").returncode, 0)
+        approved = self.run_flow(
+            "approve",
+            "--approver",
+            "human",
+            "--approval-ref",
+            "chat:approved-updated-contract",
+        )
+        self.assertEqual(approved.returncode, 0, approved.stderr)
+        before = external.read_bytes()
+        result = self.run_flow("compile")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hard link", result.stderr)
+        self.assertEqual(external.read_bytes(), before)
+
     def test_guard_blocks_ui_before_gate_and_allows_workflow_artifacts(self) -> None:
         self.assertEqual(self.init().returncode, 0)
         blocked = self.run_flow("guard-write", "--path", "src/App.tsx")
@@ -206,6 +260,53 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         )
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
         self.assertIn("WRITE_ALLOWED", allowed.stdout)
+        manifest_write = self.run_flow(
+            "guard-write", "--path", ".design-flow/workflow.json"
+        )
+        self.assertNotEqual(manifest_write.returncode, 0)
+        self.assertIn("managed workflow manifest", manifest_write.stderr)
+
+    def test_init_rejects_symlinked_workflow_directory(self) -> None:
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        (self.root / ".design-flow").symlink_to(Path(external.name), target_is_directory=True)
+        result = self.init()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlink", result.stderr)
+        self.assertFalse((Path(external.name) / "workflow.json").exists())
+
+    def test_init_rejects_symlinked_ui_root(self) -> None:
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        (self.root / "src").symlink_to(Path(external.name), target_is_directory=True)
+        result = self.run_flow(
+            "init",
+            "--name",
+            "Example",
+            "--surface",
+            "website",
+            "--ui-root",
+            "src",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlink", result.stderr)
+
+    def test_init_rejects_project_root_beneath_symlink(self) -> None:
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        nested = Path(external.name) / "nested"
+        nested.mkdir()
+        link = self.root.parent / f"{self.root.name}-root-link"
+        link.symlink_to(Path(external.name), target_is_directory=True)
+        self.addCleanup(lambda: link.unlink(missing_ok=True))
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "init", "--root", str(link / "nested"), "--name", "Example", "--surface", "website", "--ui-root", "src"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlink", result.stderr)
 
     def test_guard_allows_ui_after_compile_but_blocks_generated_skill_edit(self) -> None:
         self.ready_and_approve()
@@ -239,8 +340,10 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         self.assertIn("unresolved template choice", unresolved.stderr)
         report.write_text(
             "# Quality Report\n\n## Scope\n\nFinal product surface.\n\n"
-            "## Evidence\n\n| ID | Dimension | Result |\n|---|---|---|\n"
-            "| E1 | Browser, keyboard, and build | PASS |\n\n"
+            "## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser, keyboard, and build | browser evidence | project checks | PASS | yes |\n\n"
             "## Findings\n\nNo blocking divergence remains; skipped checks are named.\n\n"
             "## Final verdict\n\n- Verdict: PASS\n",
             encoding="utf-8",
@@ -250,6 +353,99 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         status = self.run_flow("status", "--json")
         self.assertEqual(status.returncode, 0, status.stderr)
         self.assertEqual(json.loads(status.stdout)["phase"], "verified")
+
+    def test_verify_rejects_failed_evidence_and_open_blocker(self) -> None:
+        self.ready_and_approve()
+        self.assertEqual(self.run_flow("compile").returncode, 0)
+        report = self.root / ".design-flow" / "QUALITY-REPORT.md"
+        report.write_text(
+            "# Quality Report\n\n## Scope\n\nFinal UI.\n\n## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser | screenshot | browser | FAIL | yes |\n\n"
+            "## Findings\n\n### F1 — Broken gate\n\n"
+            "- Severity: BLOCKER\n- Disposition: open\n\n"
+            "## Final verdict\n\n- Verdict: PASS\n",
+            encoding="utf-8",
+        )
+        result = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("failed evidence", result.stderr)
+        report.write_text(
+            report.read_text(encoding="utf-8").replace("| FAIL |", "| PASS |"),
+            encoding="utf-8",
+        )
+        blocker = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertNotEqual(blocker.returncode, 0)
+        self.assertIn("open BLOCKER", blocker.stderr)
+
+        report.write_text(
+            "# Quality Report\n\n## Scope\n\nFinal UI.\n\n## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser | screenshot | browser | PASS | yes |\n\n"
+            "## Findings\n\n### F1 — Fixed gate\n\n"
+            "- Severity: BLOCKER\n- Disposition: fixed\n\n"
+            "## Dimension verdicts\n\n| Dimension | Verdict |\n|---|---|\n"
+            "| Accessibility | FAIL |\n\n"
+            "## Final verdict\n\n- Verdict: PASS\n",
+            encoding="utf-8",
+        )
+        dimension = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertNotEqual(dimension.returncode, 0)
+        self.assertIn("non-passing dimension", dimension.stderr)
+
+        report.write_text(
+            "# Quality Report\n\n## Scope\n\nFinal UI.\n\n## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser | screenshot | browser | PASS | yes |\n"
+            " | E2 | Keyboard | trace | browser | FAIL | yes |\n\n"
+            "## Findings\n\nNo findings.\n\n## Final verdict\n\n- Verdict: PASS\n",
+            encoding="utf-8",
+        )
+        indented = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertNotEqual(indented.returncode, 0)
+        self.assertIn("indented evidence", indented.stderr)
+
+        report.write_text(
+            "# Quality Report\n\n## Scope\n\nFinal UI.\n\n## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser | screenshot | browser | PASS | yes |\n\n"
+            "## Findings\n\n### F1 — Contradictory finding\n\n"
+            "- Severity: MINOR\n- Disposition: fixed\n"
+            "- Severity: BLOCKER\n- Disposition: open\n\n"
+            "## Final verdict\n\n- Verdict: PASS\n",
+            encoding="utf-8",
+        )
+        duplicate_fields = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertNotEqual(duplicate_fields.returncode, 0)
+        self.assertIn("exactly one severity", duplicate_fields.stderr)
+
+    def test_verified_report_drift_invalidates_gate_and_status(self) -> None:
+        self.ready_and_approve()
+        self.assertEqual(self.run_flow("compile").returncode, 0)
+        report = self.root / ".design-flow" / "QUALITY-REPORT.md"
+        report.write_text(
+            "# Quality Report\n\n## Scope\n\nFinal UI.\n\n## Evidence\n\n"
+            "| ID | Dimension | Evidence | Command | Result | Fresh after final mutation? |\n"
+            "|---|---|---|---|---|---|\n"
+            "| E1 | Browser | screenshot | browser | PASS | yes |\n\n"
+            "## Findings\n\nNo findings.\n\n"
+            "## Final verdict\n\n- Verdict: PASS\n",
+            encoding="utf-8",
+        )
+        verified = self.run_flow("verify", "--report", ".design-flow/QUALITY-REPORT.md")
+        self.assertEqual(verified.returncode, 0, verified.stderr)
+        report.write_text(report.read_text() + "\nStale mutation.\n", encoding="utf-8")
+        checked = self.run_flow("check-build")
+        self.assertNotEqual(checked.returncode, 0)
+        self.assertIn("quality report changed", checked.stderr)
+        status = self.run_flow("status", "--json")
+        payload = json.loads(status.stdout)
+        self.assertFalse(payload["quality_report_current"])
+        self.assertEqual(payload["phase"], "build-allowed")
 
     def test_duplicate_manifest_keys_are_rejected(self) -> None:
         self.assertEqual(self.init().returncode, 0)
@@ -274,6 +470,18 @@ Run repository tests and exercise keyboard, responsive, error, and reduced-motio
         result = self.run_flow("ready")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate frontmatter key", result.stderr)
+
+    def test_malformed_nested_project_skill_frontmatter_is_rejected(self) -> None:
+        self.assertEqual(self.init().returncode, 0)
+        self.write_artifacts()
+        project_ui = self.root / ".design-flow" / "artifacts" / "PROJECT-UI.md"
+        project_ui.write_text(
+            project_ui.read_text(encoding="utf-8").replace("metadata:\n", "metadata: [\n", 1),
+            encoding="utf-8",
+        )
+        result = self.run_flow("ready")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("metadata mapping", result.stderr)
 
 
 if __name__ == "__main__":

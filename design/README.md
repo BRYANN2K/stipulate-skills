@@ -41,7 +41,7 @@ Product frontend roots remain blocked until:
 
 1. all eight design artifacts pass structural checks;
 2. the human explicitly approves the exact review set;
-3. approval is bound to current SHA-256 digests;
+3. approval is bound to the exact current artifact digests and security-relevant workflow scope;
 4. `PROJECT-UI.md` is compiled to `.agents/skills/<project>-ui/SKILL.md`;
 5. `design_flow.py check-build` passes.
 
@@ -57,4 +57,4 @@ python3 scripts/validate_skills.py
 python3 scripts/run_skill_tests.py
 ```
 
-The design-flow tests cover missing artifacts, unresolved token markers, early/vague approval, digest invalidation, compiled-skill drift, protected writes, hook behavior, and final report structure.
+The design-flow tests cover missing artifacts, unresolved token markers, review-set and scope drift, symlink/hard-link confinement, strict project-skill frontmatter, compiled-skill drift, protected writes, fail-closed hook behavior, and semantic/fresh final reports.

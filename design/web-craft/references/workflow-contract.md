@@ -14,11 +14,11 @@ draft
 |---|---|---|
 | `draft` | Content, references, direction, and system artifacts are being authored | Blocked |
 | `system-ready` | Eight required artifacts pass structural review checks | Blocked |
-| `system-approved` | A human approval reference and current artifact SHA-256 digests are recorded | Blocked until compilation |
+| `system-approved` | A human approval reference plus the exact presented artifact and workflow-scope digest are recorded | Blocked until compilation |
 | `build-allowed` | The approved `PROJECT-UI.md` is compiled project-locally and current | Allowed in declared UI roots |
 | `verified` | A structured quality report is recorded after the build gate | Allowed while digests remain current |
 
-A change to any approved artifact makes `check-build` fail even if the manifest still names a later phase. Run `ready`, request a new review, record a new approval, and recompile.
+A change to any approved artifact or security-relevant workflow field—including `ui_roots`—makes `check-build` fail even if the manifest still names a later phase. Run `ready`, present the new snapshot, record a new approval, and recompile.
 
 ## Required review artifacts
 
@@ -37,7 +37,7 @@ All paths are relative to the target project:
 
 The validator checks presence, minimum substance, JSON shape, unresolved template markers, project UI frontmatter, required sections, and exact digests. It cannot judge whether a visual direction is good, a claim is true, or a component is accessible; human and runtime review do that.
 
-Final `verify` additionally requires `## Scope`, `## Evidence`, `## Findings`, and `## Final verdict`; at least one evidence row; and an exact `PASS` or `PASS_WITH_NOTES` selection.
+Final `verify` additionally requires `## Scope`, `## Evidence`, `## Findings`, and `## Final verdict`; unique six-column evidence rows with fresh passing checks; no failed, skipped, or unavailable evidence; no unresolved BLOCKER or MAJOR; and exactly one `PASS` or `PASS_WITH_NOTES`. The recorded report digest must remain current or the effective phase falls back to `build-allowed`.
 
 ## Commands
 

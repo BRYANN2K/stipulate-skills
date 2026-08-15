@@ -10,9 +10,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
-import shutil
+import stat
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,7 +54,16 @@ def slugify(value: str) -> str:
 
 
 def root_path(value: str) -> Path:
-    root = Path(value).expanduser().resolve()
+    requested = Path(value).expanduser().absolute()
+    current = Path(requested.anchor)
+    for part in requested.parts[1:]:
+        current = current / part
+        if current.is_symlink():
+            raise FlowError("project root must not use a symlink path")
+    try:
+        root = requested.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise FlowError("project root cannot be resolved safely") from exc
     if not root.is_dir():
         raise FlowError(f"project root is not a directory: {root}")
     return root
@@ -72,31 +83,61 @@ def normalize_relative(value: str, *, label: str) -> str:
     return normalized.rstrip("/")
 
 
-def inside(root: Path, path: Path) -> bool:
-    try:
-        path.resolve().relative_to(root.resolve())
-        return True
-    except ValueError:
-        return False
-
-
 def resolve_project_path(root: Path, relative: str, *, label: str) -> Path:
     normalized = normalize_relative(relative, label=label)
-    resolved = (root / normalized).resolve()
-    if not inside(root, resolved):
-        raise FlowError(f"{label} resolves outside the project root")
-    return resolved
+    candidate = root / normalized
+    current = root
+    for part in Path(normalized).parts:
+        current = current / part
+        if current.is_symlink():
+            raise FlowError(f"{label} must not use a symlink path")
+        if current != candidate and current.exists() and not current.is_dir():
+            raise FlowError(f"{label} has a non-directory ancestor")
+    try:
+        candidate.absolute().relative_to(root)
+    except ValueError as exc:
+        raise FlowError(f"{label} resolves outside the project root") from exc
+    return candidate
 
 
 def manifest_path(root: Path) -> Path:
-    return root / MANIFEST_REL
+    return resolve_project_path(root, MANIFEST_REL, label="workflow manifest")
 
 
 def atomic_json_write(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def write_bytes_atomic(path: Path, content: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
 
 
 def reject_non_finite(value: str) -> None:
@@ -130,6 +171,8 @@ def read_manifest(root: Path) -> dict[str, Any]:
     path = manifest_path(root)
     if not path.is_file():
         raise FlowError(f"workflow manifest is missing: {MANIFEST_REL}; run init first")
+    if path.stat().st_nlink != 1:
+        raise FlowError("workflow manifest must not be a hard link")
     data = read_json_object(path, "workflow manifest")
     if data.get("schema_version") != SCHEMA_VERSION:
         raise FlowError(f"workflow manifest must use schema_version {SCHEMA_VERSION}")
@@ -137,6 +180,26 @@ def read_manifest(root: Path) -> dict[str, Any]:
         raise FlowError("workflow manifest has an invalid surface or phase")
     if not isinstance(data.get("ui_roots"), list) or not data["ui_roots"]:
         raise FlowError("workflow manifest must declare at least one ui_root")
+    if not isinstance(data.get("project_name"), str) or not data["project_name"].strip():
+        raise FlowError("workflow manifest must declare a project_name")
+    project_slug = data.get("project_slug")
+    if not isinstance(project_slug, str) or not NAME_RE.fullmatch(project_slug) or len(project_slug) > 61:
+        raise FlowError("workflow manifest has an invalid project_slug")
+    normalized_roots: list[str] = []
+    for value in data["ui_roots"]:
+        if not isinstance(value, str):
+            raise FlowError("workflow ui_roots must contain only strings")
+        normalized = normalize_relative(value, label="ui_root")
+        if normalized != value:
+            raise FlowError("workflow ui_roots must use canonical project-relative paths")
+        if normalized == FLOW_DIR or normalized.startswith(FLOW_DIR + "/"):
+            raise FlowError("ui_roots cannot include the workflow directory")
+        if normalized == ".agents" or normalized.startswith(".agents/"):
+            raise FlowError("ui_roots cannot include agent-instruction directories")
+        resolve_project_path(root, normalized, label="ui_root")
+        normalized_roots.append(normalized)
+    if len(set(normalized_roots)) != len(normalized_roots):
+        raise FlowError("workflow ui_roots must be unique")
     if data.get("artifacts") != ARTIFACTS:
         raise FlowError("workflow artifact map does not match this script version")
     return data
@@ -150,26 +213,87 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
+def parse_frontmatter(text: str) -> tuple[dict[str, str], dict[str, str], str]:
     if not text.startswith("---\n"):
         raise FlowError("PROJECT-UI.md frontmatter must start at byte zero")
     end = text.find("\n---\n", 4)
     if end < 0:
         raise FlowError("PROJECT-UI.md frontmatter closing delimiter is missing")
     values: dict[str, str] = {}
+    nested: dict[str, str] = {}
+    allowed = {"name", "description", "license", "allowed-tools", "metadata", "compatibility"}
+    section = ""
     for raw in text[4:end].splitlines():
-        if raw and not raw[0].isspace() and ":" in raw:
-            key, value = raw.split(":", 1)
-            normalized_key = key.strip()
-            if normalized_key in values:
-                raise FlowError("PROJECT-UI.md has a duplicate frontmatter key")
-            values[normalized_key] = value.strip().strip("\"'")
-    return values, text[end + 5 :]
+        if not raw or raw.lstrip().startswith("#"):
+            continue
+        if "\t" in raw:
+            raise FlowError("PROJECT-UI.md frontmatter must not contain tabs")
+        if raw.startswith("  "):
+            if section != "metadata" or raw.startswith("   ") or ":" not in raw:
+                raise FlowError("PROJECT-UI.md metadata must be a two-space-indented scalar mapping")
+            key, value = raw.strip().split(":", 1)
+            key = key.strip()
+            if not re.fullmatch(r"[a-z][a-z0-9_-]*", key) or key in nested:
+                raise FlowError("PROJECT-UI.md has an invalid or duplicate metadata key")
+            nested[key] = parse_yaml_scalar(value, label="metadata value")
+            continue
+        if raw[0].isspace() or ":" not in raw:
+            raise FlowError("PROJECT-UI.md has an invalid top-level frontmatter line")
+        key, value = raw.split(":", 1)
+        key = key.strip()
+        if key not in allowed:
+            raise FlowError("PROJECT-UI.md has an unsupported frontmatter key")
+        if key in values:
+            raise FlowError("PROJECT-UI.md has a duplicate frontmatter key")
+        if key == "metadata":
+            if value.strip():
+                raise FlowError("PROJECT-UI.md metadata mapping must not use an inline value")
+            values[key] = ""
+            section = "metadata"
+        else:
+            values[key] = parse_yaml_scalar(value, label="frontmatter value")
+            section = ""
+    required_nested = {"version", "author", "category", "tags"}
+    if not {"name", "description", "license", "metadata"}.issubset(values):
+        raise FlowError("PROJECT-UI.md frontmatter is missing required fields")
+    if not required_nested.issubset(nested):
+        raise FlowError("PROJECT-UI.md metadata mapping is missing required scalar fields")
+    return values, nested, text[end + 5 :]
+
+
+def parse_yaml_scalar(raw: str, *, label: str) -> str:
+    value = raw.strip()
+    if not value:
+        raise FlowError(f"PROJECT-UI.md {label} must not be empty")
+    if value[0] in "[{|>&*!?%:@`" or value.startswith("- "):
+        raise FlowError(f"PROJECT-UI.md {label} must use the portable scalar subset")
+    if value[0] == '"':
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise FlowError(f"PROJECT-UI.md {label} has invalid double-quoted syntax") from exc
+        if not isinstance(decoded, str):
+            raise FlowError(f"PROJECT-UI.md {label} must decode to a string")
+        return decoded
+    if value[0] == "'":
+        if len(value) < 2 or value[-1] != "'":
+            raise FlowError(f"PROJECT-UI.md {label} has an unmatched quote")
+        inner = value[1:-1]
+        if re.search(r"(?<!')'(?!')", inner):
+            raise FlowError(f"PROJECT-UI.md {label} has invalid single-quoted syntax")
+        return inner.replace("''", "'")
+    if ": " in value or " #" in value:
+        raise FlowError(f"PROJECT-UI.md {label} must quote YAML-significant text")
+    if value.lower() in {"null", "true", "false", "yes", "no", "on", "off", "~"} or re.fullmatch(
+        r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", value
+    ):
+        raise FlowError(f"PROJECT-UI.md {label} must be an unambiguous string")
+    return value
 
 
 def validate_project_ui(path: Path, slug: str) -> None:
     text = path.read_text(encoding="utf-8")
-    metadata, body = parse_frontmatter(text)
+    metadata, _, body = parse_frontmatter(text)
     expected = f"{slug}-ui"
     if metadata.get("name") != expected:
         raise FlowError(f"PROJECT-UI.md name must be {expected!r}")
@@ -189,7 +313,10 @@ def validate_required_artifacts(root: Path, manifest: dict[str, Any]) -> dict[st
         path = resolve_project_path(root, relative, label=f"artifact {key}")
         if not path.is_file():
             raise FlowError(f"required artifact is missing: {relative}")
-        if path.stat().st_size < 32:
+        details = path.stat()
+        if not stat.S_ISREG(details.st_mode) or details.st_nlink != 1:
+            raise FlowError(f"required artifact must be a regular single-link file: {relative}")
+        if details.st_size < 32:
             raise FlowError(f"required artifact is empty or too small: {relative}")
         if key == "tokens":
             raw_tokens = path.read_text(encoding="utf-8")
@@ -210,6 +337,24 @@ def validate_required_artifacts(root: Path, manifest: dict[str, Any]) -> dict[st
     return digests
 
 
+def canonical_digest(payload: dict[str, Any]) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def review_snapshot(manifest: dict[str, Any], digests: dict[str, str]) -> dict[str, Any]:
+    return {
+        "schema_version": manifest["schema_version"],
+        "project_name": manifest["project_name"],
+        "project_slug": manifest["project_slug"],
+        "surface": manifest["surface"],
+        "ui_roots": manifest["ui_roots"],
+        "artifacts": manifest["artifacts"],
+        "compiled_skill_path": f".agents/skills/{manifest['project_slug']}-ui/SKILL.md",
+        "artifact_sha256": digests,
+    }
+
+
 def approval_is_current(root: Path, manifest: dict[str, Any]) -> tuple[bool, str]:
     approval = manifest.get("approval")
     if not isinstance(approval, dict):
@@ -223,6 +368,10 @@ def approval_is_current(root: Path, manifest: dict[str, Any]) -> tuple[bool, str
         return False, str(exc)
     if recorded != current:
         return False, "an approved artifact changed; run ready and obtain a new human approval"
+    recorded_review = approval.get("review_snapshot_sha256")
+    current_review = canonical_digest(review_snapshot(manifest, current))
+    if not isinstance(recorded_review, str) or recorded_review != current_review:
+        return False, "the reviewed workflow scope changed; run ready and obtain a new human approval"
     return True, "approval digests match"
 
 
@@ -231,7 +380,114 @@ def compiled_skill_path(root: Path, manifest: dict[str, Any]) -> Path:
     return resolve_project_path(root, relative, label="compiled skill")
 
 
-def check_build(root: Path, manifest: dict[str, Any]) -> None:
+def validate_quality_report(report: Path) -> None:
+    if not report.is_file() or report.stat().st_size < 64:
+        raise FlowError("quality report is missing or too small")
+    if report.stat().st_nlink != 1:
+        raise FlowError("quality report must be a regular single-link file")
+    text = report.read_text(encoding="utf-8")
+    required_headings = ("## Scope", "## Evidence", "## Findings", "## Final verdict")
+    for heading in required_headings:
+        if heading not in text:
+            raise FlowError(f"quality report is missing required heading: {heading}")
+    if PLACEHOLDER_RE.search(text):
+        raise FlowError("quality report contains an unresolved placeholder")
+    if re.search(
+        r"(?i)(?:PASS\s*/\s*FAIL|yes\s*/\s*no|PASS\s*/\s*PASS_WITH_NOTES|BLOCKER\s*/\s*MAJOR)",
+        text,
+    ):
+        raise FlowError("quality report contains an unresolved template choice")
+
+    evidence: dict[str, tuple[str, str]] = {}
+    evidence_section = text.split("## Evidence", 1)[1].split("## Findings", 1)[0]
+    for line in evidence_section.splitlines():
+        if line.lstrip().startswith("|") and not line.startswith("|"):
+            raise FlowError("quality report contains an indented evidence row")
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells or not re.fullmatch(r"E[A-Za-z0-9_-]+", cells[0]):
+            continue
+        if cells[0] in evidence:
+            raise FlowError("quality report contains a duplicate evidence identifier")
+        if len(cells) < 6:
+            raise FlowError("quality report evidence rows must use the six-column contract")
+        result = cells[4].upper()
+        fresh = cells[5].lower()
+        if result not in {"PASS", "FAIL", "SKIPPED", "UNAVAILABLE", "NOT_APPLICABLE"}:
+            raise FlowError("quality report contains an invalid evidence result")
+        evidence[cells[0]] = (result, fresh)
+    if not evidence:
+        raise FlowError("quality report must contain at least one evidence row")
+    if any(result == "FAIL" for result, _ in evidence.values()):
+        raise FlowError("quality report contains failed evidence and cannot pass")
+    if any(result in {"SKIPPED", "UNAVAILABLE"} for result, _ in evidence.values()):
+        raise FlowError("quality report contains incomplete evidence and cannot pass")
+    if any(result == "PASS" and fresh != "yes" for result, fresh in evidence.values()):
+        raise FlowError("quality report PASS evidence must be fresh after the final mutation")
+
+    findings: set[str] = set()
+    blocks = re.findall(
+        r"(?ms)^###\s+(F[A-Za-z0-9_-]+)\b.*?(?=^###\s+F|^## Final verdict|\Z)",
+        text,
+    )
+    for finding_id in blocks:
+        if finding_id in findings:
+            raise FlowError("quality report contains a duplicate finding identifier")
+        findings.add(finding_id)
+    for block in re.finditer(
+        r"(?ms)^###\s+(F[A-Za-z0-9_-]+)\b(?P<body>.*?)(?=^###\s+F|^## Final verdict|\Z)",
+        text,
+    ):
+        body = block.group("body")
+        severities = re.findall(r"(?mi)^-\s*Severity:\s*(BLOCKER|MAJOR|MINOR|NOTE)\s*$", body)
+        dispositions = re.findall(
+            r"(?mi)^-\s*Disposition:\s*(open|fixed|accepted risk|blocked)\s*$", body
+        )
+        if len(severities) != 1:
+            raise FlowError("quality report finding must contain exactly one severity")
+        if len(dispositions) != 1:
+            raise FlowError("quality report finding must contain exactly one disposition")
+        if severities[0].upper() in {"BLOCKER", "MAJOR"} and dispositions[0].lower() != "fixed":
+            raise FlowError("quality report contains an open BLOCKER or MAJOR finding")
+
+    findings_section = text.split("## Findings", 1)[1].split("## Final verdict", 1)[0]
+    for heading in re.findall(r"(?m)^###\s+(.+)$", findings_section):
+        if not re.match(r"F[A-Za-z0-9_-]+\b", heading):
+            raise FlowError("quality report findings must use unique F-prefixed identifiers")
+    if "## Dimension verdicts" in text:
+        dimension_section = text.split("## Dimension verdicts", 1)[1].split("## Final verdict", 1)[0]
+        for line in dimension_section.splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [cell.strip().upper() for cell in line.strip().strip("|").split("|")]
+            if any(cell in {"FAIL", "SKIPPED", "UNAVAILABLE", "BLOCKED"} for cell in cells):
+                raise FlowError("quality report contains a non-passing dimension verdict")
+
+    verdicts = re.findall(r"(?mi)^-\s*Verdict:\s*(PASS|PASS_WITH_NOTES)\s*$", text)
+    if len(verdicts) != 1:
+        raise FlowError("quality report must select PASS or PASS_WITH_NOTES exactly once")
+
+
+def quality_report_is_current(root: Path, manifest: dict[str, Any]) -> tuple[bool, str]:
+    recorded = manifest.get("quality_report")
+    if not isinstance(recorded, dict):
+        return False, "no quality report is recorded"
+    relative = recorded.get("path")
+    digest = recorded.get("sha256")
+    if not isinstance(relative, str) or not isinstance(digest, str):
+        return False, "quality report record is incomplete"
+    try:
+        report = resolve_project_path(root, relative, label="quality report")
+        validate_quality_report(report)
+    except FlowError as exc:
+        return False, str(exc)
+    if sha256_file(report) != digest:
+        return False, "quality report changed after verification; run verify again"
+    return True, "quality report digest matches"
+
+
+def check_build(root: Path, manifest: dict[str, Any], *, require_quality: bool = True) -> None:
     if manifest["phase"] not in {"build-allowed", "verified"}:
         raise FlowError(f"frontend build is blocked in phase {manifest['phase']!r}")
     current, reason = approval_is_current(root, manifest)
@@ -252,6 +508,10 @@ def check_build(root: Path, manifest: dict[str, Any]) -> None:
         raise FlowError("compiled project-local UI skill is stale or was edited directly")
     if destination_hash != source_hash:
         raise FlowError("compiled project-local UI skill does not match PROJECT-UI.md")
+    if require_quality and manifest["phase"] == "verified":
+        quality_current, quality_reason = quality_report_is_current(root, manifest)
+        if not quality_current:
+            raise FlowError(quality_reason)
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -266,6 +526,7 @@ def cmd_init(args: argparse.Namespace) -> None:
     for value in roots:
         if value == FLOW_DIR or value.startswith(FLOW_DIR + "/") or value == ".agents" or value.startswith(".agents/"):
             raise FlowError("ui_roots cannot include workflow or agent-instruction directories")
+        resolve_project_path(root, value, label="ui_root")
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "project_name": args.name,
@@ -279,7 +540,10 @@ def cmd_init(args: argparse.Namespace) -> None:
         "quality_report": None,
         "updated_at": utc_now(),
     }
-    (root / FLOW_DIR / "artifacts").mkdir(parents=True, exist_ok=False)
+    artifacts_directory = resolve_project_path(
+        root, f"{FLOW_DIR}/artifacts", label="workflow artifacts directory"
+    )
+    artifacts_directory.mkdir(parents=True, exist_ok=False)
     atomic_json_write(path, payload)
     print(f"INITIALIZED: {MANIFEST_REL} phase=draft slug={slug}")
 
@@ -292,6 +556,7 @@ def cmd_ready(args: argparse.Namespace) -> None:
     manifest["approval"] = None
     manifest["quality_report"] = None
     manifest["review_artifact_sha256"] = digests
+    manifest["review_snapshot_sha256"] = canonical_digest(review_snapshot(manifest, digests))
     manifest["updated_at"] = utc_now()
     atomic_json_write(manifest_path(root), manifest)
     print(f"SYSTEM_READY_FOR_REVIEW: {len(digests)} artifacts; FRONTEND_BUILD=BLOCKED")
@@ -306,11 +571,16 @@ def cmd_approve(args: argparse.Namespace) -> None:
     if len(reference) < 8 or reference.lower() in {"approved", "yes", "ok", "user approved"}:
         raise FlowError("approval_ref must identify the explicit human approval, not a generic word")
     digests = validate_required_artifacts(root, manifest)
+    presented = manifest.get("review_snapshot_sha256")
+    current_review = canonical_digest(review_snapshot(manifest, digests))
+    if not isinstance(presented, str) or presented != current_review:
+        raise FlowError("the review set changed after ready; run ready and present it again")
     manifest["approval"] = {
         "approver": "human",
         "approval_ref": reference,
         "approved_at": utc_now(),
         "artifact_sha256": digests,
+        "review_snapshot_sha256": current_review,
     }
     manifest["phase"] = "system-approved"
     manifest["updated_at"] = utc_now()
@@ -330,6 +600,12 @@ def cmd_compile(args: argparse.Namespace) -> None:
     validate_project_ui(source, manifest["project_slug"])
     destination = compiled_skill_path(root, manifest)
     previous = manifest.get("compiled_skill")
+    if destination.exists():
+        details = destination.stat()
+        if not stat.S_ISREG(details.st_mode):
+            raise FlowError("compiled skill destination must be a regular file")
+        if details.st_nlink != 1:
+            raise FlowError("compiled skill destination must not be a hard link")
     if destination.exists() and sha256_file(destination) != sha256_file(source):
         safe_previous = (
             isinstance(previous, dict)
@@ -339,7 +615,10 @@ def cmd_compile(args: argparse.Namespace) -> None:
         if not safe_previous and not args.replace:
             raise FlowError("compiled skill has independent edits; reconcile them or rerun compile with explicit --replace")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
+    destination = compiled_skill_path(root, manifest)
+    if destination.exists() and destination.stat().st_nlink != 1:
+        raise FlowError("compiled skill destination must not be a hard link")
+    write_bytes_atomic(destination, source.read_bytes())
     digest = sha256_file(destination)
     manifest["compiled_skill"] = {
         "path": destination.relative_to(root).as_posix(),
@@ -368,14 +647,25 @@ def cmd_guard_write(args: argparse.Namespace) -> None:
         return
     manifest = read_manifest(root)
     raw = Path(args.path).expanduser()
-    candidate = raw.resolve() if raw.is_absolute() else (root / raw).resolve()
-    if not inside(root, candidate):
+    if raw.is_absolute():
+        try:
+            relative = raw.absolute().relative_to(root).as_posix()
+        except ValueError:
+            print("WRITE_ALLOWED: path is outside this project")
+            return
+    else:
+        relative = normalize_relative(args.path, label="write path")
+    candidate = resolve_project_path(root, relative, label="write path")
+    try:
+        candidate.absolute().relative_to(root)
+    except ValueError:
         print("WRITE_ALLOWED: path is outside this project")
         return
-    relative = candidate.relative_to(root).as_posix()
     generated = compiled_skill_path(root, manifest).relative_to(root).as_posix()
     if relative == generated:
         raise FlowError("write to generated project-local UI skill is blocked; edit PROJECT-UI.md and run compile")
+    if relative == MANIFEST_REL:
+        raise FlowError("write to the managed workflow manifest is blocked; use design_flow.py commands")
     if relative == FLOW_DIR or relative.startswith(FLOW_DIR + "/"):
         print(f"WRITE_ALLOWED: workflow artifact {relative}")
         return
@@ -390,27 +680,10 @@ def cmd_guard_write(args: argparse.Namespace) -> None:
 def cmd_verify(args: argparse.Namespace) -> None:
     root = root_path(args.root)
     manifest = read_manifest(root)
-    check_build(root, manifest)
+    check_build(root, manifest, require_quality=False)
     relative = normalize_relative(args.report, label="quality report")
     report = resolve_project_path(root, relative, label="quality report")
-    if not report.is_file() or report.stat().st_size < 64:
-        raise FlowError("quality report is missing or too small")
-    text = report.read_text(encoding="utf-8")
-    required_headings = ("## Scope", "## Evidence", "## Findings", "## Final verdict")
-    for heading in required_headings:
-        if heading not in text:
-            raise FlowError(f"quality report is missing required heading: {heading}")
-    if PLACEHOLDER_RE.search(text):
-        raise FlowError("quality report contains an unresolved placeholder")
-    if re.search(
-        r"(?i)(?:PASS\s*/\s*FAIL|yes\s*/\s*no|PASS\s*/\s*PASS_WITH_NOTES|BLOCKER\s*/\s*MAJOR)",
-        text,
-    ):
-        raise FlowError("quality report contains an unresolved template choice")
-    if not re.search(r"(?m)^\|\s*E[A-Za-z0-9_-]+\s*\|", text):
-        raise FlowError("quality report must contain at least one evidence row")
-    if not re.search(r"(?mi)^-\s*Verdict:\s*(?:PASS|PASS_WITH_NOTES)\s*$", text):
-        raise FlowError("quality report must select PASS or PASS_WITH_NOTES exactly")
+    validate_quality_report(report)
     manifest["quality_report"] = {
         "path": relative,
         "sha256": sha256_file(report),
@@ -426,14 +699,20 @@ def cmd_status(args: argparse.Namespace) -> None:
     root = root_path(args.root)
     manifest = read_manifest(root)
     current, reason = approval_is_current(root, manifest)
+    quality_current, quality_reason = quality_report_is_current(root, manifest)
+    effective_phase = manifest["phase"]
+    if effective_phase == "verified" and not quality_current:
+        effective_phase = "build-allowed"
     payload = {
-        "phase": manifest["phase"],
+        "phase": effective_phase,
         "surface": manifest["surface"],
         "project_slug": manifest["project_slug"],
         "approval_current": current,
         "approval_status": reason,
         "compiled_skill": manifest.get("compiled_skill", {}).get("path") if isinstance(manifest.get("compiled_skill"), dict) else None,
         "quality_report": manifest.get("quality_report", {}).get("path") if isinstance(manifest.get("quality_report"), dict) else None,
+        "quality_report_current": quality_current,
+        "quality_report_status": quality_reason,
     }
     if args.json:
         print(json.dumps(payload, indent=2, sort_keys=True))

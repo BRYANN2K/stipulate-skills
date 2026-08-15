@@ -117,7 +117,7 @@ python3 <web-craft-skill>/scripts/design_flow.py compile --root .
 python3 <web-craft-skill>/scripts/design_flow.py check-build --root .
 ```
 
-`approve` binds the eight review artifacts to SHA-256 digests. `compile` copies the approved `PROJECT-UI.md` to `.agents/skills/<project>-ui/SKILL.md`. Edit the source artifact and reapprove rather than editing the generated skill directly.
+`ready` freezes both the eight artifact digests and security-relevant workflow scope (`project`, `surface`, `ui_roots`, artifact map, and compiled-skill path). `approve` accepts only that exact presented snapshot. `compile` atomically writes the approved `PROJECT-UI.md` to `.agents/skills/<project>-ui/SKILL.md`. Any artifact or scope drift requires a new `ready` and approval; edit the source artifact rather than the generated skill.
 
 The approval record is tamper-evident workflow evidence, not identity authentication. Branch protection and review policy remain the authoritative control for a hostile writer.
 
@@ -163,10 +163,10 @@ Run the repository's fresh tests, lint, type checks, build, and real-browser che
 |---|---|---|
 | Portable | `AGENTS.md` routes UI work through `web-craft` and the compiled project UI skill | Instruction-level; compatible agents can still be misconfigured |
 | Deterministic | `design_flow.py guard-write` checks protected paths and current digests | Direct path gate; run before UI writes and in CI |
-| Hermes | Install [the hook template](templates/hermes-hooks.yaml) with `fail_closed: true` | Blocks `write_file`, `patch`, and suspicious terminal mutations in initialized projects |
+| Hermes | Install [the hook template](templates/hermes-hooks.yaml) with `fail_closed: true` | Blocks ambiguous writes and all pre-approval terminal commands except an explicit read-only allowlist and exact controller invocations |
 | Repository | CI runs `check-build` when protected UI roots change | Final merge gate; strongest portable enforcement with branch protection |
 
-The hook is opt-in because it changes the user's Hermes profile. Configure it only with explicit permission and an absolute installed script path. It is conservative, not a shell parser; CI and review remain required.
+The hook is opt-in because it changes the user's Hermes profile. Configure it only with explicit permission and an absolute installed script path. Before approval it evaluates the terminal tool's effective `workdir`, rejects shell metacharacters, arbitrary interpreters, mixed patch payloads, and malformed or duplicate-key hook JSON. It is intentionally restrictive rather than a general shell parser; CI, branch protection, and review remain required for hostile writers and race conditions.
 
 ## Output contract
 
