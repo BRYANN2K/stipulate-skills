@@ -128,31 +128,9 @@ Restart the client or open a new session if it caches its skill index.
 
 ## How the collection fits together
 
-```mermaid
-flowchart LR
-    Evidence["Inspect evidence"] --> Decide["Make a decision"]
-    Decide --> Build["Build and change"]
-    Build --> Verify["Test and verify"]
-    Verify --> Operate["Operate and learn"]
-    Operate --> Document["Document the result"]
-    Document --> Share["Share what is useful"]
-    Share --> Evidence
-
-    Infra["Infrastructure"] --> Build
-    Software["Software development"] --> Build
-    DevOps["DevOps"] --> Operate
-    Docs["Documentation"] --> Document
-    Creator["Creator"] --> Share
-    Agent["Agent workflows"] --> Verify
-    Design["Design"] --> Decide
-    Design --> Build
-    Design --> Verify
-
-    classDef core fill:#17112b,stroke:#a78bfa,color:#fafafa,stroke-width:2px;
-    classDef domain fill:#0f172a,stroke:#475569,color:#e2e8f0;
-    class Evidence,Decide,Build,Verify,Operate,Document,Share core;
-    class Infra,Software,DevOps,Docs,Creator,Agent,Design domain;
-```
+<p align="center">
+  <img src="assets/skills-operating-loop.svg" alt="A seven-stage loop from inspecting evidence through deciding, building, verifying, operating, documenting, and sharing. Every stage writes reusable knowledge into a central skills catalog, with verification highlighted as the evidence gate." width="100%">
+</p>
 
 Skills remain independent and composable. A project can verify completion claims, move from architecture review to delivery and incident investigation, document the result, and capture build-in-public ideas without loading one monolithic prompt.
 

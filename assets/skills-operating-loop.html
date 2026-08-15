@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How the skill collection improves itself</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 32px;
+      background: #f8fafc;
+      color: #111827;
+      font-family: "Geist", system-ui, sans-serif;
+    }
+    main { width: min(100%, 1040px); margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #64748b;
+      font: 500 11px "Geist Mono", ui-monospace, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font: 400 32px/1.1 "Instrument Serif", Georgia, serif;
+      letter-spacing: -0.02em;
+    }
+    .subtitle { margin: 0 0 28px; color: #475569; font-size: 14px; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Loop · Agent skill collection</p>
+    <h1>How the collection improves itself</h1>
+    <p class="subtitle">Work moves clockwise. Every phase writes reusable evidence back into one shared catalog.</p>
+
+    <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="skills-loop-title skills-loop-desc">
+      <title id="skills-loop-title">How the skill collection improves itself</title>
+      <desc id="skills-loop-desc">Seven phases move clockwise from inspecting evidence through deciding, building, verifying, operating, documenting, and sharing. Each phase writes reusable knowledge into a central skills catalog, with verification highlighted as the evidence gate.</desc>
+      <defs>
+        <style>
+          @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap");
+          .skills-loop-ring { fill: none; stroke: #475569; stroke-width: 1.2; }
+          .skills-loop-spoke { fill: none; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 5 4; }
+          .skills-loop-station { fill: #f8fafc; stroke: #111827; stroke-width: 1; }
+          .skills-loop-station-focal { fill: #f3e8ff; stroke: #7c3aed; stroke-width: 1.2; }
+          .skills-loop-hub { fill: #111827; }
+          .skills-loop-name { fill: #111827; font: 600 12px "Geist", system-ui, sans-serif; text-anchor: middle; }
+          .skills-loop-name-focal { fill: #7c3aed; }
+          .skills-loop-sub { fill: #64748b; font: 400 8px "Geist Mono", ui-monospace, monospace; text-anchor: middle; }
+          .skills-loop-hub-name { fill: #f8fafc; font: 600 16px "Geist", system-ui, sans-serif; text-anchor: middle; }
+          .skills-loop-hub-sub { fill: #cbd5e1; font: 400 8px "Geist Mono", ui-monospace, monospace; text-anchor: middle; }
+          .skills-loop-legend { fill: #64748b; font: 400 8px "Geist Mono", ui-monospace, monospace; letter-spacing: 0.04em; }
+          .skills-loop-legend-label { fill: #475569; font: 500 8px "Geist Mono", ui-monospace, monospace; letter-spacing: 0.12em; }
+        </style>
+        <marker id="skills-loop-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+        </marker>
+        <marker id="skills-loop-arrow-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+        </marker>
+      </defs>
+
+      <rect width="960" height="600" fill="#f8fafc"/>
+
+      <!-- Clockwise operating ring, centered at (480, 296), radius 224. -->
+      <path class="skills-loop-ring" d="M560.000 86.773 A224 224 0 0 1 622.576 123.234" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M676.245 188.000 A224 224 0 0 1 703.510 310.803" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M689.227 376.000 A224 224 0 0 1 629.060 463.204" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M496.000 519.428 A224 224 0 0 1 465.197 519.510" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M331.838 464.000 A224 224 0 0 1 271.204 377.120" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M256.572 312.000 A224 224 0 0 1 283.180 189.053" marker-end="url(#skills-loop-arrow)"/>
+      <path class="skills-loop-ring" d="M336.501 124.000 A224 224 0 0 1 398.880 87.204" marker-end="url(#skills-loop-arrow)"/>
+
+      <!-- Dashed write-backs into the reusable-skills hub. -->
+      <path class="skills-loop-spoke" d="M480.000 104.000 L480.000 242.000" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M615.771 188.000 L545.038 244.265" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M620.000 326.545 L581.862 318.224" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M560.640 464.000 L505.636 349.409" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M399.360 464.000 L454.364 349.409" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M340.000 326.545 L378.138 318.224" marker-end="url(#skills-loop-arrow-soft)"/>
+      <path class="skills-loop-spoke" d="M344.229 188.000 L414.962 244.265" marker-end="url(#skills-loop-arrow-soft)"/>
+
+      <!-- Stations: one concept per phase, one editorial focal gate. -->
+      <rect class="skills-loop-station" x="400" y="40" width="160" height="64" rx="6"/>
+      <text x="480" y="68" class="skills-loop-name">Inspect evidence</text>
+      <text x="480" y="88" class="skills-loop-sub">agent workflows · signals</text>
+
+      <rect class="skills-loop-station" x="576" y="124" width="160" height="64" rx="6"/>
+      <text x="656" y="152" class="skills-loop-name">Decide</text>
+      <text x="656" y="172" class="skills-loop-sub">design · architecture</text>
+
+      <rect class="skills-loop-station" x="620" y="312" width="160" height="64" rx="6"/>
+      <text x="700" y="340" class="skills-loop-name">Build</text>
+      <text x="700" y="360" class="skills-loop-sub">software · infrastructure</text>
+
+      <rect class="skills-loop-station-focal" x="496" y="464" width="160" height="64" rx="6"/>
+      <text x="576" y="492" class="skills-loop-name skills-loop-name-focal">Verify</text>
+      <text x="576" y="512" class="skills-loop-sub">tests · observable proof</text>
+
+      <rect class="skills-loop-station" x="304" y="464" width="160" height="64" rx="6"/>
+      <text x="384" y="492" class="skills-loop-name">Operate</text>
+      <text x="384" y="512" class="skills-loop-sub">DevOps · incidents</text>
+
+      <rect class="skills-loop-station" x="180" y="312" width="160" height="64" rx="6"/>
+      <text x="260" y="340" class="skills-loop-name">Document</text>
+      <text x="260" y="360" class="skills-loop-sub">docs · decisions</text>
+
+      <rect class="skills-loop-station" x="224" y="124" width="160" height="64" rx="6"/>
+      <text x="304" y="152" class="skills-loop-name">Share</text>
+      <text x="304" y="172" class="skills-loop-sub">creator · learnings</text>
+
+      <!-- Shared accumulated state, not another process step. -->
+      <rect class="skills-loop-hub" x="384" y="248" width="192" height="96" rx="8"/>
+      <text x="480" y="292" class="skills-loop-hub-name">Reusable skills</text>
+      <text x="480" y="316" class="skills-loop-hub-sub">one catalog · every pass</text>
+
+      <!-- Bottom legend, outside the diagram field. -->
+      <line x1="40" y1="548" x2="920" y2="548" stroke="#e2e8f0" stroke-width="0.8"/>
+      <text x="40" y="576" class="skills-loop-legend-label">LEGEND</text>
+      <path d="M120 572 H168" fill="none" stroke="#475569" stroke-width="1.2" marker-end="url(#skills-loop-arrow)"/>
+      <text x="184" y="576" class="skills-loop-legend">clockwise work</text>
+      <path d="M360 572 H408" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#skills-loop-arrow-soft)"/>
+      <text x="424" y="576" class="skills-loop-legend">writes back</text>
+      <rect x="624" y="564" width="20" height="16" rx="4" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.2"/>
+      <text x="660" y="576" class="skills-loop-legend">verification gate</text>
+    </svg>
+  </main>
+</body>
+</html>
