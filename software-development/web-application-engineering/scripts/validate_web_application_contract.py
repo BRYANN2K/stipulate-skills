@@ -227,8 +227,7 @@ def validate(raw: Any) -> dict[str, Any]:
 
     quality = obj(root["quality"], "quality"); exact(quality, {"accessibility_target", "browsers", "viewports"}, "quality")
     string(quality["accessibility_target"], "quality.accessibility_target"); strings(quality["browsers"], "quality.browsers")
-    viewports = strings(quality["viewports"], "quality.viewports")
-    if len(viewports) < 2: raise ContractError("quality requires at least two viewport classes")
+    strings(quality["viewports"], "quality.viewports")
 
     verification_ids: list[str] = []
     for item in array(root["verification"], "verification"):

@@ -1,33 +1,31 @@
-# Cloud architecture review
+# Optional cloud architecture review
 
-## Executive verdict
+Use only sections that support the requested decision. This template is not a certification, maturity score, or required output schema.
 
-**Overall:** [Fit | Fit with conditions | Not fit]
+## Decision, scope, and objectives
 
-## Scope and objectives
+| Objective/question | Target or constraint | Evidence/confidence |
+|---|---|---|
 
-| Objective | Target | Evidence | Confidence |
+## Relevant architecture boundaries
+
+## Options (when deciding)
+
+| Option | Constraint fit | Trade-off/failure behavior | Evidence/unknown |
 |---|---|---|---|
 
-## Architecture summary
+## Material findings (when assessing)
 
-## Findings
-
-| ID | Severity | Confidence | Dimension | Finding | Evidence | Recommendation |
-|---|---|---|---|---|---|---|
-
-## Critical journeys and failure modes
-
-| Journey | Failure | Current response | Gap | Validation |
+| Impact | Confidence | Objective/boundary | Evidence | Smallest recommendation |
 |---|---|---|---|---|
 
-## Roadmap
+## Critical journey/recovery (when relevant)
 
-### Now
-### Next
-### Later
-### Accepted risk
+| Journey/failure | Configured response | Tested evidence | Gap/readback need |
+|---|---|---|---|
 
-## Open decisions and missing evidence
+## Priorities or roadmap (when requested)
 
-## Checks and sources
+Use project-native priorities or Now/Next/Later/Accepted risk only if that format helps.
+
+## Change boundary and effects not performed

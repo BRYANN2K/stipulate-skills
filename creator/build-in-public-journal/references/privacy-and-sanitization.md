@@ -1,103 +1,75 @@
 # Privacy and sanitization
 
-Apply this gate before writing to the private journal and again before creating a content opportunity.
+Apply this boundary before private persistence and again before any optional editorial mining.
 
-## Two boundaries, not one
+## Ignored is not confidential
 
-`/.build-in-public/` in `.gitignore` reduces accidental commits. It does not protect against local malware, shared machines, backups, editor sync, shell history, screenshots, or an agent reading the file later.
+A repository-root `.gitignore` rule or an explicitly selected repository-local `$GIT_DIR/info/exclude` rule, plus restrictive file mode, reduces accidental Git commits and casual local access. A local exclude is unshared, not stronger secrecy. Neither policy protects against malware, a shared account, backups, editor/cloud sync, shell history, screenshots, later agent access, manual copying, or any path under `.build-in-public/` that was previously committed.
 
 Store the minimum useful fact. Prefer a safe summary and an evidence pointer over raw material.
 
-## Never persist
+## Never persist in this journal
 
-Do not put these values or payloads in the journal:
-
-- passwords, API keys, access tokens, cookies, private keys, recovery codes, or connection strings;
-- real `.env` content, authentication headers, session identifiers, or signed URLs;
+- passwords, API keys, tokens, cookies, private keys, recovery codes, or connection strings;
+- real environment/config secrets, authentication headers, session IDs, or signed URLs;
 - customer records, payloads, identifiers, support conversations, or private feedback;
 - sensitive personal, financial, health, employment, location, or relationship information;
 - confidential contracts, pricing, roadmaps, source material, or third-party conversations;
-- internal hostnames, account identifiers, private repository URLs, topology, or control-plane details that are not approved for disclosure;
-- raw prompts, completions, tool arguments, tool results, traces, or screenshots that may contain proprietary context;
-- reproduction steps, affected endpoints, payloads, or exploit details for an unresolved vulnerability.
+- unapproved private hostnames, account identifiers, repository URLs, topology, or control-plane detail;
+- raw prompts, completions, tool arguments/results, traces, logs, or screenshots containing proprietary context;
+- affected endpoints, payloads, proof of concept, or exploit detail for an unresolved vulnerability.
 
-If one of these is central to the event, record only a redacted category or a pointer to the approved secure system.
+When such material is central, use only a category-level statement or a pointer to the approved secure system. Omit the event when even a pointer or summary would create risk.
 
-## Privacy classes
+## Qualitative privacy classes
 
-| Class | Meaning | Editorial rule |
+| Class | Meaning | Editorial boundary |
 |---|---|---|
-| `public_safe` | Facts and artifacts are already public or approved for disclosure | May be scored after fact check |
-| `internal` | Useful private evidence with no current publication approval | Mine only a sanitized derivative after human review |
-| `embargoed` | Disclosure may become safe after a named condition or date | Do not mine before the embargo clears |
-| `never_public` | The event cannot safely become content | Keep out of the opportunity queue |
+| `public_safe` | Facts are already public or explicitly approved for the intended disclosure | May be reviewed for requested channels after fact check |
+| `internal` | Useful private evidence without current publication approval | Keep private unless a human approves a separately sanitized fact set |
+| `embargoed` | Disclosure depends on a named release, consent, fix, or date | Do not mine or publish before the condition clears |
+| `never_public` | The event is not suitable for public derivation | Keep out of editorial mining |
 
-`never_public` is sticky. Only an explicit human decision can relax it.
+Treat `never_public` as sticky. Only an explicit authorized human decision can relax it, and a fixed vulnerability is not automatically public-safe.
 
-## Sanitization decisions
+## Detail-level sanitization
 
-For each detail, choose one action:
+For each material detail, choose the safest useful action:
 
 | Action | Use when |
 |---|---|
-| `keep` | The fact is necessary, verified, and approved for the current privacy class |
-| `generalize` | Exact identity, amount, URL, vendor, or topology is unnecessary to preserve the lesson |
-| `redact` | The record needs to acknowledge a field but must not retain its value |
-| `delay` | Disclosure depends on a release, fix, customer consent, or coordinated announcement |
-| `drop` | The detail adds risk without adding reusable evidence |
+| keep | necessary, verified, and approved for the current private/public boundary |
+| generalize | exact identity, amount, URL, vendor, or topology is unnecessary |
+| redact | the record needs to acknowledge a category but must not retain its value |
+| delay | disclosure depends on release, remediation, consent, or coordinated announcement |
+| drop | the detail adds risk without preserving the lesson |
 
-Never anonymize by changing a real customer name into a fake name while keeping identifying context. Remove or aggregate the identifying context.
+Do not anonymize by replacing a real customer name while retaining identifying context. Remove or aggregate the context.
 
 ## Security-sensitive events
 
-For an active or unresolved security issue, the journal may contain only:
+For an active or unresolved issue, the journal may contain only the minimum safe acknowledgement:
 
-- event ID and `security-pointer` type;
-- a generic impact class;
-- a pointer to a secure private advisory or tracker;
-- remediation owner and state;
-- disclosure approval state;
-- `privacy_class: never_public`;
-- `content_eligible: false`.
+- a stable internal event reference and `security-pointer` type;
+- a generic impact/remediation state;
+- a pointer to the approved private advisory or tracker;
+- disclosure state;
+- `privacy_class: never_public`.
 
-Do not retain the exploit path or proof of concept here. Revisit only after remediation and coordinated disclosure. A fixed vulnerability is not automatically content-safe.
+Do not retain the exploit path or proof of concept here. Use the project's security process and coordinated-disclosure rules.
 
-## Manual pre-write checklist
+## Manual review questions
 
-Before persistence, verify:
+Before persistence, ask whether every retained fact is necessary; evidence links reveal private identities or paths; logs/screenshots were copied; third-party words lack consent; exact numbers lack disclosure approval; security detail could aid exploitation; or an interpretation could be mistaken for fact. Uncertainty means omit the detail or keep the event out of editorial mining.
 
-- every value is necessary to preserve the decision or lesson;
-- evidence links expose no private path, account, user, customer, or infrastructure detail;
-- screenshots and logs were not copied wholesale;
-- third-party words are not quoted without consent;
-- numbers have an approved disclosure status;
-- no active security detail could help exploitation;
-- interpretations and hypotheses cannot be mistaken for confirmed facts.
+## Guard and scanner boundary
 
-If uncertain, omit the detail and set `content_eligible: false`.
+`journal_guard.py check` examines a bounded set of path, Git tracking/history, link-count, ignore, and POSIX permission properties. `journal_guard.py scan` detects configured common credential patterns and private-key markers. Neither command can certify confidentiality or publication safety.
 
-## Deterministic scanner boundary
+An additional repository-native scanner is optional only when the user requests it and the target repository already documents and provides it. Do not install or configure a scanner, update a baseline, enable a hook, or change dependencies for this journal. Confirm the existing command includes the ignored journal; a tracked-files-only scan does not. Never relay a matched value. Keep raw output local when it cannot be safely reduced to tool name, status/count, and non-sensitive finding type/location.
 
-Run `journal_guard.py scan` after each write. It detects common credential shapes and private-key markers. It cannot reliably detect:
+Bundled and existing scanners cannot reliably detect customer/proprietary information, ordinary-language personal data, confidential business facts, sensitive internal URLs, novel credential formats, exploitable vulnerability prose, third-party consent, backups, editor sync, or later disclosure. A clean result means only that the checked invariants held or configured patterns did not match.
 
-- customer or proprietary data;
-- personal information in ordinary prose;
-- confidential business facts;
-- sensitive internal URLs;
-- a novel credential format;
-- whether vulnerability detail is exploitable;
-- whether a third party approved disclosure.
+## Optional public derivation
 
-A clean scan means “no configured pattern matched,” not “safe to publish.”
-
-## Public derivation rule
-
-Never copy a private event wholesale into a public draft. Derive a minimal public-safe fact set:
-
-1. selected confirmed fact;
-2. approved artifact;
-3. generalized context;
-4. limitation or uncertainty;
-5. explicit redactions and embargo state.
-
-A human must approve this fact set before publication. This skill still does not write the publication.
+Never copy a private event wholesale into a draft. When editorial mining is explicitly requested, derive a minimal fact set containing only selected confirmed facts, approved artifacts, generalized context, limitations, and named redactions/embargoes. A human must approve publication through the applicable process. This skill still does not write or publish the content.

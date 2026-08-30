@@ -1,10 +1,10 @@
 ---
 name: developer-documentation
-description: "Use when creating, restructuring, auditing, or maintaining developer documentation: READMEs, quickstarts, tutorials, how-to guides, concepts, API/CLI/config reference, runbooks, troubleshooting, migration guides, changelogs, and docs-as-code systems. Grounds claims in code and tests examples before completion."
+description: "Use when creating, restructuring, auditing, or maintaining developer documentation: READMEs, quickstarts, tutorials, how-to guides, concepts, API/CLI/config reference, runbooks, troubleshooting, migration guides, changelogs, and docs-as-code systems. Inherits the repository's documentation structure, grounds changed claims in source, and verifies affected examples proportionately."
 license: Apache-2.0
-compatibility: Works with Markdown and common documentation stacks. Project-specific linters, generators, and build tools are used when available.
+compatibility: Works with Markdown and common documentation stacks. Project-specific linters, generators, and build tools are used when they govern the changed documentation.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: doc-writer
   tags: documentation, readme, api-docs, tutorials, runbooks, diataxis, docs-as-code
@@ -14,166 +14,108 @@ metadata:
 
 ## Overview
 
-Write the complete documentation a developer needs to discover, adopt, understand, operate, change, and migrate a software project. Classify the reader's job first, then ground every technical claim in the repository, executable output, or an explicitly cited source.
+Help a developer find, understand, or perform the requested work with the least documentation that solves the reader's problem. Inherit the repository's current docs structure, terminology, style, generators, and navigation before introducing a new scheme.
+
+Choose the shortest safe path. A small correction may require only the governing source, the affected page, a direct edit, and link/readback checks. The workflow below is guidance for larger work, not a sequence of admission gates.
 
 <HARD-GATE>
-Do not invent commands, flags, APIs, versions, defaults, support guarantees, benchmark results, file paths, or successful output. Inspect the source of truth and run examples when feasible. If verification is unavailable, label the example or claim unverified.
+Do not invent commands, flags, APIs, versions, defaults, support guarantees, benchmark results, paths, behavior, or successful output. Ground changed technical claims in current code, schemas, generated help, tests, executable output, or an explicitly cited authoritative source. If a material claim or example cannot be checked, label that gap rather than presenting it as verified.
 </HARD-GATE>
 
 ## When to use
 
-- README, installation, quickstart, onboarding, tutorial, how-to, explanation, reference.
+- README, installation, quickstart, onboarding, tutorial, task guide, concept, or reference.
 - API, CLI, configuration, environment-variable, schema, webhook, and error documentation.
-- Runbook, troubleshooting, incident procedure, migration, deprecation, changelog, release notes.
-- Documentation architecture, content audit, docs debt, style guide, docs CI, contribution workflow.
+- Runbook, troubleshooting, migration, deprecation, changelog, or release notes.
+- Documentation structure, content audit, docs debt, style, navigation, or docs CI.
 
-Use `architecture-decision-records` for decisions and `software-architecture-diagrams` for diagrams. Link them into the broader documentation set rather than duplicating them.
+Use `architecture-decision-records` for consequential decisions and `software-architecture-diagrams` for architecture views, then link them where the repository normally does.
 
-## Documentation map
+## Reader-intent heuristic
 
-Choose one primary intent per page:
+When useful, ask whether the reader mainly needs:
 
-| Intent | Reader asks | Doc type |
-|---|---|---|
-| Learn | “Can you teach me?” | Tutorial |
-| Accomplish | “How do I do X?” | How-to guide |
-| Look up | “What exactly is X?” | Reference |
-| Understand | “Why does this work this way?” | Explanation |
+- a guided learning path;
+- steps to accomplish a specific task;
+- exact facts to look up;
+- a conceptual explanation.
 
-Project entry points, operations, changes, and migrations use dedicated contracts but still follow the same separation. Do not mix a tutorial, reference dump, and conceptual essay into one long page.
+This is a planning lens, not a required taxonomy, page split, title set, or directory structure. A repository may intentionally combine needs in a README or use its own information architecture. Follow local conventions unless the user requested a redesign and evidence shows a different structure would help.
+
+The [Diátaxis documentation framework at `957c09c`](https://github.com/evildmp/diataxis-documentation-framework/tree/957c09ca40b4a1edc23874f713e01937d50d54d5) (CC-BY-SA-4.0) is used only as evidence for the factual distinction among reader intents. The local workflow is independently written; do not copy its prose, templates, or distinctive structure into the repository.
 
 ## Workflow
 
-### 1. Define the reader and outcome
+### 1. Bound the reader, change, and local structure
 
-State:
+Infer the audience, desired outcome, product/version/environment, affected pages, and exclusions from the request and repository. Ask only for a decision that cannot be inferred safely. Inspect applicable repository instructions, neighboring docs, navigation, generator ownership, and Git status.
 
-- primary audience and assumed knowledge;
-- task or understanding they need;
-- software/version/environment in scope;
-- artifact type and where it belongs;
-- what is intentionally out of scope.
+For an existing docs set, use its page types and placement. Do not create a docs site, taxonomy, template set, ownership system, or navigation layer merely because one could exist.
 
-Prefer an existing docs convention and information architecture over creating a new one.
+### 2. Trace affected claims to their sources
 
-**Complete when:** one reader, one primary intent, and one observable outcome are explicit.
+Inspect only the sources needed for the pages and claims being changed: public APIs/types/schemas, CLI help, config definitions, implementation, tests, examples, migrations, release automation, ADRs, or current diff. Prefer generated or executable contracts for exact surfaces, while reporting genuine conflicts instead of silently changing product behavior in prose.
 
-### 2. Inspect sources of truth
+When an affected surface is generated, identify its ownership seam before editing: the authoritative input, existing generator or repository command, generated file or marked region, adjacent human-authored seam, and the input/generator revision represented by the output. Change an authoritative input and regenerate only when that input is documentation-bearing, already inside the requested authority, and the edit does not alter code behavior, schema semantics, CLI behavior, or another public machine contract. Otherwise preserve the generated boundary, hand off or request explicit scope expansion for the owning product source, and report the stale output as a gap. Do not overwrite human prose or patch generated output unless the repository explicitly makes that output an edit point. For conditional or single-source content, list only the product/version variants affected by the change.
 
-Before writing, trace the relevant behavior through:
+For broad audits, a temporary docs-to-code coverage map can expose missing or stale areas. For a bounded edit, a few source locators in working notes are enough; no durable matrix is required. Load conditional guidance only when it helps:
 
-- README/docs and contribution rules;
-- manifests and lock files;
-- public APIs, types, schemas, OpenAPI/AsyncAPI, CLI help, config definitions;
-- implementation and call sites;
-- tests, examples, fixtures, migrations, and release automation;
-- existing ADRs, diagrams, runbooks, and changelog;
-- current Git diff when documenting a change.
+- learning, task, README, or concept pages: [learning and task docs](references/learning-and-task-docs.md)
+- API, CLI, config, schema, or errors: [reference documentation](references/reference-documentation.md)
+- runbook, troubleshooting, migration, deprecation, or release notes: [operations and change docs](references/operations-and-change-docs.md)
+- audit or docs-site structure: [documentation system](references/documentation-system.md)
 
-When sources disagree, prefer executable contracts and current code, then report/document the inconsistency. Do not silently “fix” behavior in prose.
+### 3. Write the shortest useful path
 
-### 3. Select the output contract
+Lead with the outcome and prerequisites that matter. Put warnings before the risky action, keep commands and effects together, use consistent project terminology, and link one canonical source instead of duplicating changing facts. Include permissions, failure, cleanup, rollback, compatibility, or next steps only where they affect the reader's task.
 
-Load the matching reference:
+Templates under `templates/` are optional scaffolds for a new page. Existing repository structure and a smaller direct edit take precedence. Do not add marketing filler, fabricated quotes or output, raw secrets, real credentials, or decorative badges without signal.
 
-- README, quickstart, tutorial, how-to, concept → `references/learning-and-task-docs.md`
-- API, CLI, config, schema, errors → `references/reference-documentation.md`
-- Runbook, troubleshooting, migration, deprecation, release notes → `references/operations-and-change-docs.md`
-- Audit or docs-site design → `references/documentation-system.md`
+### 4. Verify only the affected claims and examples
 
-Use the relevant template under `templates/`.
+After the last edit, re-read the changed pages and run the smallest safe checks that can falsify the changed claims:
 
-### 4. Outline before prose
+- inspect generated help or source for changed flags/defaults;
+- run changed commands or examples in a safe sandbox when their successful use is claimed;
+- validate changed API/config examples against the applicable schema or test server;
+- regenerate affected output with the repository-owned path when available, then confirm the generated boundary, human seam, and expected source/generator revision were preserved;
+- render or preview each affected product/version variant when conditional content changed, rather than checking only the default variant;
+- check changed links, anchors, snippets, or Mermaid blocks;
+- use the repository's docs build/lint/generator when required or when the change can affect it broadly.
 
-Create headings that match the reader's path. Lead with outcome and shortest success path. Put prerequisites before commands, explanations after the step they clarify, and exhaustive details in reference.
+Do not rerun every example, rebuild an unrelated site, or exercise production procedures for a bounded prose change. A parser proves syntax, not factual correctness; a docs build proves the build, not that commands behave as written. Record checks as passed, failed, skipped, unavailable, or not applicable, and label affected unverified examples clearly.
 
-Each page should answer quickly:
+### 5. Integrate where the repository requires it
 
-1. What is this?
-2. Who is it for?
-3. What outcome will I get?
-4. What must I have first?
-5. What is the shortest verified path?
-6. What can go wrong or where do I go next?
-
-### 5. Write for execution and scanning
-
-- Use active voice, present tense, concrete nouns, and direct verbs.
-- Prefer short paragraphs, descriptive headings, tables for comparisons, and numbered steps for sequences.
-- Introduce commands before code blocks; explain expected effect after.
-- Use consistent terminology; add a glossary only when terms cannot be avoided.
-- Link to one canonical source instead of copying changing facts across pages.
-- State defaults, constraints, permissions, failure modes, and destructive effects near the relevant action.
-- Keep secrets and real credentials out of examples; use unmistakable placeholders.
-
-Do not add marketing filler, fake quotes, fake output, or decorative badges with no signal.
-
-### 6. Test the documentation
-
-Validate according to artifact:
-
-- run commands in a clean/sandboxed environment where safe;
-- compile/run code samples and validate API requests against schemas or test servers;
-- verify CLI flags from real `--help` or source;
-- build the docs site;
-- lint Markdown/style, check links/anchors, and render Mermaid;
-- follow tutorial steps from zero with declared prerequisites;
-- verify migration rollback and runbook decision points without touching production.
-
-Mark every validation **passed**, **failed**, **skipped**, or **unavailable**. A plausible snippet is not a tested snippet.
-
-### 7. Review technical and editorial quality
-
-Run two distinct reviews:
-
-- **Technical:** correctness, completeness, version, safety, executable examples, API/config parity.
-- **Reader:** information scent, prerequisites, sequence, terminology, accessibility, cognitive load, next steps.
-
-Check that warnings appear before risk, not after a destructive command.
-
-### 8. Integrate and maintain
-
-Update navigation/indexes, backlinks, API indexes, ADR links, changelog/release notes, and ownership metadata as applicable. Add a maintenance signal: code owner, generated source, review condition, version boundary, or deprecation date.
-
-Documentation is complete only when discoverable and attached to the change it describes.
+Update navigation, indexes, backlinks, generated sources, changelog links, ownership metadata, or maintenance triggers only when the local docs system or requested change requires them. Re-read the final diff and confirm no unrelated content, generated output, or human-authored context was lost.
 
 ## Output contract
 
-When authoring:
+Preserve this information when reporting authoring or audit work:
 
-- artifact path and type;
-- audience/outcome/version;
-- completed document;
-- source-of-truth map;
-- validation log;
-- known gaps or intentionally unverified items.
+- artifact paths and the reader outcome addressed;
+- material sources used for changed technical claims;
+- checks run and their scoped results;
+- unverified, stale, conflicting, skipped, or unavailable items;
+- for an audit, prioritized findings and affected pages rather than unsupported completeness claims.
 
-When auditing:
-
-- inventory and audience journeys;
-- findings by severity: incorrect, missing, stale, unsafe, hard to find, hard to use;
-- evidence and affected pages;
-- prioritized fix plan with owners/validation;
-- suggested information architecture.
+No fixed section order is required. A user-requested or host presentation adapter may reorder, chunk, summarize, or progressively disclose the response as long as it retains the artifact, source/evidence, validation, and gap boundaries.
 
 ## Common pitfalls
 
-- Writing before reading the code/schema/CLI.
-- Using one page for tutorial, how-to, explanation, and reference.
-- Copying generated API reference by hand.
-- Showing success output that was never observed.
-- Omitting permissions, cleanup, rollback, or destructive warnings.
-- Documenting only the happy path.
-- Adding a docs site when a strong README and a few focused pages are enough.
-- Treating grammar as documentation quality while behavior is wrong.
-- Shipping a new page without navigation or ownership.
+- Reorganizing the repository around a documentation framework instead of solving the requested reader problem.
+- Writing from memory before checking code, schema, generated help, or existing docs.
+- Hand-copying generated reference that will drift.
+- Showing output that was never observed.
+- Testing the whole documentation estate when only one claim changed—or testing nothing while claiming the example works.
+- Hiding destructive effects, permissions, or rollback information needed for the task.
+- Calling grammar or a successful docs build proof of technical accuracy.
 
 ## Verification checklist
 
-- [ ] Audience, intent, outcome, version, and scope are explicit.
-- [ ] Technical claims trace to current code, schema, tests, or cited sources.
-- [ ] Commands/examples were tested or labeled unverified.
-- [ ] Prerequisites, permissions, failures, cleanup, and next steps are present where needed.
-- [ ] Terminology, links, anchors, and navigation are consistent.
-- [ ] Docs build/lint/render checks have honest status.
-- [ ] The artifact is discoverable and has a maintenance owner/trigger.
+- Did the change inherit the repository's docs structure and source ownership?
+- Is any generated ownership seam intact, and were affected product/version variants checked rather than inferred from one render?
+- Do material changed claims trace to current evidence?
+- Were affected examples checked, or clearly labeled when they could not be?
+- Are warnings placed before consequential actions?
+- Is the result discoverable to the extent the repository normally requires?

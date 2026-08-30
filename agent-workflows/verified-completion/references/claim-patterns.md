@@ -1,6 +1,6 @@
 # Claim patterns
 
-Choose the smallest pattern that directly tests the user's actual requirement. Replace examples with the repository's canonical commands when available.
+Choose the smallest relevant checks that test the user's actual requirement. These patterns are examples, not mandatory batteries; inherit repository commands and omit unaffected checks.
 
 ## Code change or bug fix
 
@@ -40,7 +40,7 @@ A Markdown parser supports syntax validity. It does not prove factual accuracy o
 2. Render to a raster or browser surface.
 3. Inspect at the intended dimensions.
 4. Check requested removals, clipping, overlap, contrast, and text legibility.
-5. Re-render after every geometry change.
+5. Re-render after a geometry change that could affect the visual claim.
 
 Source inspection alone reaches `IMPLEMENTED`; rendered inspection is needed for `VERIFIED` visual claims.
 
@@ -55,16 +55,20 @@ Source inspection alone reaches `IMPLEMENTED`; rendered inspection is needed for
 
 A local commit is not pushed. A successful `git push` message should still be followed by remote ref readback.
 
-## CI
+## CI and asynchronous review
 
-Use an immutable workflow run ID. Confirm:
+Use an immutable workflow run ID and candidate identity. Confirm:
 
-- the run's `head_sha` is the intended commit;
-- status is completed;
-- conclusion is success;
-- required jobs were not silently skipped unless allowed.
+- the run's commit/merge candidate is the intended current subject;
+- progress and terminal state are not conflated;
+- required jobs completed successfully rather than being skipped, canceled, superseded, timed out, or merely allowed to fail;
+- infrastructure failure remains distinct from candidate failure;
+- required review or feedback that arrived after an earlier green run has been addressed on the current subject;
+- bounded retries follow repository policy and do not run until a favorable result appears.
 
-A green workflow for an earlier commit is stale.
+A green workflow for an earlier commit, changed merge candidate, or superseded run is stale. A newly green run does not erase unresolved review feedback.
+
+Adversarial cases: the required check was renamed and silently skipped; a flaky retry passed on a new head; all tests are green but required review arrived afterward; a runner outage is reported as a product regression or success. Preserve the exact state rather than upgrading any of these to verified completion.
 
 ## Package or release
 
@@ -72,10 +76,10 @@ A green workflow for an earlier commit is stale.
 2. Install it into a clean temporary environment.
 3. Execute a representative command or import.
 4. Publish only when authorized.
-5. Query the registry or release API by version/ID.
-6. Download or install from the published source and verify content/version.
+5. Query the exact registry, version, channel, and release ID named by the claim.
+6. Download or install from that published source and verify content/version.
 
-A release page existing does not prove the package can be installed.
+A release page existing does not prove the package can be installed. A protocol compatibility claim similarly needs an exchange and readback at the exact endpoint/version named by the claim; a default or `latest` target is not a substitute.
 
 ## Deployment
 
@@ -122,3 +126,17 @@ Use `BLOCKED` when an external dependency prevents required proof, for example:
 - third-party outage.
 
 State what was implemented, the highest achieved level, the exact missing proof, and the next action. Never replace the blocked check with a plausible-looking surrogate.
+
+## Compact evaluation cases
+
+| Case | Expected classification |
+|---|---|
+| A run is queued or still executing | Progress only; terminal proof is missing. |
+| CI is green for commit A after the branch moved to commit B | The green result is stale and only qualifies evidence about A. |
+| Current-head CI is green, then required review posts a blocking finding | The review is contradicting evidence; completion remains open. |
+| A runner outage is followed by one authorized, policy-bounded retry on the same head | Preserve both attempts, classify the first as infrastructure failure, and use the second only for what it directly proves. |
+| A branch test fails reproducibly while runners are healthy | Classify it as branch/candidate failure; do not retry until green or call it infrastructure noise. |
+| A release exists on a preview channel but the claim names the stable registry/channel or protocol target | Exact-target readback is missing; do not claim `PUBLISHED`. |
+| An action is allowlisted but the pre-effect repository, issue, account, or environment identity differs | Stop before the effect; the allowlist neither authorizes nor repairs the target mismatch. |
+
+These are prose evaluation prompts, not a required harness, retry loop, or completion manifest.

@@ -1,28 +1,34 @@
-# GitOps operations report
+# Optional GitOps operations report
 
-## Scope
+Use only sections relevant to the selected mode. This template is not proof that desired state renders, reconciles, or serves users.
 
-| Field | Value |
-|---|---|
-| Mode | Static / Live / Change review |
-| Controller | |
-| Repository/revision | |
-| Cluster/environment | |
+## Scope and evidence boundary
 
-## Topology and dependency chain
+| Repository/target | Controller object + generation | Static/live mode and observation time | Evidence limits |
+|---|---|---|---|
+
+## Revision and controller-state ledger (when live)
+
+| Desired | Approved | Fetched | Last attempted | Last applied | Fresh condition basis |
+|---|---|---|---|---|---|
+
+| Comparison | Sync | Operation | Health |
+|---|---|---|---|
+
+## Relevant topology or diagnostic boundary
 
 ## Findings
 
-| Severity | Confidence | Boundary | Evidence | Correction |
+| Impact | Confidence | Boundary | Evidence | Authoritative correction |
 |---|---|---|---|---|
 
-## Validation
+## Affected validation
 
-| Target/check | Status | Evidence |
+| Target/check | Status: passed/failed/skipped/unavailable | Evidence/limit |
 |---|---|---|
 
-## Proposed source-of-truth changes
+## Proposed source diff or live operation (when applicable)
 
-## Convergence checks
+## Rollback, convergence, and user-health readback (for effects)
 
-## Unknowns and gated actions
+## Unknowns and effects not performed

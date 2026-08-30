@@ -1,108 +1,80 @@
 # Event taxonomy and capture policy
 
-Use this reference during `capture` and `review`. The journal is a curated evidence ledger. It is not a transcript, timesheet, changelog of every commit, or emotional diary.
+Load this reference when deciding whether an event is meaningful or when a richer private record would help. The journal is an evidence ledger, not a transcript, timesheet, complete changelog, or editorial queue.
 
-## Hard capture triggers
+## Capture indicators
 
-Create or update an event only when at least one trigger applies:
+An event is usually worth keeping when it records one or more of these:
 
-1. A consequential technical or product decision was proposed, accepted, rejected, or superseded.
-2. An unexpected problem caused meaningful investigation, redesign, delay, user impact, or a reusable prevention.
-3. An AI-generated assumption, API shape, dependency, test, or implementation was proven wrong in a non-obvious way.
-4. A distinct approach failed and eliminated a plausible option.
-5. An experiment or benchmark produced a measured result or invalidated an assumption.
-6. External user, operator, or market evidence changed scope, priority, UX, architecture, or go/no-go state.
-7. A user-visible or operator-visible capability shipped and has inspectable proof.
-8. A new constraint or trade-off will affect future decisions.
-9. A pivot, stop, rollback, or major change of direction occurred.
-10. The human-agent workflow changed because a concrete failure or measurement showed a better verification boundary.
+- a consequential technical or product decision with real trade-offs;
+- an unexpected problem that caused meaningful investigation, redesign, impact, or reusable prevention;
+- a non-obvious AI assumption, API shape, dependency, test, or implementation proven wrong;
+- a distinct failed approach that eliminated a plausible option;
+- an experiment or benchmark with a measured result or invalidated assumption;
+- user, operator, or market evidence that changed scope, priority, UX, architecture, or go/no-go state;
+- a meaningful capability with inspectable delivery or behavior evidence;
+- a new constraint that will affect future work;
+- a pivot, stop, rollback, or major direction change;
+- a human-agent workflow change grounded in a concrete failure or observation.
 
-An explicit user request to record an event still passes through privacy sanitization, but it may override the editorial noise filter.
+These are editorial-noise heuristics, not an admission form. An explicit user request may justify capture even when the event is unusual, but it never overrides privacy and safety boundaries.
 
-## Skip by default
+## Usually skip
 
-Do not create an event for:
-
-- prompts, tool calls, shell commands, individual file edits, or every commit;
-- plans and intentions that produced no decision or outcome;
-- repeated retries with the same hypothesis and no new information;
-- formatting, renaming, generated-file churn, or routine dependency installation;
-- a normal compiler error or typo with no reusable lesson;
-- a green test unless the test proves a meaningful assumption or result;
-- AI output merely because it was fast, long, or generated many lines;
+- raw prompts, tool calls, shell commands, individual edits, or every commit;
+- intentions that produced no decision or observation;
+- retries with the same hypothesis and no new information;
+- routine dependency, formatting, rename, or generated-file churn;
+- ordinary compiler errors or typos without a reusable lesson;
+- green tests unless they establish a meaningful result;
+- AI output merely because it was fast, long, or high-volume;
 - generic status such as “worked on billing”;
-- feelings, conflict, customer reactions, or motives that were not supplied directly by the person involved.
+- feelings, reactions, conflict, or motives not supplied by the person involved.
 
 ## Event types
 
-| Type | Use when | Useful extension fields |
+Use a label only when it aids later retrieval:
+
+| Type | Use when | Potential detail |
 |---|---|---|
-| `decision` | A real choice has alternatives and consequences | drivers, options, reversibility, consequences, confirmation |
-| `experiment` | A hypothesis was tested under stated conditions | hypothesis, method, environment, before/after, limitation |
-| `failure` | Expected behavior materially diverged from observation | impact, attempts, root cause, correction, prevention |
-| `fix` | A consequential fault was corrected and verified | cause, change, regression proof, residual risk |
-| `learning` | A non-obvious constraint or principle will affect future work | prior belief, evidence, new model, future use |
-| `feedback-change` | External evidence changed the product or priority | source class, previous direction, change, validation plan |
-| `ship` | A meaningful capability became inspectable or usable | user problem, changed behavior, release proof, limitations |
-| `pivot` | Evidence caused a substantial change of direction | old hypothesis, decisive evidence, new direction, sunk cost |
-| `stop` | Work or an option was deliberately abandoned | stop criteria, evidence, reusable assets, consequences |
-| `security-pointer` | A security-sensitive event must be acknowledged without details | private reference, owner, remediation state; always `never_public` while active |
+| `decision` | A real choice has consequences | drivers, alternatives, reversibility |
+| `experiment` | A hypothesis was tested | method, environment, result, limitation |
+| `failure` | Expectation materially diverged from observation | impact, distinct attempts, cause hypothesis |
+| `fix` | A consequential fault was corrected | cause, change, regression evidence, residual risk |
+| `learning` | A non-obvious constraint changes future work | prior belief, evidence, updated model |
+| `feedback-change` | External evidence changed the product or priority | source class, prior direction, change |
+| `ship` | A meaningful capability became inspectable | user problem, changed behavior, destination evidence |
+| `pivot` | Evidence caused a substantial direction change | previous hypothesis, decisive evidence, new direction |
+| `stop` | Work or an option was deliberately abandoned | stop reason, reusable assets, consequence |
+| `security-pointer` | A security event needs a safe acknowledgement | approved secure pointer and generic remediation state only |
 
-## Required event fields
+## Minimal record
 
-Every event needs:
+Keep enough information to distinguish and revisit the event:
 
-- stable `event_id`;
-- `occurred_at` and `recorded_at`;
-- project scope or component;
-- event type and status;
-- trigger or problem;
-- expected result or hypothesis when one existed;
-- observed result;
-- action or decision;
-- impact or consequence;
-- evidence references and verification status;
-- human and AI contribution when AI participated;
-- confidence and privacy classification;
-- content eligibility state.
+- stable event identifier and date;
+- concise factual label and project scope;
+- event type/status only if useful;
+- trigger, observation, decision/action, and consequence as applicable;
+- safe evidence locator and what it verifies or leaves pending;
+- human and AI contribution when relevant;
+- privacy classification and any required omission or embargo.
 
-Use only fields that convey information. Do not fill optional sections with invented detail.
+Optional detail—expected result, alternatives, attempts, confidence label, follow-up, or updates—belongs only when it adds information. Editorial channel fields do not belong in a normal capture record.
 
 ## Claim labels
 
-Keep these categories separate:
+Keep these categories distinguishable in prose or fields:
 
 | Label | Meaning |
 |---|---|
-| `confirmed_fact` | Direct observation or claim supported by an inspectable artifact |
-| `interpretation` | An explanation of what the facts may mean; attribute it to the author or agent |
-| `hypothesis` | A testable explanation that is not yet verified |
-| `content_idea` | A possible public angle derived later from safe evidence |
+| `confirmed_fact` | Direct observation or a claim supported by inspectable evidence |
+| `interpretation` | An explanation of what facts may mean, attributed to its source |
+| `hypothesis` | A testable explanation not yet verified |
+| `content_idea` | A possible public angle derived later during explicitly requested mining |
 
-A test result can confirm behavior without proving the proposed root cause. Label confidence accordingly.
+A passing behavior check can confirm behavior without proving a proposed root cause.
 
-## Status model
+## Updates and compaction
 
-Use the smallest relevant vocabulary:
-
-- `proposed`
-- `in_progress`
-- `observed`
-- `evidence_pending`
-- `verified`
-- `accepted`
-- `rejected`
-- `superseded`
-- `closed`
-- `closed_no_content`
-
-Do not convert an old observation into a new fact by editing its wording. Append a dated update, link the new evidence, and change status.
-
-## Compaction rules
-
-- Bundle actions by outcome or decision.
-- Summarize only distinct attempts and what each taught.
-- Link large diffs, logs, traces, benchmarks, and screenshots; do not paste them.
-- Update one event when evidence arrives.
-- Link superseding events rather than deleting history.
-- During review, close entries that have neither evidence nor a concrete next check.
+Bundle actions by outcome, summarize only distinct attempts that revealed new information, and link large evidence rather than pasting it. Before creating an event, reconcile its stable ID, outcome/decision, and evidence locators with existing entries. A duplicate with no new evidence is a no-op; a duplicate with new or conflicting evidence appends a dated `update`, `correction`, or `supersession` to the canonical event and records the resulting current status. Never add a second account of the same outcome or silently rewrite the earlier observation. Preserve alias IDs when reconciling existing duplicates, and close entries that have neither durable evidence nor a useful next check.

@@ -1,168 +1,183 @@
 ---
 name: design-direction
-description: "Use when translating product strategy, copy, screenshots, websites, design systems, component libraries, or inspiration collections into an original art direction before UI implementation. Builds a cited reference ledger, separates observation from inference, proposes at most two coherent directions, defines a product-specific visual thesis and no-go list, and prevents reference collage or literal cloning."
+description: "Use when product understanding, copy, screenshots, sites, design systems, component libraries, or subject-world references must become an original visual thesis, a bounded direction, or decision-relevant rendered concepts. Handles targeted direction work without invoking the full design studio; uses the smallest cited source set and only enough alternatives to expose a real trade-off. Preserves licence/no-copy boundaries and keeps real-time graphics strictly optional."
 license: Apache-2.0
-compatibility: Works with image-capable or text-only Agent Skills clients; visual inspection requires an available browser or image-analysis tool.
+compatibility: Works with image-capable or text-only Agent Skills clients; rendered comparison requires a browser, image-generation, design, or equivalent preview tool.
 metadata:
-  version: "1.0.0"
+  version: "2.1.0"
   author: BRYANN2K
   category: design
-  tags: art-direction, design-research, references, visual-language, anti-copy, anti-slop
+  tags: art-direction, visual-prototypes, design-research, references, concept-selection, anti-copy, webgl, webgpu, 3d
 ---
 
 # Design Direction
 
 ## Overview
 
-Turn source material into a coherent visual decision, not a moodboard collage. Observe what a reference does, infer why it works, adapt the principle to the product's content and constraints, and explicitly name what must not be copied.
+Turn product truth and real content into an original visual argument. Use the shortest safe mode: a targeted direction request can produce one thesis or bounded concept; research only supplies missing evidence; alternatives exist only for a material trade-off; a full rendered exploration belongs to a new/materially open interface or an explicit request.
+
+**Reuse boundary:** do not copy a source's distinctive layout, artwork, icons, branded token values, proprietary components, code, text, or recognizable interaction sequence without compatible permission. A public URL is not a reuse licence. Unclear status means principle-only observation with attribution, never asset/code reuse. Permission and originality are separate checks: a compatible licence can permit direct reuse, but it does not make a direction original when the source's recognizable composition, sequence, or combined expression remains the concept. Rework it into a product-specific adaptation or label the authorized reuse honestly instead of presenting it as new art direction.
+
+Exact source observations, licensing, product truth, accessibility constraints, and no-copy boundaries are low-freedom. Concept count, research count, artifact form, presentation order, and rendering depth are judgment calls calibrated to the decision.
 
 <HARD-GATE>
-Do not copy source assets, layouts, distinctive illustrations, branded token values, proprietary Figma components, or recognizable interaction sequences. A public URL is not a reuse license. Verify the original source and license before reusing code or text; when licensing is absent or unclear, use the source only for high-level observation and attribution.
+An explicit bounded direction or local prototype request authorizes that named local work. Ask again only when scope/effect expands, a consequential unresolved choice needs the human, or a dependency, paid asset, live/external effect, deployment, or publication appears. If direction selection is delegated, choose and continue. Never trade originality, claim truth, accessibility, or source rights for speed.
 </HARD-GATE>
 
 ## When to use
 
-- Establish art direction from screenshots, websites, portfolios, dashboards, design systems, component galleries, or resource lists.
-- A user asks to make an interface feel distinctive, restrained, premium, dense, playful, technical, editorial, or unlike AI-generated templates.
-- Compare visual approaches before defining tokens and components.
-- Audit whether an existing UI has become a collage of libraries or trends.
+- Define or refine one visual thesis, signature, composition, or bounded page/feature direction.
+- Give visual form to source-backed content for a new/material landing page or marketing surface.
+- Explore information topology, density, navigation, and states for an open application/dashboard pattern.
+- Translate screenshots, sites, systems, component libraries, or product-domain material into original principles.
+- Decide whether bounded work should inherit an established system.
+- Evaluate a specifically requested or product-justified WebGL/WebGPU/Three/R3F/`vgpu` concept without making it the default.
 
-Do not use for building the design system, implementing components, selecting a library solely by API, or copying an existing site. Use the design-system or engineering workflow after direction is selected.
+Do not use to clone a reference, build a full token/component system before a concept exists, manufacture alternatives for a settled change, or route a targeted direction request through the full Interface Studio.
 
 ## Workflow
 
-### 1. Read product and content constraints first
+### 1. Select the exploration mode
 
-Inspect `PRODUCT-STORY.md`, `PAGE-COPY.md`, `CLAIMS.md`, routes/journeys, content volume, data shapes, existing brand assets, accessibility constraints, supported platforms, and implementation stack. If these artifacts do not exist, obtain equivalent evidence; do not let references invent the product.
+Inspect only the content, claims boundary, existing system/brand, representative data/states, platform/accessibility constraints, and stack needed for the visual decision. Equivalent inline evidence is enough for a bounded task.
 
-Name what the design must help users recognize, compare, trust, or do. Identify density, language length, data variability, and state complexity.
+| Mode | Use when | Minimum path |
+|---|---|---|
+| `TARGETED_DIRECTION` | One thesis, reference translation, signature, composition, or bounded concept is requested | inspect governing content/system → research only missing evidence → produce one viewable or implementation-ready direction → check originality/fit |
+| `OPEN_EXPLORATION` | A new/material marketing interface has a real unresolved visual strategy | fair content contract → enough distinct concepts to cover the trade-off → render → select |
+| `TASK_PATTERN` | A new app/dashboard topology or interaction pattern remains open | hold task/data/state constant → enough task-centered concepts → render relevant state(s) → select |
+| `INHERIT_SYSTEM` | Bounded work fits a coherent established system | cite governing system → define the local placement/extension → skip alternatives and fresh inspiration unless a gap remains |
 
-**Complete when:** the visual problem is expressed in product terms rather than adjectives alone.
+Record decision owner only when a material choice exists: `human`, `delegated`, or `not-applicable`. Delegated judgment authorizes selection and continuation within the bounded local scope; it does not authorize dependencies, publication, deployment, or asset purchase.
 
-### 2. Build a small, source-first reference set
+### 2. Research only what the decision lacks
 
-Use three to eight references with distinct roles:
+Start from the product decision, not a gallery. Retain the smallest source set that unlocks a credible original direction. One strong source can be enough; several may be needed for distinct roles. Stop when another source would add fashionable fragments rather than decision value.
 
-- structural/compositional;
-- typographic/editorial;
-- system/component;
-- motion/interaction;
-- data visualization or product-specific imagery, when applicable.
+For every retained source record:
 
-A curated list such as Numa1's Design-Ressources is a discovery index only. Follow each candidate to its original site or repository, inspect the current artifact, and verify its license before reuse. Prefer primary sources over screenshots of screenshots or derivative galleries.
+- exact primary URL and artifact/viewport/state inspected;
+- exact visible observation, not an adjective;
+- interaction evidence actually observed (live path, recording, trace, or source), or an explicit `still-only — interaction unobserved` boundary;
+- adaptation principle tied to this product;
+- licence/reuse status and date checked;
+- originality decision independent of licence and an explicit no-copy boundary.
 
-Load [reference analysis rules](references/reference-analysis.md) for source quality, screenshots, dashboards, component libraries, and anti-collage checks.
+Prefer origins, current official artifacts, creator-authored case studies, inspectable terms, and subject-world material. Load [reference analysis rules](references/reference-analysis.md) for difficult provenance, concept differentiation, or rendering decisions. Skip fresh inspiration research in `INHERIT_SYSTEM` when the canonical system already answers the choice.
 
-**Complete when:** every chosen source has an exact URL, creator/maintainer when known, role, license status, and reason it is relevant to this product.
+Inline research notes are valid. Persist a ledger only when requested, required by the project, actual reuse/attribution must survive, or the decision will cross runs/agents.
 
-### 3. Record observation before interpretation
+### 3. Hold comparison truth fair when alternatives exist
 
-Copy [the reference ledger template](templates/reference-ledger.md) to `.design-flow/artifacts/REFERENCE-LEDGER.md`. For each reference separate:
+Name only the constants needed for fair comparison: product facts/caveats, proof inventory, representative content/data/state, primary action/task, target constraint, and technical/accessibility boundaries. Do not use fake metrics, customers, production states, or unlicensed assets to make one concept persuasive.
 
-1. `observed` — directly visible or verified behavior;
-2. `principle` — why it may work;
-3. `adaptation` — how the product can apply the principle;
-4. `no-copy boundary` — recognizable elements excluded;
-5. `license boundary` — what may or may not be reused.
+Keep each copy strategy coupled to the direction it materially serves rather than generating every combination. Fairness means equal access to supported truth and proof, not identical sentences. Task concepts should use the same representative job, data, state, and consequence.
 
-Example: “irregular grid” is observation; “size follows decision priority” is principle; “allocate width by operational importance” is adaptation; “do not reproduce the same card geometry or artwork” is the no-copy boundary.
+Skip this comparison contract when one targeted or inherited direction is already selected.
 
-**Complete when:** no adaptation depends on copying the source's identity, and uncertain interpretations are labeled as hypotheses.
+### 4. Produce the minimum viewable direction evidence
 
-### 4. Synthesize one visual thesis
+A direction must be concrete enough for its requested purpose. When alternatives are resolving an open visual decision, every candidate must be viewable through disposable HTML/CSS, a project-native preview, an image comp, a readable wireframe, or an equivalent real render. A concise implementation brief or annotated locator is sufficient only when a targeted/inherited decision is already selected and no visual comparison remains. Do not add a framework or reusable component library merely to compare concepts.
 
-Define:
+For each explored direction include the applicable subset of:
 
-- tension: the productive contrast that makes the direction memorable;
-- hierarchy: how attention moves;
-- density: what is compact and what breathes;
-- typography: roles, contrast, and content fit;
-- geometry: grids, alignment, radius, borders, and rhythm;
-- surfaces: depth, separation, and background behavior;
-- color: semantic role and accent discipline;
-- imagery/data language: what visualizes the product truth;
-- signature: one product-specific recurring idea;
-- restraint: patterns deliberately excluded.
+- one-sentence thesis and product/subject-world signature;
+- topology, attention path, typography, density, palette/asset/data language, and motion posture;
+- real copy/data needed to expose wrapping, hierarchy, proof, state, and action;
+- a readable viewport/state or annotated locator that tests the decisive claim;
+- interaction claims only when the behavior was actually observed or prototyped—a still image supports pictured composition, not hover, scroll, timing, focus, transition, or responsive behavior;
+- honest trade-off, accessibility/responsive/implementation risk, and concept-specific no-go.
 
-The signature should emerge from product mechanism or content. A generic gradient, globe, floating card, or glowing orb is not automatically a signature.
+When constraints select one direction, stop at one. When alternatives are warranted, render enough structurally and strategically independent concepts to expose and resolve the material trade-off—not palette/font swaps—and stop when that trade-off is covered. A downstream frame, constrained viewport, or non-happy state is required only when it changes the decision or supports the claim.
 
-**Complete when:** the thesis can guide an unfamiliar screen without referring back to source screenshots.
+For applications/dashboards, vary the relevant information topology, navigation/focus model, density, disclosure, state handling, and action placement around the same task. Do not style a marketing funnel and call it an application concept.
 
-### 5. Offer at most two coherent directions
+### 5. Keep real-time graphics strictly conditional
 
-If a meaningful strategic choice remains, produce:
+Semantic HTML/CSS/DOM is the default. No option set must contain a GPU concept. Enter the renderer branch only when the user explicitly requests it or a named product need requires spatial, procedural, or interactive rendering that static media cannot communicate as well.
 
-- Direction A — recommended, with rationale and risks;
-- Direction B — genuinely different, with rationale and risks.
+A viable real-time direction preserves, as applicable:
 
-Do not create cosmetic variants of the same layout. Recommend one. If the user does not make a separate choice, the recommended direction may enter the design-system review, but it is not approved until the design-system gate is explicitly approved.
+- named product beat and canvas role;
+- remove-canvas result: proposition, proof, order, controls, and CTA remain usable in semantic DOM;
+- static/reduced-motion and reduced-data equivalent;
+- DOM/canvas/native-scroll/input/resource ownership;
+- readable deterministic frames only for decision-changing states/viewports;
+- renderer/version feasibility, project-specific budget risk, loading/failure/loss, offscreen pause, cleanup, and asset provenance.
 
-**Complete when:** each direction is internally coherent, decision-relevant, and testable with actual content.
+If nothing meaningful is lost without the canvas, simplify to static media. If content/action disappears, repair DOM/fallback before selecting it. Do not install a renderer or decoder during concept work. Route `vgpu`, GSAP, Three/R3F, and other framework details to official relevant skills or the repository-pinned documentation rather than duplicating APIs here.
 
-### 6. Define the no-go list and handoff
+### 6. Compare and select only when needed
 
-Name project-specific failure modes, such as:
+Evaluate candidates against product/task fit, content/proof legibility, originality without copied expression, accessibility risk, responsive behavior, and implementation cost. Run originality independently of permission: a licensed candidate still fails the original-direction claim when a reasonable reviewer can recognize the source from substantially the same composition, sequence, and combined motifs. Likewise, strip or qualify any interaction claim supported only by a still frame.
 
-- uniform card wall despite unequal information priority;
-- decorative gradients or glows detached from meaning;
-- generic SaaS hero plus logo wall plus bento sequence;
-- dashboards with fake metrics or chart-first layout;
-- typography selected for novelty rather than language/content;
-- copied interactions that conflict with task speed;
-- inaccessible low contrast presented as sophistication.
+- `human`: present the viable set and one recommendation, then ask the unresolved selection question.
+- `delegated`: record the evidence-based choice, rationale, risk, and continue within local authority.
+- `not-applicable`: the request/system already selected the direction; no approval ritual.
 
-Pass the selected thesis, reference ledger, and no-go list to `design-system-first`. Do not start product frontend implementation.
+A fresh reviewer can reduce builder bias for a consequential choice, but it is not mandatory. Do not merge unrelated fragments into a safe average. Reopen the concept only when feedback changes its architecture or governing truth, not for a local fix.
 
-**Complete when:** the design-system author can derive tokens and components without reopening reference discovery or guessing what not to copy.
+### 7. Hand off only what implementation must retain
+
+Keep the selected direction as inline output or persist a brief only when it is a deliverable, must survive runs/agents, or the project requires it. Preserve:
+
+- thesis and product-specific signature;
+- composition/topology and responsive priority relevant to the build;
+- type/density/palette semantics and asset/data provenance;
+- motion intent and reduced equivalent when material;
+- representative content/states and no-go;
+- accepted trade-off, evidence locators, and unresolved risks;
+- conditional renderer role, semantic fallback, ownership, versions, budget/lifecycle boundaries.
+
+Do not create a speculative full design system. `design-system-first` may inherit/extend the current system for bounded work or consolidate genuinely shared rules afterward.
+
+### 8. Verify only the decision claim
+
+Inspect the direction at the viewport/state that exposes the decision, plus contrasting cases only when content, behavior, or the claim changes. Check real text/data, action clarity, contrast, reading/focus order, responsive risk, asset rights, and reduced-motion intent as applicable. Record unavailable checks. If hover, scroll, focus, gesture, transition, sequence, or responsive behavior affects selection, observe or prototype that behavior; do not infer it from a still.
+
+A rendered frame proves the pictured state, not unobserved interaction, function, accessibility, performance, cleanup, deployment, or publication. Syntax/tool `PASS` proves only that tool. Stop refinement when the decision is resolved, value diminishes, a material choice/blocker needs the human, or the agreed budget is reached.
 
 ## Output contract
 
+Preserve this information when it applies. A user-requested or host presentation adapter may reorder, relabel, chunk, summarize, or progressively disclose it, but must not hide citations, no-copy/licence boundaries, selection authority, risks, or gaps.
+
 ```text
-Design direction: SELECTED | READY_FOR_SYSTEM_REVIEW | PARTIAL | BLOCKED
-Visual problem: <product-specific problem>
-Recommended thesis: <one sentence>
-Signature: <product-derived recurring idea>
-
-References
-- <source>: <role, exact URL, license status>
-- Discovery indexes only: <sources>
-
-Direction
-- Hierarchy/density: <rules>
-- Typography/geometry/surfaces: <rules>
-- Color/imagery/data: <rules>
-- Motion posture: <restrained/expressive and why>
-- No-go list: <specific exclusions>
-
-Artifact
-- REFERENCE-LEDGER.md: <path>
-
-Decision
-- Selected: <A/B or included in system review>
-- Open risk: <content, accessibility, implementation, license>
+Design direction: READY | RENDERED | SELECTED | PENDING_HUMAN | PARTIAL | BLOCKED
+Mode: TARGETED_DIRECTION | OPEN_EXPLORATION | TASK_PATTERN | INHERIT_SYSTEM
+Requested visual decision and exclusions: <specific>
+Sources: <IDs, URLs, observations, observed-interaction/still-only boundary, adaptations, licence/reuse, independent originality/no-copy decision>
+Directions: <one direct direction or candidate IDs with real differences and viewable locators>
+Decision: <selected/pending/not applicable> — owner=<human|delegated|not-applicable>
+Selected handoff: <inline summary or path, trade-off/no-go/risk>
+Real-time graphics: <not active or explicit/named need, remove-canvas/fallback, renderer/lifecycle boundary>
+Evidence: <decision-relevant viewports/states and results>
+Not performed/proven: <system build, dependency, runtime/accessibility/performance, publication gaps>
 ```
 
 ## Common pitfalls
 
-- Beginning from references before understanding content and user decisions.
-- Treating a curated resource list as permission to reuse every linked asset.
-- Combining one component from each fashionable library.
-- Describing references only with adjectives such as clean or premium.
-- Copying a layout while changing colors and calling it original.
-- Using a dashboard template as both architecture and art direction.
-- Offering five directions to avoid making a recommendation.
-- Making visual novelty more important than legibility, state, or task speed.
-- Failing to record source and license status at research time.
+- Running a full exploration for a targeted thesis or inherited-system placement.
+- Browsing by quota before reading product/content evidence.
+- Treating a screenshot, public URL, community file, or code licence as blanket reuse permission—or treating compatible permission as proof that a recognizable copied composition is original.
+- Manufacturing a fixed number of palette/font swaps instead of resolving one real trade-off.
+- Giving one option stronger invented proof/data or generating every copy × style combination.
+- Forcing landing composition onto an operational task.
+- Building tokens/components/full state matrices before choosing the direction.
+- Applying universal aesthetic bans instead of a product/concept-specific no-go.
+- Requesting approval after selection was delegated or when constraints already decide.
+- Treating a still image as evidence of hover, scroll, focus, transition, sequence, responsive, or other unobserved interaction.
+- Treating a generic GPU effect as a direction, hiding content in canvas, or duplicating renderer APIs.
 
 ## Verification checklist
 
-- [ ] Product story, copy, claims, journeys, data shapes, and state complexity informed the brief.
-- [ ] The reference set is small, role-diverse, and traced to primary sources.
-- [ ] Every source has an exact URL, role, creator when known, and license status.
-- [ ] Observations, inferred principles, adaptations, and no-copy boundaries are separate.
-- [ ] Discovery catalogs were not treated as reuse licenses.
-- [ ] The thesis defines hierarchy, density, typography, geometry, surfaces, color, imagery/data, and motion posture.
-- [ ] A product-derived signature and project-specific no-go list exist.
-- [ ] At most two coherent directions were proposed and one is recommended.
-- [ ] No code, assets, copy, distinctive layout, or brand tokens were cloned without a compatible license and attribution.
-- [ ] Product frontend implementation has not started before the design-system approval gate.
+- [ ] The shortest exploration mode matches the request; targeted work did not invoke the full studio.
+- [ ] Product truth, real content/data, claims boundary, existing system, and constraints were inspected proportionately.
+- [ ] Research stopped when the missing evidence was supplied; every retained source has origin, observation, observed-interaction or still-only boundary, adaptation, licence/reuse status, independent originality decision, and no-copy boundary.
+- [ ] One direction was accepted when constraints selected it; alternatives exist only for a real structural/strategic trade-off.
+- [ ] Compared options use fair product truth/proof/data and are viewable enough to expose their decisive difference.
+- [ ] The selected thesis/signature is original after source expression is removed; compatible licensing was not mistaken for originality.
+- [ ] Interaction claims are limited to behavior actually observed or prototyped; still frames support pictured composition only.
+- [ ] Any real-time branch is explicitly requested or tied to a named product need and preserves semantic DOM/fallback, reduced modes, ownership, failure/loss, pause, cleanup, performance/capture truth, and source rights.
+- [ ] Selection authority is explicit only when needed; delegated judgment continued without a redundant approval.
+- [ ] Handoff/persistence is proportional and does not create a speculative full system.
+- [ ] Verification matches the visual decision claim and does not overstate still frames, tools, runtime, accessibility, deployment, or publication.

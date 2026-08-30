@@ -1,3 +1,5 @@
+<!-- Optional scaffold for a new page. Inherit repository structure and remove inapplicable sections. -->
+
 # Runbook: <operation or incident>
 
 ## Purpose and scope
@@ -31,3 +33,8 @@
 ## Cleanup and evidence
 
 ## Test/review record
+
+| Evidence | Date | Scope/environment | Result or gaps |
+|---|---|---|---|
+| Last reviewed | | Prose, owners, dependencies, applicability | |
+| Last tested/exercised | | Steps actually run or simulated | |

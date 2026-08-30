@@ -1,37 +1,42 @@
-# Incident: <title>
+# Optional incident notebook: <title>
 
-## Current status
+Use only sections needed for current coordination or later learning. This template does not prove severity, diagnosis, authorization, or recovery.
 
-| Field | Value |
-|---|---|
-| Severity | |
-| Started/detected | |
-| Impact | |
-| Incident commander | |
-| Technical lead | |
+## Current scope/status
 
-## Timeline
+| Environment/service/window | Observed impact | Owner/roles when used | Evidence limits |
+|---|---|---|---|
+
+## Material timeline (when useful)
 
 | Time (TZ) | Event | Evidence |
 |---|---|---|
 
-## Confirmed facts
+## Confirmed facts and uncertainty
 
-## Hypotheses
+## Signal identity/state (when relevant)
 
-| ID | Hypothesis | Evidence for | Evidence against | Confidence | Next test |
+| Resource identity | Trace/span/parent-or-link | Sampling/clock unknowns | Alert data/evaluation | Notification/incident state | Recovery evidence |
 |---|---|---|---|---|---|
 
-## Actions
+## Hypotheses/tests (when cause is uncertain)
 
-| Time | Action | Authorized by | Expected | Observed | Reversal |
-|---|---|---|---|---|---|
+| Hypothesis | Prediction/query | Result | Confidence/next step |
+|---|---|---|---|
 
-## Recovery evidence
+## Actions/effects (when any occurred)
 
-## Contributing factors
+| Time | Exact target/action | Authorization | Expected/observed | Abort/reversal |
+|---|---|---|---|---|
 
-## Follow-up actions
+## Recovery/readback
 
-| Action | Owner | Priority | Validation | Due |
+## Causal edges (when a chain is claimed)
+
+| Edge | Mechanism + identity/path | Ordering/control/contradictions | Confidence |
+|---|---|---|---|
+
+## Contributing factors and follow-ups (postmortem only)
+
+| Action | Failure-mode link + baseline/prediction | Owner/due/priority when needed | Implementation status | Effectiveness readback: effective/ineffective/inconclusive |
 |---|---|---|---|---|

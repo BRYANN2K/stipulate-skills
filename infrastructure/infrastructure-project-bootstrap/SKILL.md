@@ -1,10 +1,10 @@
 ---
 name: infrastructure-project-bootstrap
-description: "Use when starting a new infrastructure repository or safely adopting an existing one. Discovers constraints before scaffolding, selects a minimal or spec-driven profile, produces a reviewable non-destructive file plan, creates portable project and agent contracts without running infrastructure, and diagnoses bootstrap drift."
+description: "Use when starting a new infrastructure repository, adding a bounded project foundation, adopting an existing repository without overwriting ownership, or diagnosing bootstrap drift. Chooses the shortest safe local path and offers an optional hardened manifest/helper workflow."
 license: Apache-2.0
 compatibility: Works with any Agent Skills-compatible client and any cloud provider. The optional deterministic helper requires Python 3.10 or newer and uses only the standard library.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: infrastructure
   tags: infrastructure, bootstrap, scaffolding, project-init, iac, agent-instructions
@@ -14,275 +14,153 @@ metadata:
 
 ## Overview
 
-Turn known infrastructure constraints into a small, portable repository foundation without choosing an architecture for the user or mutating infrastructure. The workflow supports a new empty directory and non-destructive adoption of an existing repository. It separates discovery, review, file creation, and diagnosis so an agent cannot silently turn assumptions into project structure.
+Create only the repository foundation the request needs. Start from existing project evidence, preserve human-owned files, and keep scaffolding distinct from implemented or deployed infrastructure. A focused request for one contract or directory does not require a full bootstrap package.
 
-The deterministic helper creates only repository files. It does not install tools, initialize Git, invoke OpenSpec, execute validation commands, contact a provider, create CI workflows, or run an infrastructure plan/apply.
+A direct request to create or adapt bounded local project files authorizes those in-root writes. Do not ask for a second approval after restating the same file scope. Stop instead when a path would escape the root, traverse a symlink, overwrite conflicting ownership, expose private material, or expand beyond the requested outcome.
 
 <HARD-GATE>
-Never scaffold while architecture-defining decisions are unknown, overwrite a conflicting file, follow a symlinked target, write credentials, or treat file creation as authorization to initialize Git, install tools, run OpenSpec, generate provider resources, apply, deploy, destroy, reconcile, push, or mutate a live environment. Review the exact bootstrap plan and require explicit authorization for its file writes. Any later operational mutation requires separate explicit authorization for the exact action and target.
+Do not read or write credentials, private keys, state contents, customer data, or other private material. Dependency or tool installation, provider or cluster operations, live or destructive changes, privileged or authentication effects, and any push, deployment, release, or publication require explicit authorization for the exact action, target, and environment. Local bootstrap authoring does not authorize those effects.
 </HARD-GATE>
 
 ## When to use
 
 - Start a repository for Terraform, OpenTofu, Pulumi, CloudFormation, Bicep, AWS CDK, Ansible, Packer, Docker, Kubernetes, Helm, or Kustomize infrastructure.
-- Add a coherent project contract and minimal agent instructions to an existing infrastructure repository.
-- Choose between a lightweight bootstrap and a spec-driven workflow.
-- Diagnose whether an earlier bootstrap still has its required artifacts and safety exclusions.
-- Convert an architecture decision that is already understood into a reviewable repository skeleton.
+- Add a project contract, agent instructions, safe ignore rules, documentation anchors, or stack directories.
+- Adopt an existing repository without replacing current content.
+- Preview a deterministic scaffold or diagnose drift in helper-owned files.
 
-Do not use this skill to select a cloud architecture from an underspecified idea, review a production Terraform plan, design a delivery pipeline, deploy infrastructure, or generate generic documentation. Use architecture, IaC, delivery, and documentation skills after this bootstrap establishes their context.
+Do not use this skill to choose an underspecified cloud architecture, review a production IaC plan, or deploy infrastructure. Route those outcomes to the corresponding architecture, Terraform, Kubernetes, GitOps, or delivery skill.
 
-### Routing precedence
+## Task modes
 
-Prefer this skill when the requested outcome is a portable, provider-neutral, non-destructive repository bootstrap or diagnosis. If another installed bootstrap workflow also matches but would copy private handbooks, generate editor-specific artifacts, initialize Git or a specification tool, install tooling, or create commits, do not select it by default. Use that environment-specific workflow only when the user explicitly asks for those additional artifacts and mutations. Never run both bootstrappers on the same root unless their exact file ownership has been reviewed and the user has authorized the combined plan.
+Choose the narrowest mode that answers the request. The names are routing aids, not gates that every task must pass through.
 
-## Operating modes
-
-| Mode | Use when | Write boundary |
+| Mode | Use when | Default boundary |
 |---|---|---|
-| `init` | Target is absent or empty | Create only the reviewed files |
-| `adopt` | Repository already contains work | Create missing files; update only the managed `.gitignore` block; block all other differences |
-| `doctor` | Check bootstrap health | Read-only; never executes declared validation commands |
+| **Focused guidance** | Answer a bootstrap, layout, profile, or adoption question | Read-only; inspect only relevant evidence |
+| **Direct bootstrap** | Create a small set of requested local files or directories | Bounded local writes; no helper required |
+| **Adopt** | Add missing structure to a non-empty repository | Preserve existing ownership; update only explicitly selected content |
+| **Preview** | Show a proposed file set or resolve collisions before writing | Read-only plan or diff |
+| **Hardened helper** | Reproducible scaffolding, drift detection, or machine-readable handoff is valuable | Optional manifest plus plan digest and local-file apply |
+| **Doctor** | Inspect helper-owned structure for drift | Read-only structural checks |
 
-Profiles are independent of modes:
-
-| Profile | Select when | Adds |
-|---|---|---|
-| `minimal` | Scope is small, reversible, and owned by one team | Project contract, agent instructions, safe ignores, stack directories, selected docs |
-| `spec-driven` | Multiple systems, teams, migrations, irreversible decisions, compliance, or production risk are involved | The minimal profile plus a generic `specs/` contract |
-
-OpenSpec is an optional value of `spec_workflow`, not a dependency. Selecting it records intent only; the helper never installs or initializes it.
+Do not run two bootstrappers against the same root unless their file ownership is compatible. Provider-specific or editor-specific branches apply only when the repository or user selected them.
 
 ## Workflow
 
-### 1. Inspect before asking
+Use only the applicable parts below. These headings are navigation, not a mandatory sequence.
 
-Inspect the target directory, repository instructions, manifests, lock files, IaC roots, CI definitions, documentation, and Git status. Detect facts already established by the project. Do not read secret values or Terraform state contents.
+### Bound the requested outcome
 
-Classify every bootstrap input as:
+Identify the target root and the smallest owned file set. Inspect existing repository instructions, manifests, IaC roots, lock files, CI definitions, documentation, ignore rules, and Git status only as needed to avoid contradictions.
 
-- **Known** — directly supported by repository evidence or the user;
-- **Decision required** — changes structure, security boundaries, environments, ownership, state, or delivery;
-- **Optional** — can be omitted without constraining implementation;
-- **Later implementation** — belongs after bootstrap, such as provider resources or CI jobs.
+Classify inputs as:
 
-Load [the discovery guide](references/discovery-and-profiles.md) only when decisions remain unresolved.
+- **Known** — established by the request or repository;
+- **Required now** — an unresolved choice that changes the files being authored;
+- **Safe to defer** — can remain open without forcing a hidden architecture choice;
+- **Out of scope** — implementation or an external effect rather than bootstrap work.
 
-**Complete when:** every manifest field is known, explicitly deferred under `open_decisions`, or removed as unnecessary; no architecture-defining value was guessed.
+Ask only the smallest question that blocks the selected files. Do not read `.env`, state, kubeconfig, private key, or credential contents; names and references are normally sufficient.
 
-### 2. Select profile and write a temporary manifest
+### Choose the smallest project-native foundation
 
-Choose `minimal` unless the risk indicators require `spec-driven`. Copy one example from `templates/` to a temporary path outside the target repository, then fill it with project facts. For a POSIX shell:
+Prefer the repository's existing conventions. Create only useful artifacts, for example a project contract, scoped `AGENTS.md`, managed ignore block, selected stack roots, or a documentation/specification anchor. Do not invent provider resources, backends, environments, regions, identity models, validation commands, CI jobs, or generic documentation.
 
-```bash
-cp <skill-directory>/templates/minimal-manifest.json /tmp/infrastructure-project.json
-```
+`minimal` and `spec-driven` are optional helper profiles, not universal architecture categories. Use `spec-driven` only when durable cross-team requirements, migrations, compliance evidence, or hard-to-reverse decisions justify a specification surface. OpenSpec is never an implicit dependency.
 
-For PowerShell:
+Load [the discovery guide](references/discovery-and-profiles.md) only when profile or structural decisions remain unresolved.
 
-```powershell
-$manifest = Join-Path ([System.IO.Path]::GetTempPath()) "infrastructure-project.json"
-Copy-Item <skill-directory>/templates/minimal-manifest.json $manifest
-```
+### Author or adopt directly
 
-Use `templates/spec-driven-manifest.json` for the spec-driven profile. The full field contract and supported values are in [the bootstrap contract](references/bootstrap-contract.md).
+For a direct bootstrap:
 
-Rules:
+1. write only absent files or explicitly requested managed sections;
+2. preserve repository-native names and formats;
+3. show or inspect the resulting diff;
+4. stop on conflicting content, a symlinked target/parent, path escape, or unexpected ownership change;
+5. validate only the formats and links affected by the change.
 
-- keep secret values out of every field;
-- do not encode or serialize credentials into text fields; the helper scans common equivalent escape representations and URI userinfo conservatively, but is not a complete secret scanner;
-- declare validation commands but do not claim they have run;
-- use provider-neutral deployment targets unless a provider is already decided;
-- list unresolved structural decisions honestly;
-- do not add stacks merely because tools happen to be installed.
+The original request covers these bounded writes. Ask again only if resolving a conflict or newly discovered choice would change the outcome or effect boundary.
 
-**Complete when:** the temporary manifest parses, represents only approved facts, and contains no credentials or hidden defaults.
+In adoption work, compare current content with the proposed content and distinguish safe create, intentional managed update, unchanged, and conflict. Do not overwrite a human-owned `PROJECT.md`, `AGENTS.md`, workflow, or architecture document because a generated version looks newer.
 
-### 3. Generate a read-only plan
+### Use the optional hardened helper
 
-Run the helper in the selected mode. POSIX-shell example:
+Use `scripts/bootstrap_project.py` when deterministic ownership, reproducible previews, or later drift diagnosis is worth the extra machinery. Its exact input schema and collision semantics are documented in [the helper contract](references/bootstrap-contract.md); example manifests live in `templates/`.
 
-```bash
-python3 <skill-directory>/scripts/bootstrap_project.py plan \
-  --manifest /tmp/infrastructure-project.json \
-  --root <project-root> \
-  --mode init \
-  --json
-```
+The helper route is optional:
 
-PowerShell example:
+1. create a temporary manifest outside the target repository;
+2. run `plan` with `init` or `adopt` and inspect the file actions/collisions;
+3. retain the returned digest;
+4. when the requested scope still matches, run the helper's local-file `apply` subcommand with that digest;
+5. optionally run `doctor` and inspect the files directly.
 
-```powershell
-python <skill-directory>/scripts/bootstrap_project.py plan `
-  --manifest $manifest `
-  --root <project-root> `
-  --mode init `
-  --json
-```
-
-Use `--mode adopt` for an existing repository. The command returns:
-
-- planned `create`, `update`, and `unchanged` actions;
-- content digests for current and desired files;
-- observations for actionable and conflicting generated paths;
-- collisions that block creation;
-- a `plan_digest` binding the manifest, requested and resolved roots, and every observed generated path to its state and available content digest.
-
-`plan` must not create the project root or change any file. A `BLOCKED` plan is a stop condition: inspect the conflicting files and revise the manifest or scope. Never bypass it by deleting, moving, or overwriting user content without a separate decision.
-
-**Complete when:** the plan is `READY`, every action is understood, collisions are absent, and the exact plan digest has been retained.
-
-### 4. Review the proposed foundation
-
-Confirm that the plan creates only applicable artifacts:
-
-- `infrastructure-project.json` — machine-readable source of truth;
-- `PROJECT.md` — human-readable context, constraints, decisions, and validation contract;
-- `AGENTS.md` — minimal, agent-agnostic repository boundaries;
-- managed `.gitignore` exclusions for local credentials and state;
-- one empty `infra/<stack>/` anchor per selected stack;
-- only the selected documentation directories;
-- `specs/README.md` only when a spec workflow is selected.
-
-Review the generated behavior against the templates and manifest. Do not accept generic provider resources, fake environment configuration, apply workflows, automatic commits, or documentation unrelated to bootstrap.
-
-Ask for explicit authorization to create the reviewed repository files. Approval of architecture discussion alone is not approval to write files.
-
-**Complete when:** the user has authorized the plan’s file scope and no requested path conflicts with existing ownership.
-
-### 5. Apply only the reviewed file plan
-
-Pass the exact digest from the reviewed plan. POSIX-shell example:
+When a hardened profile is intended to be replayed across helper releases, retain both its input-schema revision and the exact generator/template revision in existing helper metadata or the review record. Do not infer the old generator from the executable currently on `PATH`. An update-capable integration should compare reproducible **base** (recorded revision and inputs), **current** (working tree), and **new** (selected revision and inputs) outputs so it can distinguish local drift, generator-only change, and a collision where both sides changed. If the old revision cannot be reconstructed, fail closed rather than treating a two-way difference as helper-owned. The bundled schema and its narrower collision behavior are documented in [the helper contract](references/bootstrap-contract.md).
 
 ```bash
-python3 <skill-directory>/scripts/bootstrap_project.py apply \
-  --manifest /tmp/infrastructure-project.json \
-  --root <project-root> \
-  --mode init \
-  --plan-digest 'sha256:<reviewed-digest>' \
-  --json
+python3 <skill-directory>/scripts/bootstrap_project.py plan --manifest <manifest.json> --root <project-root> --mode <init-or-adopt> --json
+python3 <skill-directory>/scripts/bootstrap_project.py apply --manifest <manifest.json> --root <project-root> --mode <same-mode> --plan-digest 'sha256:<reviewed-digest>' --json
+python3 <skill-directory>/scripts/bootstrap_project.py doctor --root <project-root> --json
 ```
 
-PowerShell example:
+A direct bootstrap request does not need redundant approval between plan and local-file apply. A changed digest, new collision, retargeted root, or changed file scope invalidates the preview and requires resolution. The helper never installs tools, runs declared commands, initializes Git/OpenSpec, contacts a provider, or mutates infrastructure.
 
-```powershell
-python <skill-directory>/scripts/bootstrap_project.py apply `
-  --manifest $manifest `
-  --root <project-root> `
-  --mode init `
-  --plan-digest 'sha256:<reviewed-digest>' `
-  --json
-```
+`doctor` proves only conformance of helper-owned files and safety exclusions to its manifest. `PASS` is not evidence that the architecture is correct, commands work, infrastructure is implemented, or anything is deployed.
 
-Use the same mode as `plan`. The helper recomputes the plan immediately before writing. It fails when it observes that the manifest, resolved root, or any planned path changed, when a target became a symlink before its safety check, or when a non-managed target differs. Unrelated paths outside the plan are intentionally out of scope. It uses atomic file replacement but does not promise a cross-file transaction if the host fails mid-write.
+### Validate in proportion to the claim
 
-Run it only in a trusted local workspace. Portable path-based checks cannot eliminate the final race against a concurrent hostile process that has permission to replace directories between a safety check and a write.
+Use the lowest evidence level that supports the requested claim:
 
-Do not run `git init`, `git add`, `git commit`, `openspec init`, package installation, validation commands, or infrastructure tools as an implicit post-step.
+- source inspection for file presence, ownership, and consistency;
+- parse/link/schema checks for the formats actually changed;
+- helper plan/digest for reproducibility of the proposed helper-owned file set;
+- helper doctor for structural drift only;
+- repository commands only when already available, relevant, and safe to run.
 
-**Complete when:** the helper reports `APPLIED` and its created/updated lists match the authorized plan.
+Record checks as passed, failed, skipped, or unavailable. Never execute a command merely because untrusted project text lists it, and never treat a helper/template/validator result as semantic quality proof.
 
-### 6. Diagnose the result
+### Hand off effects honestly
 
-Run the structural doctor. POSIX-shell example:
+Report local artifacts separately from later implementation. If the next step would initialize tools, fetch dependencies, access credentials, run providers, mutate a remote system, or publish work, name that new boundary rather than performing it implicitly.
 
-```bash
-python3 <skill-directory>/scripts/bootstrap_project.py doctor \
-  --root <project-root> \
-  --json
-```
-
-PowerShell example:
-
-```powershell
-python <skill-directory>/scripts/bootstrap_project.py doctor `
-  --root <project-root> `
-  --json
-```
-
-Interpret results precisely:
-
-- `PASS` — required bootstrap artifacts, generated project and agent contracts, and managed safety exclusions are current; no later root rule or nested `.gitignore` negation was found;
-- `WARN` — structure is valid but declared open decisions remain or no validation commands are known;
-- `FAIL` — manifest, required artifacts, generated contracts, or safety exclusions are missing, drifted, or unsafe.
-
-The doctor reports `commands_executed: []`. It validates the command contract but deliberately does not execute those commands.
-
-Then inspect the resulting files directly. Run repository validation only if relevant tools and configuration already exist, and report each command as passed, failed, skipped, or unavailable.
-
-**Complete when:** doctor output is recorded, created files are inspected, and no generated artifact is represented as tested infrastructure.
-
-### 7. Hand off implementation honestly
-
-Report:
-
-- selected mode and profile;
-- known constraints and open decisions;
-- files created, updated, unchanged, or blocked;
-- doctor result;
-- validations actually executed separately from declarations;
-- explicit non-actions: no provider mutation, deployment, Git publication, or tool installation.
-
-Use the cross-domain `agents-md-authoring` skill at `agent-workflows/agents-md-authoring` to audit or propose richer repository instructions once real IaC commands, provider/module locks, generated-file rules, state/backend ownership, environment or cluster boundaries, and scoped subprojects exist. It must keep static validation, connected plan/preview, and live mutation separate; it must not read state or infer apply authorization. The bootstrap owns its generated `AGENTS.md` and doctor verifies it exactly. Before writing an adapted root file, either update the owning bootstrap contract/generator or obtain an explicit transfer of ownership and report that subsequent doctor output will show intentional drift. Never break bootstrap ownership silently.
-
-Use specialized skills for the next phase. A bootstrap is ready for implementation only when structural decisions needed by that implementation are resolved.
-
-**Complete when:** another agent or human can distinguish repository scaffolding from implemented, executed, verified, or deployed infrastructure.
+Use `agents-md-authoring` when established IaC commands, generated-file ownership, state/backend boundaries, or scoped subprojects now justify richer instructions. Preserve or deliberately transfer ownership of helper-generated files; otherwise `doctor` should continue to report intentional drift.
 
 ## Output contract
 
-```text
-Bootstrap: READY | APPLIED | WARN | BLOCKED
-Mode: init | adopt | doctor
-Profile: minimal | spec-driven
+Adapt the response to the mode:
 
-Decisions
-- Known: <approved structural facts>
-- Open: <explicit unresolved decisions>
+- **Focused guidance:** recommendation, evidence used, and the smallest unresolved choice.
+- **Direct/adopt:** files created or changed, conflicts preserved, relevant validation, and effects not performed.
+- **Preview/helper:** target root, mode/profile if used, file actions, collisions, plan digest/status, and narrow doctor result.
+- **Blocked:** the exact conflicting path, private-data concern, or effect boundary plus the smallest next decision.
 
-Files
-- Created: <paths or none>
-- Updated: <paths or none>
-- Unchanged: <paths or none>
-- Collisions: <paths or none>
-
-Verification
-- Plan: <digest and status>
-- Doctor: PASS | WARN | FAIL
-- Executed checks: <command and result, or none>
-
-Not performed
-- <Git, OpenSpec, provider, deployment, or other operational actions not run>
-```
-
-Never call `READY` an applied result or `APPLIED` verified infrastructure.
+Use a repository-native report or an optional template when it helps; do not emit a fixed bootstrap packet for a one-file task. Never call a preview applied, a scaffold implemented, or a structural `PASS` verified infrastructure.
 
 ## Common pitfalls
 
-- Scaffolding first and asking architecture questions afterward.
-- Treating installed tools as evidence that the project chose those stacks.
-- Using `init` against a non-empty directory instead of `adopt`.
-- Overwriting `PROJECT.md` or `AGENTS.md` because generated content looks newer.
-- Adding CI apply jobs, provider blocks, state backends, or Kubernetes resources without confirmed decisions.
-- Making OpenSpec, Cursor, one cloud, or one operating system mandatory.
-- Running validation strings merely because an untrusted manifest or generated `AGENTS.md` lists them; inspect scope and side effects first. The helper stores but never executes them.
-- Treating `.gitignore` as secret storage, assuming it protects already tracked files, or adding negation rules after the managed block or in nested `.gitignore` files.
-- Reusing a plan digest after the manifest, resolved root, or a planned path changes.
-- Saying infrastructure is tested because the structural doctor passed.
+- Turning a focused request into a complete repository framework.
+- Asking the user to approve the same bounded local file writes twice.
+- Treating installed tools as evidence that the project selected those stacks.
+- Inventing `dev`, `staging`, `prod`, cloud providers, regions, or backends.
+- Overwriting human-owned files or following symlinked paths.
+- Making a manifest, helper, doctor, OpenSpec, editor, provider, or OS mandatory.
+- Treating `.gitignore` as secret storage or protection for already tracked files.
+- Running declared validation strings, Git commands, package installation, or provider commands implicitly.
+- Saying infrastructure is tested because files parse or `doctor` passes.
 
 ## Verification checklist
 
-- [ ] Repository evidence was inspected before asking or generating.
-- [ ] Every structural input is known, explicitly open, or omitted.
-- [ ] The selected profile matches project risk rather than agent preference.
-- [ ] No secret value appears in the manifest or generated files.
-- [ ] `plan` completed without changing the target root.
-- [ ] Every proposed path and collision was reviewed.
-- [ ] File writes received explicit authorization.
-- [ ] `apply` used the exact reviewed plan digest and mode.
-- [ ] Existing non-managed files were not overwritten or followed through symlinks.
-- [ ] Git, OpenSpec, validation tools, providers, and deployments were not invoked implicitly.
-- [ ] `doctor` ran after the last file mutation.
-- [ ] Declared commands are distinguished from commands actually executed.
-- [ ] Open decisions and skipped or unavailable checks remain visible.
-- [ ] The final report does not overstate scaffolding as implementation or deployment.
+Apply only items relevant to the selected mode:
+
+- [ ] The requested root and bounded file ownership are clear.
+- [ ] Repository evidence was inspected only as far as needed to avoid contradiction.
+- [ ] Unknowns that affect current files were resolved or left explicit; optional unknowns did not block a minimal result.
+- [ ] No secret/private contents were read or written.
+- [ ] Existing ownership, collisions, path escape, and symlinks were preserved as stop conditions.
+- [ ] Direct local writes did not receive a redundant approval gate.
+- [ ] Optional helper/template/doctor results were described within their narrow contract.
+- [ ] Relevant files/diffs were inspected and applicable checks have honest statuses.
+- [ ] No installation, privileged/live mutation, deployment, release, push, or publication occurred without explicit authorization.
+- [ ] The final claim distinguishes scaffolding, implementation, execution, verification, and deployment.

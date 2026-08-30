@@ -1,60 +1,34 @@
----
-id: ADR-NNNN
-status: proposed
-date: YYYY-MM-DD
-deciders: []
-consulted: []
-informed: []
----
+<!-- Optional scaffold for a repository without an ADR template. Use local naming, metadata, and heading conventions when they exist; remove all comments and empty optional sections. -->
 
-# ADR-NNNN: <Decision in active voice>
+# <Decision title>
 
-## Context and problem
+**Status:** Proposed
 
-## Scope and non-goals
+## Context
 
-## Decision drivers
-
--
-
-## Constraints
-
--
-
-## Considered options
-
-1. <Option A>
-2. <Option B>
-3. <Status quo, when viable>
+<What problem or constraint makes a decision necessary?>
 
 ## Decision
 
-We will **<decision>**.
+<What is chosen, including the scope needed to interpret it?>
 
-## Rationale
+## Rationale and trade-offs
 
-## Option comparison
-
-| Driver | Option A | Option B | Status quo | Evidence |
-|---|---|---|---|---|
+<Why this choice fits the material constraints and what it gives up.>
 
 ## Consequences
 
-### Positive
+<Only the benefits, costs, risks, and follow-on effects germane to adopting the decision.>
 
-### Negative
+<!-- Add only when useful or required locally:
 
-### Neutral
+## Considered alternatives
 
-## Implementation and migration
+## Implementation or migration
 
-## Validation
-
-## Revisit triggers
+## Validation or revisit conditions
 
 ## Related decisions and evidence
 
-- Supersedes:
-- Superseded by:
-- Related:
-- Evidence:
+When superseding, name the old ADR here. After authorized acceptance, update its reciprocal link or lifecycle index only when local convention supports it; preserve the old decision text.
+-->

@@ -1,70 +1,63 @@
-# Discovery and profile selection
+# Discovery and optional profile selection
 
-Load this reference only when repository evidence and the user's request do not settle the bootstrap manifest.
+Load this reference only when repository evidence and the user's request do not settle a consequential bootstrap choice, or when deciding whether the bundled deterministic profile is worth its ceremony.
 
-## Inspect first
+## Inspect proportionately
 
-Read, without mutation:
+Read only what the requested foundation needs:
 
-1. applicable `AGENTS.md`, `CLAUDE.md`, and project instructions;
-2. root and workspace manifests;
-3. lockfiles and package-manager declarations;
-4. language and build configuration;
-5. source and test roots;
-6. existing documentation and specification directories;
-7. CI definitions for validation evidence only;
-8. Git status, without staging.
+1. applicable repository/agent instructions;
+2. relevant workspace/package manifests and lockfiles;
+3. active language/build configuration;
+4. source and test roots;
+5. existing documentation/specification directories;
+6. CI declarations as evidence of commands, not authority to run them;
+7. Git status without staging.
 
-Do not inspect `.env`, credential stores, private keys, secret-manager output, production databases, or user profiles merely to bootstrap structure.
+Do not inspect environment files, credential stores, private keys, secret-manager output, production databases, or user profiles merely to bootstrap structure.
 
 ## Ask only decision-changing questions
 
-| Decision | Ask when evidence does not establish |
+| Decision | Ask only when evidence does not establish and it changes the request |
 |---|---|
-| Product kind | The primary user interface and delivery form |
-| Language/toolchain | Several active stacks conflict or none is selected |
-| Package manager | Lockfiles, manifest declarations, and CI disagree |
-| Source/test roots | Existing ownership is unclear or a new repository needs a layout decision |
-| Validation | No safe repository-native checks are known |
-| Spec depth | Change risk and collaboration needs are unclear |
+| Product/interface | The next useful slice has no clear delivery surface |
+| Language/toolchain | Active stacks conflict or none is selected |
+| Package manager | Repository declarations conflict or a new project needs a choice now |
+| Source/test roots | Existing ownership is unclear or the requested files need a layout decision |
+| Validation | The user needs a declared check and no safe repository-native command is known |
+| Durable specification | Coordination, compatibility, migration, security, or reversibility makes memory useful |
 
-Do not ask about branding, providers, deployment topology, databases, authentication vendors, analytics, or UI frameworks unless those facts directly determine the requested repository foundation.
+Do not ask about branding, providers, deployment topology, databases, authentication vendors, analytics, or UI frameworks unless they determine the requested foundation.
 
-## Select `minimal` by default
+## Choose direct scaffolding by default
 
-Use `minimal` when all are true:
+Use direct bounded writes when:
 
-- one team or owner;
-- small and reversible scope;
-- no consequential public-contract migration;
-- no cross-system rollout or data migration;
-- no compliance or production-safety gate requiring durable specs.
+- the request names the files/layout or local conventions make them obvious;
+- the target is absent/empty or conflicts are easy to inspect;
+- only a few files are needed;
+- no repeatable managed-file/drift contract is requested.
 
-## Select `spec-driven` when one or more apply
+The original scaffolding request authorizes those bounded writes. Inspect targets and proceed without generating a manifest or asking again.
 
-- multiple systems or teams must coordinate;
-- public APIs, schemas, persisted data, permissions, or compatibility change;
-- work is difficult to reverse;
-- security, privacy, compliance, or production risk is material;
-- implementation needs multiple independently verifiable slices;
-- decisions need explicit review before code.
+## Choose the optional deterministic profile when useful
 
-The profile does not authorize a particular spec tool. `generic` is portable. `openspec` records an already-approved choice but still does not install or initialize anything.
+The helper's `minimal` profile is appropriate when repeatable multi-file generation or later doctor checks are useful but coordination/risk is modest.
 
-## Project-kind routing
+Its `spec-driven` profile may be useful when several systems/teams coordinate, public schemas/permissions/persisted data migrate, the work is hard to reverse, or security/privacy/compliance requires durable decisions. The profile does not authorize a particular spec tool. A generic spec should organize independently deliverable slices and decisions; it is not a prerequisite artifact train before implementation.
 
-| Kind | Defining interface |
+OpenSpec is only an already approved recorded choice. The helper neither installs nor initializes it.
+
+## Product routing hints
+
+These labels are routing hints, not a mandate to flatten a repository into one kind:
+
+| Surface | Matching workflow in this pack |
 |---|---|
-| `website` | Public content and conversion path |
-| `web-application` | Stateful browser behavior |
-| `dashboard` | Dense data/operations console |
-| `terminal-ui` | Full-screen interactive terminal frames |
-| `command-line-tool` | Line-oriented scriptable process contract |
-| `desktop` | Native or packaged graphical desktop interface |
-| `api` | Public network request/response contract |
-| `backend` | Service behavior without a primary public UI |
-| `library` / `package` | Imported public programming interface |
+| Public content/conversion | `website-production-engineering` |
+| Stateful browser journey | `web-application-engineering` |
+| Data/operations console | `dashboard-application-engineering` when dashboard semantics are material |
+| Full-screen terminal frames | `terminal-ui-engineering` |
+| Line-oriented process contract | `command-line-tool-engineering` |
 
-Only website, web application, dashboard, terminal UI, and command-line tool kinds have dedicated product-surface skills in this pack. Desktop, API, backend, library/package, and `other` remain valid bootstrap classifications, but their handoff must name a repository-owned or external workflow—or explicitly record that no specialist has been selected—before product implementation begins.
-
-If a repository has several products, choose the primary bootstrap context and record others as explicit subprojects or open decisions. Do not flatten a monorepo into one imaginary product.
+Desktop, API, backend, library, package, and other work remains valid but should follow the repository's own specialist workflow when this pack has none. In a multi-product repository, bootstrap only the requested root/scope and preserve subproject ownership.

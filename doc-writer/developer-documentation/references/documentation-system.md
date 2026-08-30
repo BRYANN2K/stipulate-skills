@@ -1,33 +1,30 @@
-# Documentation system and audit
+# Documentation systems and broad audits
 
-## Inventory
+Load this reference for a documentation-estate audit or structural redesign. Do not build an inventory for a bounded page edit unless it helps answer the request.
 
-Collect page/path, title, type, audience, product/version, owner, source of truth, generated/manual, inbound navigation, last meaningful review, and validation status.
+## Optional inventory
 
-## Journey coverage
+Record only fields that support the audit: page/path, audience/job, product or version, source of truth, generated/manual ownership, inbound navigation, last meaningful review, and validation state. Add named owner or page type when the repository already uses those concepts.
 
-Map:
+## Journey and code coverage
 
-- discover/evaluate;
-- install and first success;
-- learn concepts;
-- accomplish core and advanced tasks;
-- look up APIs/config/errors;
-- operate and troubleshoot;
-- upgrade/migrate/deprecate;
-- contribute and extend.
+Check the reader journeys that matter to the product, such as discovery, first success, core tasks, exact lookup, operation/troubleshooting, migration, and contribution. A large page count can still omit one critical journey.
 
-A large page count can still leave a critical journey undocumented.
+For technical coverage, map relevant public code surfaces—packages, modules, APIs, CLI commands, schemas, configuration, or examples—to the docs that claim to cover them. Use a table or durable artifact only when the audit is broad enough to benefit; otherwise keep working notes.
 
-## Finding severity
+This docs-to-code coverage idea was informed by the documentation organization in [openai/openai-agents-python at `89c02c8`](https://github.com/openai/openai-agents-python/tree/89c02c828ee8510fe9a84ee6675608193aa13b02) (MIT). The audit method and wording here are independently written.
 
-- **Critical:** unsafe instruction, secret exposure, destructive omission, or fundamentally incorrect contract.
-- **High:** prevents first success, production operation, migration, or correct API use.
-- **Medium:** incomplete, stale, difficult to find, or inconsistent.
-- **Low:** editorial/accessibility polish with limited task impact.
+## Prioritizing findings
+
+Prioritize by reader and operational consequence rather than filling a fixed severity quota:
+
+- unsafe, secret-bearing, or materially incorrect instructions first;
+- blockers to adoption, operation, migration, or correct API use next;
+- stale, missing, inconsistent, or hard-to-find material after that;
+- editorial polish when it improves an actual reading or accessibility problem.
 
 ## Docs-as-code controls
 
-Select only useful controls: Markdown/style lint, link/anchor check, spelling/terminology, code sample execution, API schema drift, CLI help generation, Mermaid rendering, docs build, accessibility, preview, ownership, and stale-content review triggers.
+Select only controls that govern the affected documentation: link/anchor checks, Markdown/style lint, terminology, example execution, schema drift, generated CLI/API reference, Mermaid rendering, docs build, accessibility, preview, ownership, or stale-content triggers.
 
-Prefer generated reference for mechanical contracts and authored guidance for intent/trade-offs. Keep generated output separate from hand-authored source.
+Prefer generated reference for mechanical contracts and authored guidance for intent and trade-offs. Keep generated output distinct from its hand-authored source.

@@ -1,10 +1,10 @@
 ---
 name: command-line-tool-engineering
-description: "Use when building or changing a line-oriented command-line tool intended for humans, scripts, automation, or agents. Defines command, stream, format, exit-code, configuration, non-interactive, mutation-safety, signal, completion, and distribution contracts; implements stable behavior; and verifies it through black-box subprocess probes."
+description: "Use when building or changing a line-oriented command-line tool intended for humans, scripts, automation, or agents. Preserves the process contracts the tool actually exposes, selects new stream, format, exit, config, signal, and distribution behavior deliberately, and scales optional manifests and black-box probes to compatibility and release claims."
 license: Apache-2.0
-compatibility: Works with any CLI language or framework and Agent Skills-compatible client. The deterministic contract validator and probe harness require Python 3.10 or newer and use only the standard library.
+compatibility: Works with any CLI language or framework and Agent Skills-compatible client. The optional contract/probe helper requires Python 3.10 or newer and uses only the standard library.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: software-development
   tags: cli, command-line, unix, automation, json, black-box-testing
@@ -14,181 +14,140 @@ metadata:
 
 ## Overview
 
-Build command-line tools as stable process contracts, not merely terminal-shaped user interfaces. Humans need discoverable help and actionable errors; scripts and agents need non-interactive operation, clean streams, stable machine formats, meaningful exit codes, bounded execution, and safe repeated use.
+Build and change CLIs through their actual public process boundary. Inherit established command names, parser conventions, streams, exit meanings, config sources, signals, packaging, and compatibility policy. For a new tool, select only the interfaces its real human or automation consumers need; do not manufacture JSON, NDJSON, config layers, signal contracts, completions, or platform promises.
+
+A clear request to change a bounded local command authorizes the necessary local source writes and safe local probes. It does not require a manifest, all output modes, exit code `2`, a distribution matrix, or separate implementation approval.
 
 <HARD-GATE>
-Never hide destructive behavior behind an ordinary-looking command, prompt when stdin is not interactive, place diagnostics in machine-readable stdout, execute shell strings assembled from input, or silently change configuration precedence or output schemas. Real mutations, credential access, installation, publishing, release signing, and deployment require explicit authorization and bounded targets.
+Never conceal destructive behavior behind an ordinary-looking command, prompt when the active non-interactive contract cannot answer, leak credentials/private responses, place diagnostics into a declared machine-data stream, execute shell strings assembled from untrusted input, or silently break a public process contract. Real resource mutation, credential access, dependency installation or changes, user-level installation/config mutation, signing, publishing, release, and deployment require explicit authorization and bounded targets.
 </HARD-GATE>
 
 ## When to use
 
-- Build a new executable, subcommand, UNIX-style tool, automation client, or agent-facing CLI.
-- Add flags, arguments, stdin/stdout behavior, JSON/NDJSON, exit codes, configuration, completions, signals, progress, confirmation, dry-run, or packaging.
-- Stabilize a CLI for shell pipelines, CI, scripts, or AI agents.
-- Audit backwards compatibility, non-interactive behavior, errors, or distribution.
+- Build a new executable, subcommand, line-oriented tool, automation client, or agent-facing CLI.
+- Change flags, arguments, stdin/stdout/stderr, machine output, exit behavior, configuration, signals, progress, confirmation, dry-run, or packaging.
+- Stabilize an exposed interface for pipelines, CI, scripts, agents, or human operators.
+- Audit compatibility, non-interactive behavior, error actionability, or distribution.
 
-Do not use this skill for a full-screen stateful terminal application. Use `terminal-ui-engineering` when frames, focus, resize, and raw terminal modes are core behavior.
+Use `terminal-ui-engineering` when the program owns full-screen frames, focus, resize, and terminal modes.
+
+## Task modes
+
+| Mode | Default path | Evidence target |
+|---|---|---|
+| Bounded edit | Inspect the affected command and public consumers, edit directly, preserve exposed behavior | Focused unit/public-interface or subprocess probe |
+| New behavior or surface | Define one user task and the minimum selected process contract; implement one independently useful command slice | Happy/failure subprocess behavior for the interfaces actually introduced |
+| Complex contract or migration | Change several commands, automation schemas, config precedence, exit mappings, or compatibility | Consumer/evidence map, optional manifest lint and configured probes |
+| Release or live effect | Separate source readiness from install, signing, package publication, release, mutation, or deployment | Exact authorization, built/installed artifact and target readback |
 
 ## Workflow
 
-### 1. Inspect the public process boundary
+### 1. Inspect the exposed boundary
 
-Read repository instructions, executable entrypoint, parser/command tree, business/service layer, configuration, output rendering, error mapping, signal handling, tests, packaging, release configuration, and Git status. Exercise existing `--help` and `--version` only when safe. Capture current command names, formats, exit codes, defaults, and compatibility obligations before changing them.
+First classify the target as either a durable installed public CLI or a one-off repository script/task. An installed CLI may owe consumers stable executable identity, invocation from arbitrary working directories, compatibility, packaging, and install behavior. A repository script may still need clear argv, stream, and exit behavior, but it does not acquire version, completion, multi-platform, or installation promises merely because it is command-line code.
 
-**Complete when:** scope names users, automation consumers, commands, mutations, streams, formats, exit semantics, configuration precedence, supported platforms, and repository-native checks.
+Read applicable instructions, executable entrypoint, parser/command tree, business/service layer, configuration, rendering/error mapping, signal handling, tests, packaging/release configuration, and Git status only as far as the slice needs. Exercise existing help/version safely when useful.
 
-### 2. Define the CLI contract
+Identify the actual consumers and which command names, flags, positional syntax, streams, formats, exit values, configuration sources, signals, and platforms are public or relied upon. Ask only when missing intent materially changes compatibility, automation, mutation safety, or distribution.
 
-Copy `templates/cli-contract.json` to a temporary path. Record:
+### 2. Preserve or select the contract deliberately
 
-- application identity and help/version flags;
-- each command's interaction, non-interactive path, mutation, idempotency, dry-run/confirmation, and streams;
-- human/plain/JSON/NDJSON formats and no-color behavior;
-- exit-code taxonomy;
-- configuration precedence and locations;
-- SIGINT, SIGTERM, and broken-pipe behavior;
-- platform, completion, build, and black-box probes.
+Existing public behavior wins unless a breaking change is explicitly in scope. For a new interface, choose the smallest coherent contract:
 
-Use the template's structured stream ownership values rather than prose:
+- separate requested data from diagnostics when stdout is consumed by pipes or machine readers;
+- add plain/JSON/NDJSON only for a real consumer and define the stability it needs;
+- use the parser/framework's established usage-error code; select exit `2` only when that is the existing or chosen public convention;
+- define precedence only for configuration sources the tool actually supports;
+- define SIGINT/SIGTERM/child cleanup only for long-running work or resources that need it; preserve ordinary platform behavior otherwise;
+- define broken-pipe behavior when output is pipeline-oriented;
+- design completions, multi-platform artifacts, checksums/signing, install/uninstall, and reproducibility only when distribution is in scope.
 
-- `stdin`: `none`, `data`, or `secret`;
-- `stdout`: `data` or `data-or-human`;
-- `stderr`: `diagnostics` or `diagnostics-and-progress`.
-
-Exit code `0` uses meaning `success`; exit code `2` uses meaning `usage-error`. Both are non-retryable. Add other stable domain codes separately.
-
-Validate read-only:
+For complex machine-facing or multi-command work, optionally use `templates/cli-contract.json` as scratch memory and run:
 
 ```bash
-python3 <skill-directory>/scripts/cli_contract.py check \
-  --manifest /tmp/cli-contract.json \
-  --json
+python3 <skill-directory>/scripts/cli_contract.py check --manifest /tmp/cli-contract.json --json
 ```
 
-Load [the CLI interface contract](references/cli-interface-contract.md) when adding mutations, machine formats, configuration, or distribution.
+The bundled template is a **hardened example**, not a list of universal requirements: its four formats, exit `2`, config order, signals, platforms, completions, and probes are optional selections. Adapt or omit the artifact if it does not match the public contract; never change the CLI merely to make the template pass. A validator pass proves only internal structure of that optional manifest, not behavior, safety, compatibility, or quality. Load [the CLI interface contract](references/cli-interface-contract.md) as a conditional menu for machine formats, multiple config sources, mutations, long-running processes, or distribution.
 
-**Complete when:** commands and codes are unique, stdout/stderr ownership is explicit, machine output is stable, configuration precedence is deterministic, interactive commands have non-interactive paths, and each mutating command has a substantive dry-run or confirmation contract rather than deferred placeholders. Standalone or label-affixed `TODO`, `TBD`, or `placeholder` work markers (including `_label` and numeric affixes) are vacuous even inside longer or bounded ASCII-encoded text; `defer` or `deferred` is likewise vacuous as a directive at field start or after a label separator. Bounded future-work phrases such as `will be implemented later`, `not yet defined`, `future work`, `define ... after implementation`, explicit `plan`/`plans` for a later phase (including `plans on`, `plan is to`, and a bounded comma-delimited incidental clause before `to`), postponement until implementation, `intend`/`intends` to specify eventually, or any subject that `remain`/`remains` to be decided are also vacuous; the latter two forms likewise allow one bounded comma-delimited incidental clause before `to` or `to be`. A domain sentence beginning with `Pending` or `Later` remains valid when it defines concrete preview or confirmation behavior. This bounded syntax guard does not prove the safety path works; contract `PASS` still requires human review and black-box mutation evidence for the declared behavior.
+### 3. Implement one command slice
 
-### 3. Design commands around tasks and composition
+Prefer one independently useful task across parse → validate → core operation → render/error over horizontal parser/core/docs/test phases. Keep parsing and presentation at the boundary and reuse the repository's core/service abstractions. Pass argv arrays directly; parse structured input instead of shell-evaluating it; validate before side effects; keep error-to-exit and serialization behavior consistent with existing conventions.
 
-Use predictable command nouns/verbs consistent with the existing tool. Avoid near-synonyms and mode ambiguity. Each command must define:
+Apply only relevant rules:
 
-- required and optional inputs;
-- stdin behavior and TTY assumptions;
-- output records and ordering;
-- diagnostics and progress channel;
-- success, usage, domain, temporary, and partial-failure exit behavior;
-- idempotency and retry semantics;
-- destructive scope, preview, confirmation, and automation override;
-- compatibility impact of adding, removing, or renaming fields and flags.
+- non-interactive invocation must not hang on an unanswered prompt;
+- machine modes, when exposed, suppress incidental decoration and keep their declared stream clean;
+- mutations identify bounded targets and use confirmation, preview/dry-run, or another safeguard proportional to consequence;
+- `--yes`, if present, confirms already authorized scope and never broadens it;
+- dry-run, if present, states its prediction limits and performs no declared mutation;
+- partial failures and retry/idempotency are explicit only when commands can encounter them;
+- signal cancellation and child cleanup are implemented only where the selected contract owns them.
 
-Defaults must be safe. `--yes` bypasses a prompt, not authorization. `--dry-run` must avoid mutations and say what it can and cannot predict.
+For an agent-facing command over remote resources, resolve a human name to an explicit, unique stable identifier before a consequential read or write; ambiguity is an error, never an arbitrary first match. Bound collection pagination and output, surface truncation or a continuation token, and require writes to carry an enumerated target set rather than an implicit unbounded match. Preserve repository/API limits instead of inventing a parallel resource model.
 
-### 4. Implement through a testable core
+Add a regression/public-interface test when behavior or compatibility changed and a suitable harness exists. A failing-first test is useful for new parsing/error logic but not mandatory ceremony for help text or another change better checked directly.
 
-Write a failing black-box or public-interface test before changed behavior. Keep parsing/rendering at the boundary and business logic in a testable core. Parse structured input instead of shell-evaluating it. Validate before side effects. Centralize error-to-exit mapping and output serialization.
+### 4. Probe the real executable proportionately
 
-Rules:
+Use direct argv subprocess execution, not an interpolated shell string. Select cases that can falsify the claim:
 
-- stdout contains requested data or chosen human presentation;
-- stderr contains diagnostics and progress;
-- machine modes suppress decoration, spinners, prompts, and incidental logs;
-- JSON/NDJSON schemas are versioned or compatibility-governed;
-- commands that can prompt also work non-interactively or fail fast with an actionable diagnostic;
-- mutating commands expose safe scope, confirmation/preview as appropriate, and partial-failure details;
-- SIGINT/SIGTERM cancel, clean up, and return predictably;
-- broken pipes exit quietly without traceback noise.
+- help/version only when changed or relied upon;
+- valid and malformed input for changed parsing;
+- stdout/stderr and redirected/non-TTY behavior for stream claims;
+- JSON/NDJSON syntax and schema for formats actually exposed;
+- documented exit values for changed error classes;
+- precedence/unknown keys for config sources actually involved;
+- confirmation/dry-run/partial failure/idempotent retry for affected mutations;
+- timeout, SIGINT/SIGTERM, broken pipe, and child cleanup for processes that claim those behaviors;
+- paths, Unicode, and platforms actually supported by the change.
 
-**Complete when:** focused tests are GREEN and the command does not rely on an interactive shell for correctness.
-
-### 5. Exercise the executable black-box
-
-Run the real built/interpreted executable as an argv array, never through a shell string. Test:
-
-The contract validator rejects credential-like assignments after bounded ASCII canonicalization, including repeated-quote serialized assignments, bounded-punctuation Basic/Bearer wrappers, dot- or space-separated credential names, and compact identifiers in any case with environment or version prefixes/suffixes, without reflecting the rejected value. This conservative filter does not prove arbitrary text secret-free.
-
-Malformed manifests, including numeric literals beyond the runtime's bounded integer conversion, fail with a controlled generic JSON diagnostic rather than a traceback.
-
-- root and subcommand help;
-- version output;
-- valid human, plain, JSON, and NDJSON modes;
-- malformed input and unknown flags;
-- stdin from pipe/file and stdout redirection;
-- non-TTY execution with no prompt or control sequences;
-- stdout/stderr separation;
-- documented exit codes;
-- config precedence and unknown keys;
-- dry-run, confirmation, `--yes`, idempotent retry, and partial failure;
-- SIGINT, SIGTERM, timeout, broken pipe, and child cleanup;
-- paths and Unicode across supported platforms.
-
-For manifest probes:
+The optional helper can run configured manifest probes:
 
 ```bash
-python3 <skill-directory>/scripts/cli_contract.py probe \
-  --manifest /tmp/cli-contract.json \
-  --timeout 10 \
-  --json \
-  -- <executable> <fixed-prefix-args>
+python3 <skill-directory>/scripts/cli_contract.py probe --manifest /tmp/cli-contract.json --timeout 10 --json -- <executable> <fixed-prefix-args>
 ```
 
-The harness executes directly with `shell=False` and evaluates configured exit and stream assertions. It requires UTF-8 streams and reports invalid encoding without reflecting raw bytes. Its `json` and `ndjson` assertions require strict syntax, finite numbers—including finite-looking exponents that overflow to non-finite runtime values—unique object keys, numeric literals within the runtime's bounded integer conversion, and no empty NDJSON records; malformed output produces a structured `FAIL` without reflecting the raw stream. Each probe runs in a contained process tree; timeout terminates and reaps that tree using a POSIX session or Windows Job Object. This remains a bounded harness, not filesystem or network isolation, and the bundled regression exercises the POSIX path only. It does not prove semantic relevance, absence of all side effects, signal behavior, packaging, or compatibility; add project tests for those claims.
+It executes without a shell, applies bounded timeouts/process-tree cleanup, and performs narrow stream assertions. It does not provide filesystem/network isolation or prove semantic relevance, mutation safety, signal behavior, packaging, compatibility, or platforms not exercised. Use project tests or direct observation for those claims.
 
-### 6. Verify distribution separately
+### 5. Separate distribution and live effects
 
-Build from a clean environment using the repository's pinned toolchain. Verify artifact identity, executable permissions, target architecture, `--version`, checksums/signatures when owned by the project, installation and uninstall paths, and generated completions. Test the installed artifact rather than only the source command.
+Build or inspect an artifact only when the task claims packaging/distribution. When installed behavior is claimed, install the built artifact into an authorized isolated target and smoke-test the resolved installed executable from an unrelated working directory, so source-tree imports and relative paths cannot create a false pass. Test target architecture, permissions, identity/version, install/uninstall, completions, and signatures only to the extent selected by that public distribution contract.
 
-Do not publish a package, create a release, sign an artifact, or modify user shell configuration unless explicitly authorized. A local package is not a published release.
-
-### 7. Report the exact contract achieved
-
-Run focused and relevant full suites, lint/type/build checks, black-box probes, and platform checks after the final mutation. Inspect the final diff. State compatibility changes and skipped platforms. Separate implemented, executed, verified, packaged, and published states.
+Do not install into user scope, mutate shell configuration, access real credentials/resources, sign, publish, release, or deploy without exact authorization. A source invocation or local package is not an installed or published release. After the final mutation, run focused/relevant checks, inspect the diff, and distinguish untested consumers/platforms from compatible ones.
 
 ## Output contract
 
-```text
-CLI: IMPLEMENTED | VERIFIED | PARTIAL | BLOCKED
-Commands: <scope>
-Compatibility: compatible | additive | breaking | unknown
+Report these semantics, in any order or adapter-specific presentation:
 
-Contract
-- Streams/formats: <summary>
-- Exit/config/safety: <summary>
-- Platforms/distribution: <summary>
+- outcome, commands, consumers, and compatibility classification;
+- changed process contract: only relevant streams/formats/exits/config/signals/safety/distribution;
+- fresh unit/public-interface/subprocess/artifact evidence actually obtained;
+- untested consumers/platforms and mutations/install/release effects not performed.
 
-Evidence
-- Contract: PASS | FAIL
-- Unit/integration: <commands/results>
-- Black-box probes: <argv/result>
-- Non-TTY/pipes/signals: <result>
-- Installed artifact/platforms: <result or unavailable>
-
-Gaps / not performed
-- <real mutations, untested platforms, install, signing, release, publication>
-```
+An optional manifest need not appear when unused. Do not claim an installed, compatible, signal-safe, or published CLI from a source-level test.
 
 ## Common pitfalls
 
-- Designing only for the interactive happy path.
-- Mixing diagnostics or progress into JSON stdout.
-- Returning exit `0` with an error object.
-- Prompting in CI or when stdin is not a TTY.
-- Treating `--yes` as permission for destructive scope.
-- Calling a command idempotent without retry evidence.
-- Changing field names or exit codes as an internal refactor.
+- Requiring JSON, NDJSON, exit `2`, a five-layer config order, all signals, completions, or every platform for every CLI.
+- Designing only for an interactive happy path when automation is an actual consumer.
+- Mixing diagnostics into a declared machine-data stream or returning success for failure.
+- Prompting indefinitely in a non-interactive invocation.
+- Treating `--yes` as authorization or dry-run as permission to mutate.
+- Changing fields, defaults, flags, streams, exits, or precedence as an internal refactor.
 - Using `shell=True` or interpolated shell strings for convenience.
-- Testing source invocation but not the packaged executable.
-- Publishing merely because local package checks pass.
+- Testing source invocation while claiming installed artifact or release behavior.
 
 ## Verification checklist
 
-- [ ] Existing commands, streams, formats, codes, config, signals, tests, packaging, and compatibility were inspected.
-- [ ] The CLI contract passes after its final edit.
-- [ ] New behavior began with a failing public-interface test where possible.
-- [ ] Every interactive command has a deterministic non-interactive path or fail-fast diagnostic.
-- [ ] Stdout, stderr, machine formats, exit codes, and configuration precedence are stable and tested.
-- [ ] Mutating commands define scope, idempotency, dry-run/confirmation, partial failure, and retry behavior.
-- [ ] The real executable was probed without a shell under TTY and non-TTY/pipeline conditions.
-- [ ] Signals, timeout, broken pipe, cleanup, Unicode, paths, and supported platforms were checked proportionately.
-- [ ] The installed/package artifact was tested when distribution is claimed.
-- [ ] Real mutations, installation, signing, release, and publication were not performed implicitly.
+- [ ] Task mode, consumers, bounded local scope, existing parser/process conventions, and exposed compatibility surface are clear.
+- [ ] Durable installed CLI versus one-off repository script was classified before adding public/distribution obligations.
+- [ ] Bounded requested writes proceeded without mandatory artifacts or redundant approval.
+- [ ] Only actually exposed or deliberately selected stream, format, exit, config, signal, and distribution contracts were constrained.
+- [ ] Optional manifest/template use, if any, is described as a hardened complex-contract aid rather than universal policy.
+- [ ] Parsing, rendering, errors, and core operation follow the repository's architecture and avoid shell injection.
+- [ ] Non-interactive and mutation safeguards are present only as needed and preserve authorization boundaries.
+- [ ] Agent-facing resource commands, when present, use unambiguous stable targets and bounded collection/read/write behavior.
+- [ ] Direct subprocess and other evidence is fresh and proportional to the process claims made; installed behavior, when claimed, was probed from outside the source tree.
+- [ ] Public compatibility changes and untested consumers/platforms are reported honestly.
+- [ ] Real mutations, credentials, dependencies, user installation/config, signing, release, publication, and deployment remained separately authorized and verified.

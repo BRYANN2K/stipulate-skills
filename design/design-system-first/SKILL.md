@@ -1,201 +1,207 @@
 ---
 name: design-system-first
-description: "Use when defining or changing the visual foundations, tokens, typography, layout, components, states, responsive behavior, accessibility, data-visualization language, or implementation contract for a website, web application, or dashboard before product frontend code. Produces reviewable design artifacts and a project-local UI skill, and keeps the build blocked until explicit human approval."
+description: "Use when a bounded request extends an established design system, a consequential shared-system change must remain coherent across reused surfaces, or the user requests a standalone design-system deliverable or audit. Do not use as a universal pre-build gate; inherit the repository's canonical system and keep one-off UI local."
 license: Apache-2.0
-compatibility: Works with any frontend stack and Agent Skills-compatible client. Integration with the Web Craft digest gate requires Python 3.10 or newer.
+compatibility: Works with any frontend stack and Agent Skills-compatible client. Rendered validation requires an available browser; artifact-only work must report that limitation.
 metadata:
-  version: "1.0.0"
+  version: "2.1.0"
   author: BRYANN2K
   category: design
-  tags: design-system, tokens, components, states, accessibility, design-to-code
+  tags: design-system, system-extraction, tokens, components, states, design-to-code
 ---
 
 # Design System First
 
 ## Overview
 
-Derive an interface system from approved content, product journeys, data, and direction before implementing product screens. A design system is a decision contract: foundations, semantic tokens, composition, components, states, responsive behavior, accessibility, motion posture, and the exact implementation rules a coding agent must follow.
+Keep the stable install name, but do not treat “first” as a universal ordering rule. Use this skill to extend an affected existing contract, make a consequential shared-system change coherent, or produce a standalone design-system deliverable or audit. The goal is the smallest useful source of truth, not a speculative kit.
+
+For a one-off page or application slice, inherit the repository system and build locally. Extract afterward only when a real shared contract has emerged; otherwise return `NO_EXTRACTION_NEEDED` rather than manufacturing foundations, tokens, components, or states.
+
+Calibrate structure to consequence. Local organization, artifact shape, and output format may use judgment. Shared semantic roles and state truth need enough precision for their consumers. Exact schemas are justified only by an actual project/tooling boundary. A persistent design contract, token file, component catalog, state matrix, or project-local instruction is optional unless the requested deliverable, project convention/consumer, or re-entry across runs or agents needs it.
 
 <HARD-GATE>
-Do not create product routes, product screen slices, or modify protected frontend roots while authoring this system. An isolated review preview under `.design-flow/` is allowed. Do not declare approval, run the Web Craft `approve` command, or compile the project-local UI skill without direct human approval of the presented review set.
+In an existing repository, inherit the active design system, native token source, primitives, semantic roles, and conventions unless migration is requested. A direct bounded edit request supplies local write authority for the named existing-system scope: proceed without creating or waiting for a human approval ticket. Human selection is required only when a consequential new-system choice remains unresolved and design judgment was not delegated. Separate authority is still required for scope expansion, migration outside the request, dependencies, destructive or live effects, deployment, and publication. Never create a parallel source of truth, promote a one-off coincidence into a system rule, weaken accessibility or state semantics, or describe a proposal as implemented, approved, live, or published.
 </HARD-GATE>
 
 ## When to use
 
-- Create a design system for a new website, application, dashboard, or redesign before frontend implementation.
-- Define or reconcile typography, semantic colors, spacing, layout, components, states, responsive behavior, accessibility, or motion tokens.
-- Turn an approved direction into a machine-readable project UI contract.
-- Audit whether an existing interface has arbitrary values, component forks, missing states, or design drift.
+Choose one explicit mode:
 
-Do not use for choosing the art direction from scratch, writing product copy, adding decorative animation, or implementing a bounded component under an already approved system.
+1. **Bounded extension (`BOUNDED_EXTENSION`)** — a requested local edit extends, reconciles, or extracts an affected token, primitive, component, or state contract inside an established system.
+2. **Consequential shared-system change (`CONSEQUENTIAL_SHARED_SYSTEM_CHANGE`)** — a requested change alters semantic roles, public component/state behavior, compatibility, or other shared contracts consumed across multiple surfaces, products, platforms, or teams.
+3. **Standalone system deliverable or audit (`STANDALONE_SYSTEM_DELIVERABLE_OR_AUDIT`)** — the user asks for a design-system specification, token/component handoff, project-local contract, or system audit as the deliverable, whether or not product UI implementation is in scope.
+
+Post-prototype extraction uses `BOUNDED_EXTENSION` when it consolidates genuinely repeated existing uses. If a bounded page, experiment, or one-off slice yields no reusable rule, return `NO_EXTRACTION_NEEDED`. Do not invoke this skill merely because frontend code will be written.
+
+Do not use this skill to choose art direction, write the product story, review overall visual quality, or add motion that has no established state purpose.
 
 ## Workflow
 
-### 1. Inspect inputs and implementation reality
+### 1. Select the mode and decision boundary
 
-Read `PRODUCT-STORY.md`, `PAGE-COPY.md`, `CLAIMS.md`, `REFERENCE-LEDGER.md`, repository instructions, current tokens/styles, primitives, component inventory, routes, content/data shapes, supported viewports, accessibility targets, dependencies, and tests. Trace existing values and variants before proposing replacements.
+State `BOUNDED_EXTENSION`, `CONSEQUENTIAL_SHARED_SYSTEM_CHANGE`, or `STANDALONE_SYSTEM_DELIVERABLE_OR_AUDIT` in working notes or the result. Do not create a mode artifact merely to record the label.
 
-Separate:
+For existing-system work, treat a rule as shared when the repository already establishes it as a consumed contract or when independent real uses demonstrate the same semantic job, behavior, and visual relationship. Repeated markup from one list, copied placeholders, or several occurrences of the same arbitrary literal do not establish a token or component by themselves. A standalone new-system deliverable may define unimplemented decisions, but must label them `PROPOSED` rather than inherited, observed, adopted, or verified.
 
-- inherited constraints that must remain compatible;
-- intentional existing patterns worth preserving;
-- accidental drift or arbitrary values;
-- new requirements introduced by content, state, or data.
+Proceed with requested bounded edits and inherited choices without another approval turn. For a consequential shared-system change, use the request, repository constraints, and delegated judgment to select the coherent path. Ask for human selection only if a consequential **new** system choice is still materially unresolved and the user did not delegate that choice; present only the decision-relevant trade-off.
 
-**Complete when:** the system brief names content lengths, data densities, states, platforms, existing component boundaries, migration constraints, and verification paths.
+**Complete when:** the mode, affected existing contract and consumers or standalone deliverable scope, proposal/observation status, and any genuinely unresolved consequential new-system choice are clear.
 
-### 2. Define principles and semantic foundations
+### 2. Inspect the affected source of truth
 
-Copy [the design-system template](templates/DESIGN.md) to `.design-flow/artifacts/DESIGN.md`. State three to five product-specific principles that resolve trade-offs. Then define:
+For existing-system work, find which design documentation, CSS custom properties, theme objects, framework configuration, primitives, shared layouts, native resources, and tests actually own the requested contract. Trace only the affected reused consumers and states first. Expand to a system-wide inventory only when the consequential change or explicit audit scope requires it. Also identify, only when implicated, a real external token importer/exporter or existing token build pipeline, and whether an affected composite/overlay intentionally matches a named ARIA Authoring Practices pattern; neither interoperability branch is assumed from file shape or visual resemblance.
 
-- typography roles and tested content behavior;
-- primitive and semantic colors;
-- spacing, sizing, grid, and density;
-- radius, border, shadow, and surface hierarchy;
-- breakpoints as behavior changes, not device labels;
-- iconography and imagery/data language;
-- focus, contrast, target size, and reduced-motion rules.
+Prefer the repository's names, paths, formats, and extension rules. If documentation and rendered implementation disagree in the affected scope, report the conflict; do not silently crown a new source. Treat migration beyond the request as a separate compatibility and rollback decision.
 
-A primitive value describes material; a semantic token describes purpose. Product code should consume semantic tokens wherever practical.
+For extraction from a working slice, inspect the rendered instances before abstracting them. When their provenance would otherwise be hard to retain, a temporary ledger can help:
 
-**Complete when:** each semantic token has a purpose, state behavior, theme behavior where applicable, and no unexplained value exists only to imitate a reference.
+| Candidate | Semantic job | Independent occurrences | Source/render locators | Decision |
+|---|---|---:|---|---|
+| | | | | inherited / extract / proposed / local |
 
-### 3. Encode tokens in a portable contract
+Keep the ledger in working notes unless the deliverable, project, or re-entry need makes it durable. Do not inventory unaffected rules merely to fill it.
 
-Copy [the token template](templates/tokens.json) to `.design-flow/artifacts/tokens.json`. Keep one canonical hierarchy and map it to the repository's native implementation only after approval. Include only tokens the product needs, but cover the states and modes it actually supports.
+**Complete when:** the affected canonical source, consumers, reused contracts/states, intentional exceptions, and any in-scope migration boundary are known; standalone scope and evidence limits are explicit.
 
-Avoid parallel sources of truth such as unrelated CSS variables, Tailwind literals, theme objects, and component-local hex values. Document temporary migration aliases and their removal condition.
+### 3. Consolidate only affected semantic foundations
 
-**Complete when:** `tokens.json` is valid, contains no template markers, and every proposed component value resolves to a token or a documented exception.
+Extend or define only role-bearing decisions the requested consumers must reuse: typography roles, semantic color roles, spacing or density relationships, layout constraints, surface hierarchy, responsive behavior, focus treatment, motion posture, and data-visualization semantics where applicable.
 
-### 4. Design components from journeys and content
+- Preserve intentional irregularity when it carries hierarchy or brand character.
+- Name purpose, not appearance: `text-muted` is stronger than `gray-500` in product code.
+- Do not create a full scale because two values exist.
+- Do not replace a repository-native source with a generic token taxonomy.
+- Keep route-specific art direction or isolated values local, and document an exception only when a consumer or later re-entry could otherwise mistake it for drift.
 
-Copy [the component template](templates/components.md) to `.design-flow/artifacts/COMPONENTS.md`. Start from repeated product needs, not a universal component checklist. For each component define:
+**Complete when:** every affected inherited or observed shared rule has a semantic purpose, canonical location, defined scope, and claim-matched evidence; standalone unimplemented rules remain visibly `PROPOSED`.
 
-- purpose and non-purpose;
-- anatomy and content contract;
-- variants and sizes that express real semantics;
-- applicable state matrix;
-- keyboard, focus, announcement, and touch behavior;
-- responsive behavior;
-- data/failure behavior where relevant;
-- composition rules and forbidden forks.
+### 4. Extend only qualifying components and states
 
-Load [the component state matrix](references/component-state-matrix.md) for forms, overlays, navigation, tables, charts, async content, and destructive actions.
+A reusable existing component needs repeated anatomy plus repeated semantics and behavior; shared styling alone is insufficient. Keep a pattern local until independent uses demonstrate a shared contract, or an explicit standalone or multi-surface brief confirms intended reuse.
 
-**Complete when:** representative journeys can be composed without inventing new visual rules, and every applicable state has content plus interaction behavior.
+For each affected qualifying component, record only implementation-relevant decisions:
 
-### 5. Define composition and data language
+- purpose, non-purpose, canonical source, and anatomy;
+- content limits and semantic variants;
+- changed or reused interaction, async, empty, error, and permission states;
+- applicable semantic role, keyboard, focus, announcement, and narrow-layout behavior;
+- composition constraints and allowed extension points.
 
-Specify page shell, content width, grids, section rhythm, dense versus quiet regions, navigation, overlays, and responsive reflow. For dashboards, define decision-first information order, table/chart selection, source/freshness display, realistic fixture rules, and narrow-screen identity/action preservation.
+For an affected composite or overlay that intentionally implements the semantics of a matching ARIA Authoring Practices pattern—such as a dialog, menu button/menu, combobox/listbox, tabs, tree, or grid—use that exact pattern's keyboard, focus, state, and dismissal behavior as a behavior oracle alongside the repository contract. Do not choose a pattern because controls merely look alike, apply composite rules to a native/simple control, or treat an APG example as proof that the implementation conforms. If no pattern matches, use platform semantics and the actual product contract instead.
 
-Do not default to a uniform card grid. A border or card must express grouping, action scope, state, or hierarchy. Visualizations must answer a named question with defined data semantics.
+Do not inventory untouched variants or states. Use [the component state matrix](references/component-state-matrix.md) only when it is a requested deliverable, project convention, or useful durable handoff for the affected reused state contract; otherwise an inline contract and focused tests may be enough. Mark state behavior `OBSERVED`, `REQUIRED_BY_EXISTING_CONTRACT`, `PROPOSED`, or `UNVERIFIED`. A screenshot cannot establish function, semantic roles, or accessibility.
 
-**Complete when:** the system explains how to compose unequal information, long content, empty/error states, and dense data without falling back to generic cards.
+**Complete when:** inherited or observed reusable component claims have affected-use evidence, standalone proposals are labeled, state distinctions remain truthful, and one-off candidates stay local.
 
-### 6. Author the project-local implementation contract
+### 5. Persist only what the deliverable or handoff needs
 
-Copy [the project UI skill template](templates/project-ui-skill.md) to `.design-flow/artifacts/PROJECT-UI.md`. Replace every marker and record verified project specifics:
+Artifacts are not workflow receipts. Update an existing durable contract when the affected decision already belongs there. Otherwise keep findings inline unless the user requested a standalone artifact, repository policy or a real consumer requires one, or re-entry across runs, agents, or teams would lose material decisions.
 
-- source directories and component boundaries;
-- token implementation path;
-- approved primitives and extension rules;
-- route/layout/data conventions;
-- installed libraries and import conventions;
-- prohibited arbitrary values and component forks;
-- repository-native test, lint, type, build, and browser commands.
+Choose the smallest useful form:
 
-`PROJECT-UI.md` must remain a complete valid Agent Skill whose name is `<project-slug>-ui`. It names `DESIGN.md`, `tokens.json`, and `COMPONENTS.md` as sources of truth. Do not invent commands or dependencies.
+- **No new document** for a bounded implementation when canonical code and focused tests already carry the affected contract.
+- **One compact design/UI contract** for a requested standalone deliverable or durable shared foundations, components, states, paths, and decisions. [The compact template](templates/DESIGN.md) is an optional starting point; rename it and remove irrelevant sections.
+- **Native implementation source** for runtime tokens. Link to it rather than copying values into prose or another runtime-like file.
+- **Portable `tokens.json`** only for a requested token deliverable, named cross-platform/design-tool/code-generation consumer, repository tooling contract, or re-entry need. Use DTCG interchange only when that real consumer declares DTCG support or the requested deliverable requires it; a JSON filename or use of `$value` is not enough. [The token template](templates/tokens.json) is optional; declare whether the file is canonical or generated.
+- **Separate component catalog or state matrix** only when requested, established by the project, or needed for durable handoff/re-entry. [The component template](templates/components.md) is optional and must not duplicate canonical code.
+- **Project-local UI/Agent contract** only when explicitly requested, required by repository convention, or needed to guide later agents. It must point to canonical sources rather than becoming another source of token or component truth.
 
-**Complete when:** a coding agent unfamiliar with the project can place and verify one component without guessing paths, libraries, or visual values.
+When a named external consumer activates DTCG interoperability, record its supported format/version and validate the affected exchange boundary rather than converting the whole repository by preference: effective token type (including group `$type` inheritance), token/alias target and type compatibility, group inheritance/override semantics only when `$extends` is actually used, unresolved references, and alias or inheritance cycles. Establish one canonical source and one direction for generated output; generated files identify their owner/source and are not hand-edited. Preserve the repository-native runtime source unless migration was requested.
 
-### 7. Build an isolated system preview
+If an existing Style Dictionary configuration and build pipeline is the actual consumer, follow its pinned project configuration, sources/includes, transforms, platforms, and output ownership, and run only its repository-native focused build/check. Do not install Style Dictionary, create a pipeline, or make its merge/transform conventions universal merely because a portable token file was requested.
 
-Create a disposable or development-only preview under `.design-flow/` using the project's available rendering path without adding production routes. Show:
+Do not create the whole bundle because one item is useful. Split a contract only when repository convention, distinct consumers, or demonstrated usability requires it.
 
-- actual typography with short, long, numeric, and error content;
-- semantic colors and surfaces in supported modes;
-- representative primitives and product components;
-- default, hover, focus-visible, active/selected, disabled, loading, success, error, empty, and skeleton states where applicable;
-- narrow and wide composition;
-- realistic labeled data rather than impressive fake metrics;
-- motion posture and reduced-motion outcome.
+**Complete when:** each persisted artifact has a named deliverable, project/consumer, or re-entry purpose and every decision has one clear canonical owner; otherwise the honest result may be `NO_EXTRACTION_NEEDED`.
 
-Capture rendered evidence and inspect the accessibility tree, keyboard path, contrast, overflow, wrapping, console, and network state. A static token table alone is not a system preview.
+### 6. Implement or map the minimum coherent change
 
-**Complete when:** the human can judge the actual system under representative content and states without seeing product frontend code.
+Within the requested scope, update the canonical token/component sources and any existing durable contract that already claims the affected decision. Do not create a new contract solely to mirror the implementation. In `CONSEQUENTIAL_SHARED_SYSTEM_CHANGE`, trace affected consumers, compatibility aliases, rollout boundaries, and old-value removal conditions only where the change needs them. In bounded extraction, refactor only the qualifying repeated instances and leave intentional exceptions local.
 
-### 8. Prepare review and stop
+A bounded existing-system edit proceeds under the user's request without an approval ticket. Do not broaden it into a full redesign, install dependencies, rewrite unrelated primitives, or convert styling architecture merely to match a preferred format.
 
-Run the Web Craft gate:
+**Complete when:** affected implementation and durable documentation agree, reused consumers resolve through the canonical rule, state and accessibility behavior remain truthful, and local exceptions remain legible.
 
-```bash
-python3 <web-craft-skill>/scripts/design_flow.py ready --root .
-```
+### 7. Validate only affected reused contracts and states
 
-Present the selected direction, system principles, tokens, component/state coverage, preview locators, responsive/accessibility evidence, open trade-offs, and no-go list. Stop with `FRONTEND_BUILD=BLOCKED` until explicit approval.
+Use repository-native checks and rendered evidence proportionate to the change and completion claim. Inspect affected representative consumers, widths, content lengths, and component states only. Add computed/native token resolution, keyboard/focus, accessible name-role-state/value, contrast, target size, zoom/reflow, reduced motion, console, network, or migration probes when the changed contract makes them material. Do not rebuild a universal state, viewport, device, or accessibility matrix for untouched behavior, and do not recapture evidence that the change did not invalidate.
 
-After direct approval, Web Craft records digests and compiles `PROJECT-UI.md`; this skill does not self-approve.
+Artifact-only authoring or audit can be valid. Mark unimplemented new-system decisions `PROPOSED`, source-only behavior `UNVERIFIED` where appropriate, and unavailable rendered/state evidence as a gap. When DTCG interchange is active, exercise the named consumer or its project-native validator against affected type inheritance, aliases/references, optional group extension/override, cycle/error handling, and canonical-to-generated direction; syntax alone is insufficient. When an APG pattern is a declared oracle, exercise its matching keyboard, focus, state, and overlay behavior in the affected implementation rather than assuming conformance from role names or screenshots.
 
-**Complete when:** `ready` passes, all review evidence is visible, and no protected frontend root was changed.
+A parser or validator proves only the syntax or schema it actually checks; it does not prove semantic role mapping, state truth, accessibility, consumer integration, visual quality, authorization, persistence, deployment, or publication. A screenshot proves presentation at its captured state and viewport only.
+
+**Complete when:** every affected inherited, observed, or reused-contract claim traces to the source and representative behavior needed by that claim, applicable state/accessibility distinctions are preserved, and unexecuted claims remain bounded.
 
 ## Output contract
 
+Preserve the following applicable information. A requested or host presentation adapter may reorder, relabel, chunk, summarize, or progressively disclose it, but must not hide canonical ownership, unresolved consequential choices, affected evidence, or claim gaps. Omit inapplicable artifact fields rather than manufacturing them.
+
 ```text
-Design system: DRAFT | SYSTEM_READY_FOR_REVIEW | APPROVED_EXTERNALLY | BLOCKED
-Direction: <selected thesis>
-Principles: <3-5 product-specific rules>
+Design-system result: INHERITED | UPDATED | EXTRACTED | DELIVERED | AUDITED | PROPOSED | NO_EXTRACTION_NEEDED | BLOCKED
+Mode: BOUNDED_EXTENSION | CONSEQUENTIAL_SHARED_SYSTEM_CHANGE | STANDALONE_SYSTEM_DELIVERABLE_OR_AUDIT
+Scope: <affected surfaces/contracts and exclusions>
+Decision owner, when material: HUMAN | DELEGATED | INHERITED_OR_NOT_APPLICABLE
 
-Artifacts
-- DESIGN.md: <path>
-- tokens.json: <path>
-- COMPONENTS.md: <path>
-- PROJECT-UI.md: <path>
-- Preview: <path/URL/screenshots>
+Canonical ownership
+- Runtime/shared system: <path(s), package, or none>
+- Durable design/UI or project-local contract: <updated / created for named need / inherited / not needed>
+- Portable tokens or component/state artifact: <named deliverable/consumer and canonical/generated direction, or not needed>
+- Conditional DTCG / existing Style Dictionary boundary: <named consumer, format/pipeline, type/alias/inheritance/cycle checks, ownership; or not active>
+- Conditional APG oracle: <matching composite/overlay pattern and exercised behavior; or no matching pattern>
 
-Coverage
-- Foundations/themes: <summary>
-- Components/variants: <summary>
-- States: <matrix gaps or complete>
-- Responsive/data: <summary>
-- Accessibility/motion: <summary>
+Affected evidence
+- Reused/inherited contracts: <contract -> source and affected consumer locators>
+- Observed repetitions or audit findings: <claim -> locators>
+- Changed/reused component states and accessibility semantics: <summary>
+- Kept local, proposed, or unverified: <summary and reason>
 
-Evidence
-- Rendered viewports: <results>
-- Keyboard/focus/tree/contrast: <results>
-- Console/network: <results>
-- Existing-system migration: <risks>
+Validation
+- Focused source/native checks: <commands/results>
+- Affected rendered uses and states: <viewports/states/results or unavailable>
+- Accessibility/runtime probes: <results or bounded gap>
+- Parser/validator boundary: <syntax/schema checked; semantics not implied>
 
-Gate
-- ready: PASS | FAIL
-- Human approval: PRESENT | ABSENT
-- Product frontend changed: NO | violation
+Claim boundary
+- <what was not implemented, selected, approved, deployed, live, or published>
 ```
+
+## Source basis for conditional interoperability
+
+The conditional exchange and behavior-oracle rules paraphrase these pinned primary sources; no source schema, example, or code is vendored:
+
+- Design Tokens Community Group format at [`16c902d9327c18290e956a21130c445f1b88c40f`, `technical-reports/format/types.md`](https://github.com/design-tokens/community-group/blob/16c902d9327c18290e956a21130c445f1b88c40f/technical-reports/format/types.md), [`aliases.md`](https://github.com/design-tokens/community-group/blob/16c902d9327c18290e956a21130c445f1b88c40f/technical-reports/format/aliases.md), and [`groups.md`](https://github.com/design-tokens/community-group/blob/16c902d9327c18290e956a21130c445f1b88c40f/technical-reports/format/groups.md) (W3C Software and Document License): explicit or inherited types, token references, optional group extension/override, and reference/inheritance cycle errors. The local skill activates this only for a real external consumer.
+- Style Dictionary at [`29f1b25f3d05d8f264de7814b52919b3dd5dca96`, `docs/src/content/docs/info/architecture.md`](https://github.com/amzn/style-dictionary/blob/29f1b25f3d05d8f264de7814b52919b3dd5dca96/docs/src/content/docs/info/architecture.md) and [`docs/src/content/docs/reference/config.md`](https://github.com/amzn/style-dictionary/blob/29f1b25f3d05d8f264de7814b52919b3dd5dca96/docs/src/content/docs/reference/config.md) (Apache-2.0): configured source/include parsing, transforms, reference resolution, platforms, and generated files. These rules apply only when that pipeline already exists in the project.
+- WAI-ARIA Authoring Practices at [`7e4034b262bc0d25332e330d8a582aaf34113829`, `content/patterns/patterns.html`](https://github.com/w3c/aria-practices/blob/7e4034b262bc0d25332e330d8a582aaf34113829/content/patterns/patterns.html), [`content/patterns/dialog-modal/dialog-modal-pattern.html`](https://github.com/w3c/aria-practices/blob/7e4034b262bc0d25332e330d8a582aaf34113829/content/patterns/dialog-modal/dialog-modal-pattern.html), and [`content/patterns/combobox/combobox-pattern.html`](https://github.com/w3c/aria-practices/blob/7e4034b262bc0d25332e330d8a582aaf34113829/content/patterns/combobox/combobox-pattern.html) (W3C Software and Document License): pattern-specific keyboard, focus, role/state, and overlay behavior. The local skill uses a pattern only when component semantics match it and does not treat examples as implementation proof.
 
 ## Common pitfalls
 
-- Reducing a design system to a palette, type scale, and button.
-- Designing components before real content, journeys, data, and states.
-- Copying a design kit's brand values instead of deriving product semantics.
-- Creating tokens that are aliases for arbitrary one-off values.
-- Treating every grouping as a rounded card.
-- Showing only default and hover states in the review.
-- Using production-looking fake metrics without a synthetic label.
-- Calling a Storybook-like gallery accessible without keyboard and tree evidence.
-- Writing product screens inside the preview to bypass the gate.
-- Inventing project paths, libraries, commands, or imports in `PROJECT-UI.md`.
+- Invoking the skill before every frontend build because its install name contains “first.”
+- Turning a bounded existing-system edit into an approval ticket, full-system audit, or artifact bundle.
+- Replacing an inherited repository system with a generic preferred taxonomy.
+- Extracting a component from one attractive instance or one mapped list.
+- Turning every literal into a token or generating unused scales and variants.
+- Maintaining CSS variables, theme values, prose, and `tokens.json` as competing sources.
+- Converting to DTCG or adding Style Dictionary without a real named consumer/pipeline, or failing to test effective types, aliases, inheritance, cycles, and canonical/generated ownership when interchange is active.
+- Applying an APG composite/overlay pattern because a control looks similar, or claiming conformance without exercising the matching keyboard/focus/state behavior.
+- Creating a state matrix, component catalog, or project-local skill without a deliverable, project, consumer, or re-entry need.
+- Demanding human selection for an inherited, already selected, or delegated decision.
+- Calling proposed values observed, a delegated selection human-approved, or local output live/published.
+- Treating a validator or screenshot as proof of semantic roles, state behavior, accessibility, integration, authorization, or persistence.
+- Refactoring local character out of the interface in pursuit of uniformity.
 
 ## Verification checklist
 
-- [ ] Product story, final copy, claims, selected direction, codebase, existing components, and data shapes were inspected.
-- [ ] Principles resolve real product trade-offs and do not merely restate aesthetic adjectives.
-- [ ] Primitive and semantic tokens cover supported modes and states without unexplained source imitation.
-- [ ] Typography, grid, spacing, surfaces, iconography, imagery/data, responsive, accessibility, and motion posture are defined.
-- [ ] Components derive from journeys and include purpose, anatomy, variants, content, states, behavior, and composition rules.
-- [ ] Focus-visible, keyboard, announcements, contrast, target size, and reduced motion are explicit.
-- [ ] Dense data, tables/charts, freshness, realistic fixtures, partial/error, and narrow-screen behavior are covered where applicable.
-- [ ] `PROJECT-UI.md` contains only verified paths, libraries, conventions, and commands.
-- [ ] The isolated preview uses real copy and representative states at narrow and wide widths.
-- [ ] Browser, keyboard, accessibility-tree, contrast, overflow, console, and network evidence was captured.
-- [ ] Web Craft `ready` passes and protected product frontend roots remain unchanged.
-- [ ] Explicit human approval remains external to this skill.
+- [ ] The mode is `BOUNDED_EXTENSION`, `CONSEQUENTIAL_SHARED_SYSTEM_CHANGE`, or `STANDALONE_SYSTEM_DELIVERABLE_OR_AUDIT`—not frontend work in general.
+- [ ] Existing-system work inherited the canonical implementation, semantic roles, component/state contracts, and repository conventions.
+- [ ] The requested bounded existing-system edit proceeded without a human approval ticket; human selection was requested only for an unresolved consequential new-system choice when judgment was not delegated.
+- [ ] Evidence covers affected reused contracts, consumers, and states only; untouched system inventory or captures were not required.
+- [ ] One-off and coincidental values remain local; unimplemented standalone decisions are labeled `PROPOSED`.
+- [ ] Reusable components have repeated existing use or confirmed intended reuse, and affected state distinctions remain truthful.
+- [ ] Applicable semantic roles, keyboard/focus/announcement behavior, contrast/non-color cues, target size, zoom/reflow, responsive behavior, and reduced motion were preserved or bounded as unverified.
+- [ ] Persistent design artifacts, portable tokens, component/state matrices, and project-local contracts exist only for a named deliverable, project/consumer, or re-entry need.
+- [ ] DTCG interoperability is active only for a real external consumer; affected effective types, aliases, optional inheritance, cycles/errors, and canonical/generated ownership were checked, and Style Dictionary rules were used only for an existing pipeline.
+- [ ] APG behavior served as an oracle only for a semantically matching composite/overlay, with affected keyboard/focus/state behavior exercised rather than inferred.
+- [ ] Every persisted decision has one canonical owner; generated or descriptive artifacts point to it rather than creating a parallel source of truth.
+- [ ] Focused implementation/render checks are fresh where the claim needs them, and parser/validator success is reported as syntax/schema evidence only.
+- [ ] No selection, approval, deployment, live-data, or publication claim exceeds the evidence.

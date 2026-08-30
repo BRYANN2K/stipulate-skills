@@ -277,8 +277,6 @@ def validate(raw: Any) -> dict[str, Any]:
     viewports = [string(item, "viewport") for item in array(quality["viewports"], "quality.viewports")]
     unique(browsers, "browsers")
     unique(viewports, "viewports")
-    if len(viewports) < 2:
-        raise ContractError("quality requires at least two viewport classes")
     budgets = obj(quality["performance_budgets"], "performance_budgets")
     exact(budgets, {"lcp_ms", "inp_ms", "cls"}, "performance_budgets")
     finite_number(budgets["lcp_ms"], "lcp_ms", allow_zero=False)

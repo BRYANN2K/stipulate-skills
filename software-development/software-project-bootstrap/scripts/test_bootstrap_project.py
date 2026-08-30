@@ -29,7 +29,7 @@ class SoftwareBootstrapTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.workspace = Path(self.temporary.name)
+        self.workspace = Path(self.temporary.name).resolve()
         self.manifest = self.workspace / "manifest.json"
         self.root = self.workspace / "project"
         self.write_manifest()

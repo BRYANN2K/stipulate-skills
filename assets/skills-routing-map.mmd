@@ -1,0 +1,76 @@
+---
+config:
+  theme: base
+  fontFamily: 'Arial, Helvetica, sans-serif'
+  themeVariables:
+    background: '#F8FAFC'
+    primaryColor: '#FFFFFF'
+    primaryTextColor: '#111827'
+    primaryBorderColor: '#CBD5E1'
+    lineColor: '#64748B'
+    edgeLabelBackground: '#F8FAFC'
+    secondaryColor: '#F3E8FF'
+    tertiaryColor: '#F8FAFC'
+  flowchart:
+    curve: basis
+    htmlLabels: true
+    nodeSpacing: 28
+    rankSpacing: 36
+    useMaxWidth: false
+---
+flowchart TB
+    accTitle: How requests move through the skill collection
+    accDescr: A vertical routing flow. Clear requests go directly to a specialist. Broad or cross-domain requests use one domain entry point. One primary owner follows the shortest safe path, verifies only the claims it makes, and returns an evidence-backed result.
+
+    REQUEST["<b>REQUEST</b><br/><span>Outcome · target · exclusions</span>"]
+    INTENT{"Is the specialist<br/>already clear?"}
+    DIRECT["<b>DIRECT SPECIALIST</b><br/><span>Skip the umbrella</span>"]
+    ENTRY["<b>DOMAIN ENTRY</b><br/><span>Only for broad, ambiguous,<br/>or cross-domain work</span>"]
+
+    subgraph ENTRIES["DOMAINS"]
+      direction TB
+      AGENT["<b>Agent Workflows</b><br/><span>instructions · completion proof · presentation</span>"]
+      CREATOR["<b>Creator Workflows</b><br/><span>private capture · prose audit</span>"]
+      INFRA["<b>Infrastructure</b><br/><span>bootstrap · Terraform · Kubernetes · cloud</span>"]
+      DEVOPS["<b>DevOps</b><br/><span>delivery · GitOps · incidents</span>"]
+      SOFTWARE["<b>Software Engineering</b><br/><span>bootstrap · website · app · dashboard · CLI · TUI</span>"]
+      DESIGN["<b>Interface Studio</b><br/><span>copy · direction · system · motion · visual QA</span>"]
+      DOCS["<b>Documentation</b><br/><span>developer docs · ADRs · diagrams</span>"]
+      AGENT ~~~ CREATOR
+      CREATOR ~~~ INFRA
+      INFRA ~~~ DEVOPS
+      DEVOPS ~~~ SOFTWARE
+      SOFTWARE ~~~ DESIGN
+      DESIGN ~~~ DOCS
+    end
+
+    OWNER["<b>ONE PRIMARY OWNER</b><br/><span>Authority can only narrow</span>"]
+    CONSULT["<b>BOUNDED<br/>CONSULTATION</b><br/><span>One question · evidence<br/>return condition</span>"]
+    WORK["<b>SHORTEST SAFE PATH</b><br/><span>No mandatory artifact train</span>"]
+    VERIFY["<b>CLAIM-MATCHED VERIFICATION</b><br/><span>Each check proves only its scoped signal</span>"]
+    RESULT["<b>EVIDENCE-BACKED RESULT</b><br/><span>Passed · failed · skipped · unavailable</span>"]
+    MEMORY["<b>REUSABLE KNOWLEDGE</b><br/><span>Update a skill only when the lesson repeats</span>"]
+
+    REQUEST --> INTENT
+    INTENT -->|Yes| DIRECT
+    INTENT -->|Broad / ambiguous| ENTRY
+    ENTRY --> ENTRIES
+    DIRECT --> OWNER
+    ENTRIES --> OWNER
+    OWNER -.-> CONSULT
+    CONSULT -.-> OWNER
+    OWNER --> WORK
+    WORK --> VERIFY
+    VERIFY --> RESULT
+    RESULT -.-> MEMORY
+
+    classDef default fill:#FFFFFF,stroke:#CBD5E1,color:#111827,stroke-width:1.2px;
+    classDef decision fill:#111827,stroke:#111827,color:#F8FAFC,stroke-width:1.5px;
+    classDef entry fill:#F8FAFC,stroke:#94A3B8,color:#111827,stroke-width:1px;
+    classDef accent fill:#F3E8FF,stroke:#7C3AED,color:#5B21B6,stroke-width:1.6px;
+    classDef result fill:#111827,stroke:#111827,color:#F8FAFC,stroke-width:1.5px;
+
+    class INTENT decision;
+    class AGENT,CREATOR,INFRA,DEVOPS,SOFTWARE,DESIGN,DOCS entry;
+    class VERIFY accent;
+    class RESULT result;

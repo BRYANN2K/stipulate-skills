@@ -1,78 +1,151 @@
-# Reference analysis rules
+# Reference analysis and concept rules
 
-## Source roles
+Load this reference while researching inspiration, recording license boundaries, checking whether concepts are genuinely distinct, or deciding how much to render.
 
-A reference set should cover needs, not maximize volume:
+## Research stop rule
 
-| Role | Useful evidence | Common misuse |
+Start from the product decision and missing visual evidence, not from a gallery. Retain the smallest source set that enables credible choices. Stop when each proposed concept can explain its structure, content fit, subject-world signature, and feasibility without adding another fashionable fragment.
+
+A source may serve more than one role, and a needed role may require no external source when the established system already answers it.
+
+## Source quality and roles
+
+Prefer origins over derivatives:
+
+1. current live artifact plus official repository or documentation;
+2. official design-system or component documentation with explicit terms;
+3. creator-authored case study, portfolio, or process record;
+4. inspectable community resource with clear license/usage terms;
+5. discovery index or secondary screenshot gallery, used only to find the origin.
+
+Useful roles include:
+
+| Role | Observe | Do not assume |
 |---|---|---|
-| Structure | Hierarchy, navigation, grouping, responsive reflow | Copying section order unchanged |
-| Typography | Role contrast, line length, density, multilingual fit | Selecting a fashionable font without content tests |
-| System | Tokens, component variants, states, documentation | Importing a library's visual identity wholesale |
-| Motion | Trigger, causality, interruption, exit, reduced motion | Adding every available transition |
-| Data/product imagery | Mapping data or mechanism to visuals | Decorative charts or fabricated product evidence |
+| Structure/topology | area, order, grouping, transitions, responsive priority | that the same section order fits this product |
+| Typography | roles, scale contrast, measure, labels/numbers, language fit | that the font is licensed or content-compatible |
+| Task/system | navigation, focus, disclosure, actions, states | that a library's brand identity should be imported |
+| Motion | trigger, causality, continuity, interruption, exit | that decorative movement improves the task |
+| Data/product imagery | mapping of mechanism/data to a visual form | that sample values or customers are real |
+| Real-time graphics | narrative beat, spatial/causal value, DOM/canvas/scroll ownership, fallback and lifecycle | that spectacle, a demo frame, or public source proves product fit, performance, accessibility, or asset rights |
+| Subject world | tools, materials, diagrams, rituals, spaces, media grammar | that literal mimicry is respectful, usable, or licensed |
 
-## Source quality
+## Evidence for each retained source
 
-Prefer exact primary artifacts in this order:
+For each retained source capture all of:
 
-1. current live product plus official repository or documentation;
-2. official design-system documentation or licensed source;
-3. creator-authored case study or portfolio;
-4. Figma/community resource with inspectable terms;
-5. curated discovery index;
-6. secondary screenshot gallery.
+- **Exact URL:** original page/repository/file, not only a search result.
+- **Artifact inspected:** page, viewport, screen, state, component, image, or interaction and date.
+- **Exact observation:** visible/verifiable relation such as “the index remains fixed while detail panes replace in place.” Avoid “nice,” “clean,” or “premium.”
+- **Interaction evidence boundary:** identify the live path, recording, trace, or source that exposed behavior; otherwise record `still-only — interaction unobserved`.
+- **Adaptation principle:** what product problem the observed relation can solve here.
+- **License/reuse status:** one of `principle-only/unclear`, `licensed code`, `licensed asset`, `owned`, `public-domain`, or `excluded`, including license name/terms locator when reused.
+- **Originality/no-copy decision:** judge separately whether recognizable composition, sequencing, or combined source expression survives.
 
-A catalog entry is a lead, not evidence of quality, maintenance, accessibility, or licensing. Verify each original.
+Creator/maintainer and screenshot provenance are useful when known. If interaction could not be inspected, say so; do not infer hover, scroll, timing, focus, transition, responsive behavior, or another interaction from a still.
 
-## Analysis lenses
+## License and reuse posture
 
-### Composition
+- Facts and high-level ideas may inspire; distinctive expression remains off limits.
+- “Free,” “community,” “open,” downloadable, or publicly viewable does not identify a license.
+- A code license does not automatically cover logos, trademarks, fonts, photography, datasets, demo copy, 3D models, HDRIs, textures, environment maps, decoders, or generated assets.
+- Record attribution obligations and preserve notices when actual reuse is allowed.
+- Run originality independently of permission. A compatible licence may allow code or asset reuse while the proposed direction still fails its “original” claim because the overall composition, sequence, or combination remains recognizably the source. Rework the arrangement or label direct reuse honestly.
+- If status is missing, contradictory, or too costly to verify, use principle-only observation or exclude the material.
+- Generated or synthetic assets still need truthful labeling and provider/license compliance.
 
-- What receives area, contrast, and placement priority?
-- Is the grid regular because content is equal, or irregular because decisions differ?
-- How does the narrow layout preserve meaning rather than merely stack blocks?
+## From observation to original adaptation
 
-### Typography
+Use the chain:
 
-- Which roles create hierarchy?
-- How do line length, wrapping, numbers, labels, and dense content behave?
-- Does type remain readable at actual product sizes and languages?
+```text
+exact observation → inferred principle → product constraint → original adaptation → no-copy boundary
+```
 
-### Surfaces and depth
+Example:
 
-- What does a border, shadow, blur, or background change communicate?
-- Can the hierarchy survive without decorative effects?
-- Are nested surfaces semantically different or only visually busy?
+```text
+Observation: a maintenance manual uses exploded numbering beside each part.
+Principle: persistent identifiers let readers cross-reference dense detail.
+Constraint: operators must compare an alert with the affected resource.
+Adaptation: pair a stable resource index with the live incident detail pane.
+No-copy boundary: do not reproduce the manual's illustration, numbering style, or page composition.
+```
 
-### Product/data language
+The adaptation fails if it can only be described as “make it look like the source.”
 
-- Does the visual show a real mechanism, state, decision, or dataset?
-- Are example values realistic and clearly synthetic when necessary?
-- Would a table communicate the task better than a chart?
+## Subject-world signature test
 
-### Interaction
+A useful signature:
 
-- What action triggers change?
-- What information does motion add?
-- How are focus, keyboard, touch, interruption, error, and reduced motion handled?
+1. comes from the product mechanism, user practice, material, data, or domain grammar;
+2. improves recognition, explanation, navigation, or memory;
+3. can recur without becoming decoration everywhere;
+4. remains original after the source's distinctive expression is removed;
+5. has a restrained fallback for accessibility and small viewports.
 
-## Anti-collage test
+A gradient, floating panel, orbit, terminal treatment, oversized serif, or cursor effect is not a signature merely because it is noticeable. It may qualify only when the product-specific link and function are explicit.
 
-For each proposed borrowed principle, ask:
+## Fair comparison contract
 
-1. Can it be explained without naming the source?
-2. Does it solve a product-specific constraint?
-3. Does it fit the selected thesis and other principles?
-4. Can it be implemented without copying distinctive source expression?
-5. Is code/asset reuse allowed by an identified license?
+Hold these constant wherever comparison requires them:
 
-If any answer is no, exclude or re-research it.
+- product facts, caveats, and available proof;
+- primary action/task and success consequence;
+- representative content length, data grain, states, and viewport/device;
+- accessibility and technical constraints;
+- asset truthfulness and license status.
 
-## Reference-specific posture
+Open-marketing routes intentionally frame/order the truth differently, so do not force identical copy. Instead give each route equal access to the same evidence inventory. Task concepts should use the same actual task/data/state.
 
-- Motion galleries such as Amicro and Transitions.dev: use for intent and state taxonomy, not brand tokens or universal animation.
-- Emil Kowalski's public skills: use the isolate-observe-adjust method and motion discipline, then replace subjective completion with evidence.
-- Shadcn Dashboard: use as a project-local implementation-contract example and dashboard architecture reference, not as default art direction.
-- Design-system kits: compare token depth, variants, documentation, state coverage, themes, and handoff; do not clone their assets.
-- Numa1/Design-Ressources: use only to discover primary sources, then verify each original URL and license.
+## Concept distinctness test
+
+Use this only when a real trade-off warrants alternatives. One direction is valid when the product, request, or inherited system already selects it. For each compared candidate, confirm coherent difference in the axes relevant to the decision:
+
+| Axis | Evidence of a real difference |
+|---|---|
+| Layout/topology | Different attention path, grouping, sequence, or spatial model—not a flipped hero |
+| Type | Different role relationships, scale contrast, measure, or reading rhythm—not only a font swap |
+| Density | Different compression/breathing logic tied to the content strategy |
+| Palette | Different semantic/contrast posture tied to content—not random brand alternatives |
+| Assets/data | Different product-truth visualization or subject-world grammar with valid provenance |
+| Motion | Different continuity/feedback posture with a reduced-motion equivalent—not extra decoration |
+| Conditional real-time | A product-specific spatial/narrative model with semantic static fallback—not the same generic effect under another shader |
+
+Not every axis must differ if the actual decision is narrower; enough must change coherently for a reasonable reviewer to choose one and reject another for substantive reasons. Merge or remove cosmetic variants. Stop adding candidates once the unresolved trade-off is covered.
+
+## Proportional rendered evidence
+
+A concept must be concrete enough to test its decisive claim, but rendering depth follows the decision. Alternatives for an open visual decision must each be viewable; an annotated locator or implementation brief alone is reserved for a selected targeted/inherited direction with no remaining comparison.
+
+- one readable frame for a bounded visual decision;
+- disposable HTML/CSS or project-native preview when hierarchy, wrapping, or interaction placement matters;
+- image comp with legible real copy when only visual composition is being selected;
+- live prototype, recording, trace, or inspectable source when hover, scroll, focus, timing, transition, gesture, sequence, or responsive behavior is part of the decision;
+- core task state plus a consequential alternative only when state changes the pattern;
+- additional viewport only when content/order/behavior or the responsive claim changes;
+- optional real-time keyframe, transition, fallback/reduced/failure/lifecycle evidence only to the extent required by the renderer decision or claim.
+
+Record viewport/tool/path and untested boundaries. Do not turn concept exploration into a full page, state matrix, device matrix, or design-system build. A still frame proves only the pictured composition and state; it cannot establish interaction that was not observed.
+
+## Claim-boundary evaluation fixtures
+
+Use these only to evaluate the corresponding risk; they do not require a fixed concept count or artifact.
+
+| Situation | Required judgment |
+|---|---|
+| A permissively licensed template is rearranged only superficially while preserving its recognizable hero split, navigation placement, section sequence, signature motif combination, and attention path | Record that reuse may be permitted, but the candidate does not satisfy an original-direction claim. Recompose around the product's own content/task logic or label the authorized direct adaptation instead of calling it original. |
+| A screenshot shows a fixed index beside a detail panel, and the analysis claims the index pins on scroll, rows expand on hover, or panels transition in place | Keep only the visible spatial observation. Mark the claimed behavior `UNOBSERVED` until a live path, recording, trace, source, or prototype exposes it. Do not let the interaction claim influence selection before then. |
+
+## Anti-collage check
+
+For every adapted principle ask:
+
+1. Does it solve a named product/content constraint?
+2. Does it support the concept thesis rather than merely add novelty?
+3. Can it be implemented without recognizable source composition or combined expression, even if some source material is licensed?
+4. Is any reused code/asset covered by identified compatible terms?
+5. Are interaction claims based on observed behavior rather than a still?
+6. Does it remain coherent with the concept's other choices?
+
+Exclude or rework any “no.”

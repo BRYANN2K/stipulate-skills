@@ -19,14 +19,18 @@ Keep a root module focused on composition. Put reusable resources in child modul
 
 Assume values may enter plan/state even when marked sensitive. Pass references to external secret systems when providers support it. Use workload identity/OIDC rather than long-lived cloud keys in CI.
 
-## Testing ladder
+## Proportional validation
 
-1. formatting and validate;
-2. lint/security/policy checks;
-3. native tests for expressions, conditions, and plan assertions;
-4. integration tests for provider behavior;
-5. examples validated as consumers;
-6. destructive tests only in isolated ephemeral accounts/projects.
+Choose only the evidence needed by the module claim:
+
+- formatting and `validate` for source/configuration structure;
+- configured lint/security/policy checks for their actual rules;
+- native tests for expressions, conditions, and plan assertions affected by the change;
+- consumer/example validation for public interface compatibility;
+- integration tests when provider behavior cannot be established statically;
+- destructive tests only when explicitly authorized in an isolated ephemeral account/project with cleanup and readback.
+
+No fixed ladder is required for a focused module question. A passing structural check is not provider-behavior proof.
 
 ## Safe evolution
 

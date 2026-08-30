@@ -1,44 +1,37 @@
-# Terraform change review
+# Optional Terraform/OpenTofu change review
 
-## Verdict
+Use only sections that serve the requested review. This template is scaffolding, not a required packet or safety verdict.
 
-**[GO | CAUTION | BLOCKED]** — <one-sentence rationale>
+## Decision (when requested)
+
+**[GO | CAUTION | BLOCKED | repository-native status]** — <evidence-based rationale; advice only>
 
 ## Scope and evidence
 
 | Item | Value |
 |---|---|
-| Tool/version | |
-| Root module | |
-| Target identity | |
-| Workspace/backend | |
-| Commit/plan | |
+| Tool/version and root | |
+| Target/workspace/backend | |
+| Commit/inputs/saved plan digest | |
+| Evidence limits | |
 
-## Change inventory
+## Material change inventory
 
-| Address | Action | Impact | Risk |
+| Address/group | Action | Effect/unknown | Evidence |
 |---|---|---|---|
 
-## Findings
+## Findings or conditions
 
-### Blocking
+Include only material blockers, conditions, risks, or advisory findings.
 
-### Significant
+## Verification and recovery (for planned effects)
 
-### Advisory
-
-## Conditions before execution
-
-- [ ]
-
-## Verification
-
-| Check | Expected | Rollback trigger |
+| Expected/readback signal | Abort condition | Rollback/recovery |
 |---|---|---|
-
-## Rollback
 
 ## Validation log
 
-| Check | Status | Evidence |
+| Check | Status: passed/failed/skipped/unavailable | Evidence |
 |---|---|---|
+
+## Effects not performed

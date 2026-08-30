@@ -1,10 +1,10 @@
 ---
 name: dashboard-application-engineering
-description: "Use when building or changing an analytical, operational, or hybrid dashboard whose users make decisions or mutate resources. Defines source, grain, freshness, metric, resource, filter, view, permission, action, failure, and reconciliation contracts; implements dense accessible interfaces; and requires source-backed and real-browser evidence."
+description: "Use when building or changing an analytical, operational, or hybrid dashboard whose users make decisions or mutate resources. Inherits project data and permission conventions, requires source-backed facts and server-authorized actions where touched, and scales optional contract lint, browser checks, reconciliation, and live-data controls to the claim."
 license: Apache-2.0
-compatibility: Works with any dashboard or admin-console stack and Agent Skills-compatible client. The optional contract validator requires Python 3.10 or newer and uses only the standard library.
+compatibility: Works with any dashboard or admin-console stack and Agent Skills-compatible client. The bundled JSON template and validator are optional structural lint; the validator requires Python 3.10 or newer and uses only the standard library.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: software-development
   tags: dashboard, admin-console, analytics, data-quality, permissions, browser-testing
@@ -14,173 +14,129 @@ metadata:
 
 ## Overview
 
-Build dashboards as decision and operation systems, not chart galleries. Every displayed fact must trace to a source, grain, freshness, and reconciliation rule; every resource action must trace to permission, confirmation, feedback, auditability, and post-action state. Keep analytical and operational semantics explicit even when they share one view.
+Build dashboards as decision or operation surfaces, not chart inventories. Apply source/grain/freshness/reconciliation discipline to facts the change actually touches and permission/feedback/readback discipline to actions it actually exposes. Inherit the repository's data model, authorization vocabulary, route/state conventions, component system, and commands.
+
+A clear request to change a bounded local dashboard slice authorizes the necessary local source writes. It does not require a dashboard manifest, every-state matrix, new metric catalog, or second implementation approval.
 
 <HARD-GATE>
-Never invent metrics, formulas, targets, source freshness, permissions, production data, or action semantics. Never test destructive controls against real resources or grant roles implicitly. Source access, production queries, permission changes, bulk actions, data exports, publication, and deployment require explicit authorization and bounded test data or environment.
+Never invent metrics, formulas, targets, source freshness, permissions, production data, or action semantics. Never use hidden controls as authorization or test destructive controls against real resources. New source or production query access, production data export, permission changes, bulk/destructive actions, dependency installation or changes, deployment, and publication require explicit authorization and a bounded environment/target.
 </HARD-GATE>
 
 ## When to use
 
-- Build an analytics dashboard, control plane, operations console, or hybrid dashboard where data semantics or privileged operations dominate.
-- Add metrics, tables, filters, drill-down, resource detail, alerts, bulk actions, or role-based views when at least two dashboard-specific dimensions are first-class: metric/source semantics, dense query-and-drill-down behavior, privileged mutations, or independently failing and reconciling data regions.
-- Fix inconsistencies between cards, charts, tables, detail pages, action results, or source data.
-- Audit metric definitions, data freshness, permissions, failure states, or operational safety.
+- Build an analytics dashboard, control plane, operations console, or hybrid decision surface.
+- Change metrics, dense tables, filters, drill-down, resources, alerts, privileged actions, or partial-source behavior.
+- Fix disagreement between summaries, charts, tables, detail views, actions, or source data.
+- Audit metric meaning, freshness, permissions, failure handling, or reconciliation.
 
-Do not use this skill for a marketing page with decorative statistics, a static report, simple chart page, ordinary CRUD/admin screen, general web application without dashboard semantics, or configuring an observability vendor. Use the website, web application, or observability workflow instead.
+Use ordinary web-application engineering for general browser behavior without material dashboard semantics. This specialization is useful when source/metric semantics, dense query and drill-down, privileged operations, or independently failing/reconciling data regions materially affect the slice; it need not wait for an arbitrary count of those traits.
 
-This skill specializes `web-application-engineering`. Use the web-application skill for the shared shell, routing, authentication, forms, accessibility, and browser-security foundation; use this skill locally for source/metric semantics, dense exploration, permission-aware operations, partial-source behavior, and reconciliation.
+## Task modes
+
+| Mode | Default path | Evidence target |
+|---|---|---|
+| Bounded edit | Trace only the affected field/widget/query/action, edit directly, preserve local conventions | Focused known-answer, render, or action check matching the claim |
+| New behavior or surface | Define one decision/operation and build one independently useful source-to-user slice | Seeded source behavior plus real browser/action result where claimed |
+| Complex contract or migration | Coordinate several sources, views, filters, roles, bulk actions, or metric definitions | Targeted source/role/state/reconciliation matrix; optional JSON structural lint |
+| Release or live effect | Separate local readiness from production queries, exports, mutations, permission rollout, deployment, or publication | Exact authorization, bounded fixtures/environment, authoritative readback |
 
 ## Workflow
 
-### 1. Identify the decisions and operations
+### 1. Identify the affected decision or operation
 
-Inspect repository instructions, routes, schemas, queries/API clients, data transformations, metric definitions, resource models, tables/charts, filters, permissions, actions, tests, and Git status. Ask what decision or operation each surface enables. A widget without a supported question is not automatically required.
+Read applicable instructions, routes, schemas, queries/API clients, transformations, metric/resource definitions, filters, permissions, actions, tests, and Git status only as far as the slice needs. Ask what user decision or operation the changed surface supports.
 
-Classify the dashboard:
+Identify the affected source facts, resource identities, roles/capabilities, views, and repository-native checks. Do not require a full dashboard inventory for a style-only or isolated defect. Ask only when missing semantics would change the result or make a displayed fact/action unsafe.
 
-- `analytics` — primarily measures and compares facts;
-- `operational` — primarily inspects and mutates resources;
-- `hybrid` — uses metrics to prioritize resource operations.
+### 2. Inherit the project's data and permission model
 
-**Complete when:** scope names users, decisions, sources, resources, metrics, actions, role boundaries, affected views, and validation commands.
+Follow established metric registries, query layers, time/grain conventions, role/capability/policy checks, route guards, loading/error patterns, and audit mechanisms. Do not rename them into `analytics` / `operational` / `hybrid` or another bundled taxonomy unless that vocabulary is useful locally.
 
-### 2. Establish the source and product contract
-
-Copy `templates/dashboard-contract.json` to a temporary path. Define:
-
-- source owner, grain, freshness, and reconciliation;
-- metric label, source, formula, grain, and freshness;
-- resource identity, source, and statuses;
-- filter scope, default, and shareability;
-- views, paths, purpose, widgets, filters, roles, and states;
-- actions, roles, destructiveness, confirmation, audit event, feedback, and reconciliation;
-- permissions and acceptance evidence.
-
-Validate read-only:
+For complex cross-source, cross-view, filter, permission, state, or action work, optionally use `templates/dashboard-contract.json` as scratch memory and run:
 
 ```bash
-python3 <skill-directory>/scripts/validate_dashboard_contract.py check \
-  --manifest /tmp/dashboard-contract.json \
-  --json
+python3 <skill-directory>/scripts/validate_dashboard_contract.py check --manifest /tmp/dashboard-contract.json --json
 ```
 
-The validator rejects credential-like assignments after bounded ASCII canonicalization, including repeated-quote serialized assignments, bounded-punctuation Basic/Bearer wrappers, dot- or space-separated credential names, and compact identifiers in any case with environment or version prefixes/suffixes, without reflecting the rejected value. This conservative filter does not prove arbitrary text secret-free.
+This bundled schema is **optional structural lint** for references inside its own model. Its mode, state, role, view, metric, and resource fields are not required application architecture. Use it only when the work maps cleanly; do not modify the dashboard to make it pass. A pass does not prove formula truth, freshness, authorization, action safety, reconciliation, or quality. Its secret and malformed-input checks harden only that optional file.
 
-Malformed manifests, including numeric literals beyond the runtime's bounded integer conversion, fail with a controlled generic JSON diagnostic rather than a traceback.
+Load [dashboard modes and evidence](references/dashboard-modes-and-evidence.md) as a menu when formulas, cross-view filtering, partial source failure, bulk/destructive actions, or reconciliation are material.
 
-Load [dashboard modes and evidence](references/dashboard-modes-and-evidence.md) for analytical formulas, bulk actions, or partial source failure.
+### 3. Prove only the semantics the change relies on
 
-**Complete when:** all references resolve, hybrid mode has both metrics and resources, source and metric grain, formula, freshness, reconciliation, verification claim, and verification evidence fields are substantive rather than deferred placeholders, every view defines loading/empty/partial/error/ready states, each view role is permitted to access every resource exposed by that view's widgets, and destructive actions have substantive confirmation and reconciliation contracts. In these semantic fields, standalone or label-affixed `TODO`, `TBD`, or `placeholder` work markers (including `_label` and numeric affixes) are vacuous even inside longer or bounded ASCII-encoded text; `defer` or `deferred` is likewise vacuous when used as a directive at field start or after a label separator. Bounded future-work phrases such as `will be implemented later`, `not yet defined`, `future work`, `define ... after implementation`, explicit `plan`/`plans` for a later phase (including `plans on`, `plan is to`, and a bounded comma-delimited incidental clause before `to`), postponement until implementation, `intend`/`intends` to specify eventually, or any subject that `remain`/`remains` to be decided are also vacuous; the latter two forms likewise allow one bounded comma-delimited incidental clause before `to` or `to be`. Normal domain language remains valid when it states an actionable contract. This bounded syntax guard does not prove semantic substance; contract `PASS` still requires human/source review and execution evidence for the declared formula, safety, reconciliation, claim, and evidence.
+For a touched metric or resource field, trace enough of source → query/API → transformation → presentation to establish the claim. Record applicable unit/grain, time window/timezone, null/late/duplicate treatment, freshness, active filter scope, formula/denominator, and a known-answer or invariant. Do not demand all fields from an untouched metric or a purely presentational change.
 
-### 3. Prove data semantics before presentation
+Choose presentation from the user's question. Prefer a native semantic table when exact values, scanning, sorting, resource identity, or actions matter and the cells do not form a composite keyboard widget. Use an ARIA grid only for real cell/row navigation, selection, or editing that requires managed focus; then implement the complete applicable keyboard, entry/exit, and interactive-descendant focus model rather than adding grid roles to a static table. Partial or stale data must not masquerade as complete current data.
 
-For each metric and resource field, trace source → query/API → transformation → UI. Confirm:
+When the touched source is Prometheus, preserve its metric meaning instead of treating the query as generic rows: keep canonical metric names/values in Prometheus base units while formatting display units separately, keep labels as bounded dimensions, interpret counters as monotonic totals or interval change rather than gauges, and distinguish an absent series from an observed zero. Do not rename an established series or impose Prometheus rules on another backend merely to satisfy this guidance.
 
-- unit and grain;
-- time window and timezone;
-- null, unknown, late, deleted, and duplicated data treatment;
-- freshness display or bounded expectation;
-- filters included in each value;
-- denominator and comparison baseline;
-- reconciliation against an independent source or known invariant.
+### 4. Select and implement one decision slice
 
-Do not choose a chart until the comparison or decision is clear. Prefer a table when users need exact values, scanning, sorting, filtering, or actions.
+For visually material work, preserve the Interface Studio dashboard profile: user decision/operation, source-backed or clearly synthetic data, permission boundaries, relevant loading/empty/stale/partial/forbidden/error/ready states, inspiration, and coherent prototype(s). The human selects when they reserve judgment; explicitly delegated visual judgment may select and proceed. Do not add a second approval gate. In an established system or leaf edit, inherit the existing direction.
 
-**Complete when:** a skeptical user can determine what every value means and how current it is.
+Implement one independently useful path from a safe source fixture to a user decision or operation. Reuse local components/tokens and extract shared rules only after observed reuse or explicit system scope. Add a focused regression or known-answer test when changed semantics/behavior and the existing harness make it useful; do not require failing-first ceremony for a visual-only change.
 
-### 4. Design dense information and state hierarchy
+For a protected action, enforce authorization server-side and bind any consequence warning/confirmation to the actual target and effect when consequence warrants it. A consequential modal confirmation needs context-appropriate initial focus (the safer action for an irreversible choice), focus contained while open, Escape dismissal before commitment, and focus returned to the invoker or a logical successor; a dialog role alone is not the interaction. Prevent or safely handle duplicate submission, distinguish accepted from completed work, preserve per-resource failure for bulk work when applicable, and reconcile the affected summaries/lists/details/caches from authoritative state. Use existing audit mechanisms only.
 
-Place decision context before decoration:
+### 5. Verify with safe, claim-scoped evidence
 
-1. scope and active filters;
-2. summary signal with definition and freshness;
-3. prioritized list/table or comparison;
-4. drill-down with stable identity and shareable URL where useful;
-5. actions with role and effect clarity;
-6. recovery from empty, partial, stale, forbidden, and failed states.
+Use seeded fixtures or an explicitly authorized non-production environment. Select evidence by claim:
 
-Tables need explicit column priority, wrapping/truncation behavior, sorting, pagination or virtualization strategy, selection persistence, bulk-action scope, and responsive fallback. Do not hide critical resource identity or action context on narrow screens.
+- metric/formula → known-answer test or independent calculation;
+- freshness/scope → source timestamp/contract plus rendered behavior;
+- cross-view/filter agreement → same fixture and scope across affected views;
+- permission → allowed/denied server-boundary evidence for role and resource;
+- action → safe test mutation plus authoritative readback;
+- partial/bulk failure → attributable seeded results and honest UI state;
+- presentation/accessibility → real browser, keyboard, names/tree, responsive state; for a selected grid or consequential dialog, exercise its managed focus path rather than checking roles alone;
+- performance → current measurement for the changed dense/expensive path.
 
-### 5. Implement a source-to-decision slice
+Use the repository's browser tooling. When Playwright matches the project, prefer user-visible locators, actionability, and outcome assertions over arbitrary waits or implementation selectors; do not install it implicitly. Screenshots prove presentation only, never formulas, authorization, freshness, or reconciliation.
 
-Write a failing test for changed metric/resource/action behavior. Implement one path from seeded source through transformation to one user decision or operation. Enforce permissions server-side. Preserve stable metric and machine output contracts. For actions:
+For visually material Interface Studio work, capture the important widths and critical states, critique the selected direction for decision hierarchy/data legibility/permission clarity, fix material in-scope findings, and recapture after the last visual change.
 
-- bind confirmation to exact resources and effect;
-- prevent duplicate submission;
-- keep partial failures attributable per resource;
-- report accepted versus completed operations accurately;
-- reconcile cards, tables, detail views, selections, and caches afterward;
-- emit audit events only through established repository mechanisms.
+Exercise only relevant loading, empty, stale, partial, forbidden, error, ready, submission, and completion states. Do not fabricate coverage of a state the surface cannot enter.
 
-**Complete when:** focused tests prove the slice and no UI success state outruns authoritative state.
+### 6. Reconcile and separate live effects
 
-### 6. Exercise source, state, and browser evidence
+Run focused and relevant repository-native checks after the final mutation, inspect the diff, and label synthetic data, unavailable sources, skipped roles, and unverified effects. Evidence volume does not make a source untrustworthy claim true.
 
-Use safe seeded fixtures or an authorized non-production environment. Verify:
-
-- source grain, formula, freshness, and known reconciliation examples;
-- filter defaults, combinations, clearing, URL sharing, and back/forward;
-- card/chart/table/detail agreement under the same scope;
-- loading, empty, stale, partial-source, full-error, forbidden, and ready states;
-- role-specific visibility plus server enforcement;
-- action confirmation, cancellation, success, failure, duplicate prevention, and reconciliation;
-- keyboard table navigation, focus, accessible names, chart alternatives, contrast, and responsive behavior;
-- console and network failures.
-
-Screenshots cannot prove formulas, authorization, or reconciliation. Pair rendered evidence with source-backed assertions and post-action readback.
-
-The contract treats actions as role-scoped dashboard capabilities, not as proof that an action is rendered in a particular view. When a view exposes an action, render it only for the intersection of the view's roles, the action's roles, and the permission grant; verify the same boundary server-side.
-
-### 7. Report readiness without data inflation
-
-Run relevant static, unit, integration, seeded-data, and browser checks after the final mutation. Inspect the diff and generated output. Clearly label synthetic fixtures, stale snapshots, unavailable production data, skipped role tests, and unverified external effects. Do not equate a structurally valid contract with a trustworthy dashboard.
+Production queries, data exports, real resource actions, role grants, bulk/destructive operations, dependency changes, deployment, and publication remain separate. Execute only with exact authorization, bounded targets, and authoritative post-effect readback.
 
 ## Output contract
 
-```text
-Dashboard: IMPLEMENTED | VERIFIED | PARTIAL | BLOCKED
-Mode: analytics | operational | hybrid
-Decision / operation: <scope>
+Report these semantics, in any order or adapter-specific presentation:
 
-Contract
-- Sources and freshness: <summary>
-- Metrics/resources: <summary>
-- Filters/views/roles/actions: <summary>
+- outcome, user decision/operation, and bounded view/source/action scope;
+- changed facts, UI, boundaries, or tests;
+- selected or inherited visual direction when relevant;
+- fresh source, behavior, permission, reconciliation, and browser evidence actually obtained;
+- synthetic/unavailable data, residual gaps, and live effects not performed.
 
-Evidence
-- Contract: PASS | FAIL
-- Source and reconciliation: <fixture/query/result>
-- Behavior tests: <command/result>
-- Browser states and roles: <result>
-- Action readback: <result or not applicable>
-- Accessibility/responsive: <result>
-
-Gaps / not performed
-- <production queries/actions, role coverage, exports, deployment, or missing evidence>
-```
+An optional manifest need not appear when unused. Never treat structural lint or a screenshot as trustworthy dashboard proof.
 
 ## Common pitfalls
 
-- Starting from available charts rather than user decisions.
-- Showing a number without source, formula, grain, window, timezone, or freshness.
-- Letting filters affect some widgets but not others without disclosure.
+- Requiring a full metric/resource catalog for a bounded style or copy fix.
+- Forcing bundled mode, role, state, or view labels over repository conventions.
+- Starting from available charts rather than the user decision.
+- Showing a number without enough source context to support the claim.
+- Letting filters silently diverge across affected views.
 - Treating hidden buttons as permission enforcement.
-- Collapsing partial data into either success or total failure.
-- Using optimistic success for long-running or destructive operations.
-- Losing selection or action context during refresh.
-- Verifying screenshots while ignoring source reconciliation.
-- Testing actions against production resources for convenience.
+- Using optimistic success for long-running/destructive work without authoritative reconciliation.
+- Asking for redundant design approval after selection.
+- Testing production queries or actions for convenience.
 
 ## Verification checklist
 
-- [ ] Users, decisions, mode, sources, metrics, resources, filters, views, roles, and actions were identified.
-- [ ] The dashboard contract passes and all references resolve.
-- [ ] Every displayed fact has source, grain, freshness, and reconciliation semantics.
-- [ ] Every resource has stable identity and every protected action has server-side authorization.
-- [ ] Destructive and bulk actions define confirmation, partial failure, feedback, auditability, and reconciliation.
-- [ ] Loading, empty, stale, partial, forbidden, error, and ready states were exercised.
-- [ ] Metrics, tables, detail, filters, and action results reconcile under the same scope.
-- [ ] Real-browser, keyboard, accessibility, responsive, console, and network checks ran after the final mutation.
-- [ ] Synthetic and unavailable data are labeled honestly.
-- [ ] Production data mutations, exports, publication, and deployment were not performed implicitly.
+- [ ] Task mode, decision/operation, local boundary, affected sources/actions, and repository conventions are clear.
+- [ ] Bounded requested writes proceeded without mandatory artifacts or redundant approval.
+- [ ] The project's data, metric, permission, state, route, and audit conventions were inherited.
+- [ ] Optional JSON/template use, if any, is described only as structural lint for complex work.
+- [ ] Every changed displayed fact has enough source, grain, freshness, filter, and reconciliation evidence for the claim; Prometheus-specific unit/label/counter/absence semantics were applied only when that source exists.
+- [ ] Native table semantics remain the default; any selected grid or consequential modal has its complete applicable keyboard/focus behavior.
+- [ ] Every changed protected action has server authorization, consequence handling, feedback, and authoritative readback as applicable.
+- [ ] The implementation is one independently useful source-to-decision/operation slice.
+- [ ] Visually material work follows the human-selected or explicitly delegated Interface Studio direction.
+- [ ] Browser, accessibility, state, source, permission, action, and performance checks are fresh and proportional.
+- [ ] Production data access/export/mutation, grants, bulk/destructive effects, dependencies, deployment, and publication remained separately authorized and verified.

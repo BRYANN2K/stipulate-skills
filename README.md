@@ -4,7 +4,7 @@
   <br>
 
   [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=flat-square)](https://agentskills.io)
-  [![Skills](https://img.shields.io/badge/skills-25-111827?style=flat-square)](#skill-catalog)
+  [![Skills](https://img.shields.io/badge/skills-33-111827?style=flat-square)](#skill-catalog)
   [![Validate](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/BRYANN2K/skills/actions/workflows/validate.yml)
   [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 
@@ -21,12 +21,12 @@ This is my growing collection of reusable Agent Skills. It is not tied to one st
 
 Every skill should earn its place by changing how an agent works:
 
-- inspect evidence before reaching a conclusion;
+- inspect the evidence needed for the requested outcome;
 - distinguish facts, hypotheses, decisions, and actions;
-- keep risky mutations behind explicit approval;
-- load detailed references only when they are relevant;
-- produce artifacts with observable verification;
-- preserve the human's judgment, voice, and ownership.
+- choose the shortest safe path instead of manufacturing ceremony;
+- treat a bounded request as authority for bounded local work, and re-confirm when scope or effect expands;
+- load detailed references and create artifacts only when they are relevant;
+- match verification to the claim and preserve the human's judgment, voice, and ownership.
 
 The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md](NOTICE.md) records the standards and public projects that materially informed them.
 
@@ -36,19 +36,24 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 
 | Skill | Use it for |
 |---|---|
+| [agent-workflows](agent-workflows/agent-workflows) | Route broad agent-workflow requests to repository instructions, truthful completion evidence, or explicitly requested focus-friendly presentation |
 | [verified-completion](agent-workflows/verified-completion) | Require fresh evidence for every completion claim; distinguish implemented, executed, verified, and published work without overstating results |
 | [agents-md-authoring](agent-workflows/agents-md-authoring) | Create, adapt, audit, and split evidence-backed `AGENTS.md` instructions across software, infrastructure, platform, data, and documentation repositories without inventing commands, live state, or mutation authority |
+| [focus-friendly-delivery](agent-workflows/focus-friendly-delivery) | Present authorized work and manual instructions in an action-first, scannable, re-entry-friendly form when explicitly requested, without inferring a diagnosis or hiding safety and evidence |
 
 ### Creator
 
 | Skill | Use it for |
 |---|---|
+| [creator-workflows](creator/creator-workflows) | Route creator work between private evidence capture and opt-in prose auditing while keeping drafting and publication separately authorized |
 | [build-in-public-journal](creator/build-in-public-journal) | Keep a private evidence journal of meaningful bugs, failed approaches, decisions, experiments, and results; identify safe ideas for X, LinkedIn, and a personal blog without drafting posts |
+| [prose-pattern-audit](creator/prose-pattern-audit) | Detect contextual prose patterns after a draft and, only when asked, make minimal meaning-preserving edits without guessing authorship or imposing a global house style |
 
 ### Infrastructure
 
 | Skill | Use it for |
 |---|---|
+| [infrastructure](infrastructure/infrastructure) | Route broad infrastructure outcomes to bootstrap, Terraform/OpenTofu, Kubernetes, or cloud architecture without imposing a lifecycle |
 | [infrastructure-project-bootstrap](infrastructure/infrastructure-project-bootstrap) | Start or safely adopt an infrastructure repository through constraint discovery, reviewable non-destructive scaffolding, minimal agent rules, and structural diagnosis |
 | [terraform-change-safety](infrastructure/terraform-change-safety) | Terraform/OpenTofu authoring, plan review, state migrations, and production change verdicts |
 | [kubernetes-production-engineering](infrastructure/kubernetes-production-engineering) | Kubernetes generation, review, hardening, validation, and live diagnosis |
@@ -58,6 +63,7 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 
 | Skill | Use it for |
 |---|---|
+| [devops](devops/devops) | Route broad delivery and operations outcomes to CI/CD, GitOps, incident work, or a precise cross-domain handoff |
 | [sre-incident-investigation](devops/sre-incident-investigation) | Triage, hypothesis-driven investigation, mitigation, and postmortems |
 | [gitops-operations](devops/gitops-operations) | Static GitOps repository audits and read-only live cluster debugging |
 | [delivery-pipeline-engineering](devops/delivery-pipeline-engineering) | CI/CD design, supply-chain security, rollout strategy, and deployment readiness |
@@ -66,8 +72,9 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 
 | Skill | Use it for |
 |---|---|
+| [software-engineering](software-development/software-engineering) | Route broad software outcomes to the smallest website, web app, dashboard, CLI, TUI, or bootstrap specialist and involve Interface Studio only when visual direction is open |
 | [software-project-bootstrap](software-development/software-project-bootstrap) | Start or safely adopt a software repository through project discovery, digest-bound non-destructive scaffolding, minimal agent rules, and read-only diagnosis |
-| [website-production-engineering](software-development/website-production-engineering) | Build public websites around approved content, conversion paths, SEO continuity, accessibility, responsive behavior, and real-browser evidence |
+| [website-production-engineering](software-development/website-production-engineering) | Build public websites around source-grounded content, a selected visual direction, conversion paths, SEO continuity, accessibility, responsive behavior, and real-browser evidence |
 | [web-application-engineering](software-development/web-application-engineering) | Build stateful browser applications with explicit routes, permissions, state ownership, mutations, failure recovery, and E2E verification |
 | [dashboard-application-engineering](software-development/dashboard-application-engineering) | Specialize web applications for analytical and operational dashboards with source, metric, resource, filter, role, action, partial-failure, and reconciliation contracts |
 | [terminal-ui-engineering](software-development/terminal-ui-engineering) | Build full-screen terminal applications with deterministic state, focus, resize, async work, cleanup, compatibility, and PTY evidence |
@@ -77,17 +84,18 @@ The workflows are original syntheses, not bundles of copied prompts. [NOTICE.md]
 
 | Skill | Use it for |
 |---|---|
-| [web-craft](design/web-craft) | Orchestrate product truth, copy, direction, design-system review, explicit human approval, project-local UI instructions, frontend implementation, motion, and anti-slop verification |
+| [interface-studio](design/interface-studio) | Serve as the sole design front door: route targeted copy, direction, system, motion, or QA work directly, and coordinate the full product-to-interface studio only for new or materially open interfaces; real-time graphics remain opt-in |
 | [product-story-and-copy](design/product-story-and-copy) | Turn product evidence into positioning, claims, message hierarchy, conversion copy, state microcopy, and marketing requirements without invented proof |
-| [design-direction](design/design-direction) | Convert cited visual, system, motion, and data references into one original product-specific direction and no-go list without cloning |
-| [design-system-first](design/design-system-first) | Define foundations, semantic tokens, composition, components, states, responsive/accessibility behavior, review evidence, and a project-local UI contract before frontend code |
-| [interface-motion](design/interface-motion) | Design and verify motion that serves causality, feedback, orientation, continuity, progression, or hierarchy with interruption and reduced-motion behavior |
-| [anti-slop-review](design/anti-slop-review) | Produce evidence-linked findings across copy, composition, system fidelity, data, states, motion, accessibility, responsive, marketing, and runtime quality |
+| [design-direction](design/design-direction) | Convert cited references into original rendered concepts—including conditional 3D scene/fallback directions—with product-specific signatures and no-copy boundaries |
+| [design-system-first](design/design-system-first) | Handle explicit system work or consolidate observed reuse into foundations, semantic tokens, composition, components, states, responsive/accessibility behavior, review evidence, and a project-local UI contract |
+| [interface-motion](design/interface-motion) | Design and verify UI or scroll-linked scene motion that serves causality, feedback, orientation, continuity, progression, or hierarchy with interruption, reduced-motion, pause and cleanup behavior |
+| [anti-slop-review](design/anti-slop-review) | Produce evidence-linked findings across copy, composition, data/states, motion, accessibility, responsive/runtime quality, and conditional GPU fallback, performance and lifecycle |
 
 ### Documentation
 
 | Skill | Use it for |
 |---|---|
+| [documentation](doc-writer/documentation) | Route broad documentation outcomes to developer docs, ADRs, diagrams, or the smallest necessary combination |
 | [developer-documentation](doc-writer/developer-documentation) | READMEs, tutorials, how-to guides, API docs, runbooks, migration guides, and documentation audits |
 | [architecture-decision-records](doc-writer/architecture-decision-records) | Proposed, accepted, deprecated, and superseded ADRs with real trade-offs |
 | [software-architecture-diagrams](doc-writer/software-architecture-diagrams) | Mermaid C4-style, sequence, flow, state, ER, and deployment diagrams |
@@ -126,13 +134,17 @@ Common discovery paths vary by client:
 
 Restart the client or open a new session if it caches its skill index.
 
-## How the collection fits together
+## How requests move through the collection
+
+A clear request goes straight to its specialist. Broad, ambiguous, or genuinely cross-domain work enters through one domain entry point, selects one primary owner, and adds bounded consultations only when another specialty must answer a specific question.
 
 <p align="center">
-  <img src="assets/skills-operating-loop.svg" alt="A seven-stage loop from inspecting evidence through deciding, building, verifying, operating, documenting, and sharing. Every stage writes reusable knowledge into a central skills catalog, with verification highlighted as the evidence gate." width="100%">
+  <img src="assets/skills-routing-map.svg" alt="Vertical routing flowchart. A request goes directly to a specialist when intent is clear, or through one of seven domain entry points when it is broad or cross-domain. One primary owner then follows the shortest safe path, performs claim-matched verification, and returns an evidence-backed result." width="720">
 </p>
 
-Skills remain independent and composable. A project can verify completion claims, move from architecture review to delivery and incident investigation, document the result, and capture build-in-public ideas without loading one monolithic prompt.
+<p align="center"><sub>Rendered from the <a href="assets/skills-routing-map.mmd">Mermaid source</a>.</sub></p>
+
+Skills remain independent and directly invocable. Consultations return evidence to the current owner; ownership transfers only when the remaining outcome truly belongs to another specialist. Verification stays proportional to the claim, and reusable guidance is updated only when a lesson is worth preserving.
 
 ## Design contract
 
@@ -151,20 +163,27 @@ Every skill in this repository must:
 ```text
 .
 ├── agent-workflows/
+│   ├── agent-workflows/
 │   ├── verified-completion/
-│   └── agents-md-authoring/
+│   ├── agents-md-authoring/
+│   └── focus-friendly-delivery/
 ├── creator/
-│   └── build-in-public-journal/
+│   ├── creator-workflows/
+│   ├── build-in-public-journal/
+│   └── prose-pattern-audit/
 ├── infrastructure/
+│   ├── infrastructure/
 │   ├── infrastructure-project-bootstrap/
 │   ├── terraform-change-safety/
 │   ├── kubernetes-production-engineering/
 │   └── cloud-architecture-review/
 ├── devops/
+│   ├── devops/
 │   ├── sre-incident-investigation/
 │   ├── gitops-operations/
 │   └── delivery-pipeline-engineering/
 ├── software-development/
+│   ├── software-engineering/
 │   ├── software-project-bootstrap/
 │   ├── website-production-engineering/
 │   ├── web-application-engineering/
@@ -172,13 +191,14 @@ Every skill in this repository must:
 │   ├── terminal-ui-engineering/
 │   └── command-line-tool-engineering/
 ├── design/
-│   ├── web-craft/
+│   ├── interface-studio/
 │   ├── product-story-and-copy/
 │   ├── design-direction/
 │   ├── design-system-first/
 │   ├── interface-motion/
 │   └── anti-slop-review/
 ├── doc-writer/
+│   ├── documentation/
 │   ├── developer-documentation/
 │   ├── architecture-decision-records/
 │   └── software-architecture-diagrams/

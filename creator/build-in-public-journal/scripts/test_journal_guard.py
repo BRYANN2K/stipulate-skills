@@ -59,6 +59,23 @@ class JournalGuardTests(unittest.TestCase):
 
         check = run("check", "--repo", str(repo), cwd=repo)
         self.assertEqual(check.returncode, 0, check.stderr)
+        if os.name == "posix":
+            self.assertIn("OK: permissions=no-group-or-other-access", check.stdout)
+        else:
+            self.assertIn("UNAVAILABLE: permissions=POSIX-mode-check-not-supported", check.stdout)
+            self.assertNotIn("OK: permissions=no-group-or-other-access", check.stdout)
+
+    def test_success_output_disclaims_confidentiality(self) -> None:
+        repo = self.make_repo()
+        initialized = run("init", "--repo", str(repo), cwd=repo)
+        self.assertEqual(initialized.returncode, 0, initialized.stderr)
+        self.assertIn("cannot certify confidentiality", initialized.stdout)
+
+        for command in ("check", "scan"):
+            with self.subTest(command=command):
+                result = run(command, "--repo", str(repo), cwd=repo)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("cannot certify confidentiality", result.stdout)
 
     def test_init_is_idempotent_and_preserves_existing_journal(self) -> None:
         repo = self.make_repo()
@@ -91,6 +108,78 @@ class JournalGuardTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("/.build-in-public/", (repo / ".gitignore").read_text())
         self.assertIn("ignored_by=.gitignore:", result.stdout)
+
+    def test_explicit_local_policy_uses_info_exclude_without_gitignore_mutation(self) -> None:
+        repo = self.make_repo()
+        result = run(
+            "init",
+            "--repo",
+            str(repo),
+            "--ignore-policy",
+            "local",
+            cwd=repo,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((repo / ".gitignore").exists())
+        self.assertIn("/.build-in-public/", (repo / ".git" / "info" / "exclude").read_text())
+        self.assertIn("ignore_policy=local", result.stdout)
+        self.assertIn("ignored_by=.git/info/exclude:", result.stdout)
+
+        check = run(
+            "check",
+            "--repo",
+            str(repo),
+            "--ignore-policy",
+            "local",
+            cwd=repo,
+        )
+        self.assertEqual(check.returncode, 0, check.stderr)
+        self.assertIn("ignored_by=.git/info/exclude:", check.stdout)
+
+    def test_local_policy_requires_check_ignore_to_report_local_source(self) -> None:
+        repo = self.make_repo()
+        original = b"/.build-in-public/\n"
+        (repo / ".gitignore").write_bytes(original)
+        exclude = repo / ".git" / "info" / "exclude"
+        original_exclude = exclude.read_bytes()
+
+        result = run(
+            "init",
+            "--repo",
+            str(repo),
+            "--ignore-policy",
+            "local",
+            cwd=repo,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((repo / ".gitignore").read_bytes(), original)
+        self.assertEqual(exclude.read_bytes(), original_exclude)
+        self.assertIn("selected local ignore policy", result.stderr)
+        self.assertIn(".gitignore:", result.stderr)
+
+    @unittest.skipUnless(hasattr(os, "symlink"), "symlinks unavailable")
+    def test_local_policy_rejects_symlinked_info_exclude(self) -> None:
+        repo = self.make_repo()
+        outside_temp = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_temp.cleanup)
+        outside = Path(outside_temp.name) / "exclude"
+        outside.write_text("outside remains unchanged\n")
+        exclude = repo / ".git" / "info" / "exclude"
+        exclude.unlink()
+        os.symlink(outside, exclude)
+
+        result = run(
+            "init",
+            "--repo",
+            str(repo),
+            "--ignore-policy",
+            "local",
+            cwd=repo,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symlinked exclude", result.stderr)
+        self.assertEqual(outside.read_text(), "outside remains unchanged\n")
+        self.assertFalse((repo / ".gitignore").exists())
 
     def test_init_preserves_existing_gitignore_bytes_and_crlf(self) -> None:
         repo = self.make_repo()
@@ -171,6 +260,50 @@ class JournalGuardTests(unittest.TestCase):
         self.assertIn("appears in Git history", result.stderr)
         self.assertFalse((repo / ".gitignore").exists())
 
+    def test_history_guard_rejects_renamed_sibling_journal_path(self) -> None:
+        repo = self.make_repo()
+        journal_dir = repo / ".build-in-public"
+        journal_dir.mkdir()
+        old = journal_dir / "weekly-notes.md"
+        old.write_text("historical journal\n")
+        self.assertEqual(git(repo, "add", "-f", ".build-in-public/weekly-notes.md").returncode, 0)
+        first = git(
+            repo,
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "add sibling journal",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(
+            git(
+                repo,
+                "mv",
+                ".build-in-public/weekly-notes.md",
+                ".build-in-public/renamed-notes.md",
+            ).returncode,
+            0,
+        )
+        second = git(
+            repo,
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "rename sibling journal",
+        )
+        self.assertEqual(second.returncode, 0, second.stderr)
+
+        result = run("init", "--repo", str(repo), cwd=repo)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("whole journal tree", result.stderr)
+        self.assertFalse((repo / ".gitignore").exists())
+
     @unittest.skipUnless(hasattr(os, "link"), "hard links unavailable")
     def test_init_rejects_journal_hard_linked_to_staged_file(self) -> None:
         repo = self.make_repo()
@@ -211,7 +344,8 @@ class JournalGuardTests(unittest.TestCase):
 
         result = run("check", "--repo", str(repo), cwd=repo)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("not ignored", result.stderr)
+        self.assertIn("selected repository ignore policy", result.stderr)
+        self.assertIn("no matching source", result.stderr)
 
     @unittest.skipUnless(os.name == "posix", "POSIX permissions unavailable")
     def test_check_rejects_public_journal_directory(self) -> None:

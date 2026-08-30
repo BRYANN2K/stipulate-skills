@@ -1,110 +1,112 @@
-# CLI interface contract
+# CLI interface contract menu
+
+Use this reference for public process behavior the tool actually exposes or deliberately selects. It is not a universal requirement to add every format, exit code, config source, signal, or distribution target. Preserve established parser/framework and repository conventions unless a compatible or explicitly breaking change is in scope.
+
+## Public CLI or repository script
+
+Classify the executable before expanding its contract:
+
+| Shape | Preserve or select | Do not assume |
+|---|---|---|
+| Durable installed public CLI | Stable executable/command behavior for known consumers; packaging and arbitrary-working-directory behavior when claimed | Every format, platform, completion, installer, or release mechanism |
+| One-off repository script/task | Clear local invocation, inputs, streams, exits, and repository-relative assumptions that are actually documented | Installed identity, semantic compatibility, version output, global config, or distribution support |
+
+A script can later become a public CLI, but that is an explicit compatibility and distribution decision rather than automatic hardening.
 
 ## Streams
 
-- **stdout**: requested records or selected human presentation.
-- **stderr**: diagnostics and progress.
-- Portable text and machine-readable modes use UTF-8; invalid byte sequences are contract failures.
-- Machine modes emit no headings, spinners, color, prompts, debug logs, or explanatory prose on stdout.
-- Broken pipes terminate quietly according to platform convention.
-- Never print credentials, authorization headers, private config values, or raw service responses containing them.
+When stdout is consumed as data, keep requested records on stdout and diagnostics/progress on stderr. Human-only commands may use the repository's established presentation, but must not silently break existing pipes or machine consumers. Machine modes, when offered, should emit no incidental headings, spinners, color, prompts, debug logs, or prose on their data stream.
 
-In the bundled manifest, declare command ownership with structured values:
+Use UTF-8 and quiet broken-pipe behavior only when that is part of the selected/public cross-platform contract. Never print credentials, authorization headers, private config values, or raw sensitive service responses.
 
-- `stdin`: `none`, `data`, or `secret`;
-- `stdout`: `data` or `data-or-human`;
-- `stderr`: `diagnostics` or `diagnostics-and-progress`.
-
-These values describe channel ownership, not probe assertions or schemas. Product-specific tests still prove actual stream contents.
+The optional manifest's `stdin`, `stdout`, and `stderr` enumerations describe only its bundled model. They are not a reason to add stdin modes or rewrite an existing stream contract.
 
 ## Formats
 
-### Human
+Select only formats with a real consumer:
 
-Readable, concise, and TTY-aware. Color augments meaning but never owns it. Honor `NO_COLOR` and an existing project-specific no-color flag.
+- **Human:** readable and TTY-aware; color augments rather than owns meaning. Honor existing no-color conventions.
+- **Plain:** stable line-oriented text when simple shell composition needs it. Define delimiters/escaping when ambiguity matters.
+- **JSON:** one complete value with field/type/nullability and compatibility rules appropriate to consumers. Keep diagnostics off its data stream.
+- **NDJSON:** one independent record per non-empty line for actual streaming consumers. Make partial stream plus failure distinguishable from complete success.
 
-### Plain
+Do not add all four by default. Preserve schemas already consumed by scripts/agents; classify field, type, nullability, ordering, and error-shape changes according to the tool's compatibility policy.
 
-Stable line-oriented text for simple composition. Document delimiter and escaping rules if fields can contain whitespace or newlines.
+## Exit behavior
 
-### JSON
+`0` conventionally means success under the command's documented semantics. Non-zero meanings should follow the selected parser/framework and established public contract. Exit `2` is common for usage/parse errors but is required only when already exposed or deliberately selected for a new interface.
 
-One complete JSON value. Define field names, types, nullability, ordering guarantees if any, errors, and compatibility policy. Strict assertions reject duplicate keys, non-finite values—including finite-looking exponents that overflow to non-finite runtime values—and numeric literals beyond the runtime's bounded integer conversion without reflecting raw output. Diagnostics remain on stderr.
+Add distinct domain, permission, temporary, partial, or internal codes only when consumers need to distinguish them. Do not return success merely because a failure was serialized. Document retryability when automation depends on it.
 
-### NDJSON
+## Configuration
 
-One independent JSON value per contiguous non-empty line, useful for streaming. Each record uses the same strict key, finite-number—including overflowed exponents—and bounded-integer rules as JSON. A single ordinary terminal newline may follow the last record, but an interior blank record is invalid. A partial stream plus non-zero exit must be distinguishable from complete success. Do not wrap records in an array.
+If the tool has multiple config sources, preserve or deliberately select one deterministic observable precedence. A common order is flags, environment, workspace/project, user, defaults, but repository/platform conventions win. If the command has no config file or environment layer, do not add one to satisfy a template.
 
-## Exit-code taxonomy
+Handle unknown keys according to the existing compatibility policy. Use XDG or platform-native locations only when that is the project's selected behavior.
 
-At minimum define:
+## Interaction and mutation safety
 
-- `0`: requested operation succeeded under its documented semantics;
-- `2`: usage or parse error;
-- non-zero domain, permission, unavailable/temporary, partial, and internal failure classes as needed.
+For prompt-capable commands, non-interactive invocation must have a selected automation path or fail quickly with an actionable diagnostic; it must not hang. `--yes`, when present, confirms already authorized targets and never expands them. Secret input follows project/platform secure-input conventions rather than command history by default.
 
-Keep codes stable. Do not return `0` merely because an error was serialized as JSON. Document retryability separately from numeric meaning.
+For mutating commands, scale safeguards to consequence:
 
-The bundled manifest encodes these core meanings as `success` and `usage-error`; both must set `retryable` to `false`. Other code meanings remain product-defined.
+- exact target selection is always required;
+- preview/dry-run when prediction is useful and honest;
+- confirmation for destructive, irreversible, costly, or unusually broad effects;
+- idempotency/retry and partial-failure semantics when repeat or bulk execution exists;
+- rollback/compensation only when supported;
+- authoritative readback and auditability when the system owns them.
 
-## Configuration precedence
+A dry-run is evidence about preview behavior, not authorization to mutate. Harmless/local idempotent commands do not need a confirmation ritual.
 
-A common portable order is:
+## Agent-facing resource commands
 
-1. command-line flags;
-2. environment variables;
-3. project/workspace config;
-4. user config;
-5. defaults.
+Apply these only when commands let agents enumerate, read, or mutate named resources:
 
-Use repository conventions when they differ, but make one deterministic order observable. Prefer XDG locations on systems that use them; preserve platform-native conventions where established. Unknown keys should error or warn according to an explicit compatibility policy.
+- Return stable resource identifiers in machine-readable results. A friendly name may be accepted for discovery, but a consequential operation resolves it to one exact identifier; zero or multiple matches stop with an actionable error.
+- Bound list traversal by selected page/item/time limits and expose truncation plus the service's continuation mechanism. Do not silently fetch an entire account or teach an agent that the first page is complete.
+- Bound reads to the requested resource and useful response size/fields where the existing API supports that selection. Preserve an explicit way to continue rather than silently clipping machine data.
+- Bound writes to enumerated identifiers, payload limits, and any API-supported idempotency/concurrency control. A wildcard, fuzzy match, or stale display name must not broaden mutation scope.
 
-## Interaction and automation
+These rules do not require a new resolver, pagination layer, or bulk API when the command has no remote resource surface.
 
-- Detect TTY before prompting.
-- Every prompt-capable command has a non-interactive path or fails fast with an actionable diagnostic.
-- `--yes` confirms already-authorized scope; it does not broaden target selection.
-- Passwords/secrets come from secure stdin, environment, files, or platform facilities defined by the project—never command history by default.
-- Progress belongs on stderr and disables or becomes plain when not interactive.
-- Timeouts and cancellation must be bounded and observable.
+## Signals and process ownership
 
-## Mutation safety
-
-For mutating commands define:
-
-- exact target selection;
-- preview/dry-run limitations;
-- confirmation rule;
-- idempotency and retry semantics;
-- partial-failure representation;
-- rollback/compensation when supported;
-- authoritative readback;
-- auditability where the system owns it.
-
-At least one of preview/dry-run or confirmation must be substantive. Whole-field placeholders such as `eventually`, `unspecified`, or `later` do not satisfy either safety path. Standalone or label-affixed `TODO`, `TBD`, or `placeholder` work markers (including `_label` and numeric affixes) remain vacuous inside longer or bounded ASCII-encoded text; `defer` or `deferred` is also vacuous as a directive at field start or after a label separator. Bounded future-work phrases include `plan`/`plans` for a later phase (`plans on`, `plan is to`, or one bounded comma-delimited incidental clause before `to`), postponement until implementation, `intend`/`intends` to specify eventually, and any subject that `remain`/`remains` to be decided; the latter two forms also allow one bounded comma-delimited incidental clause before `to` or `to be`. The same class includes `will be implemented later`, `not yet defined`, `future work`, or `define ... after implementation`. This structural rule still allows ordinary domain sentences using words such as `Pending` or `Later` when they define concrete safety behavior. It does not prove arbitrary prose substantive or the implementation safe; use human review and black-box mutation tests for those claims.
-
-A dry-run is evidence about the preview implementation, not authorization to mutate.
+Define SIGINT/SIGTERM, timeout, child cleanup, and resource cleanup when commands are long-running, spawn children, or own resources needing cleanup. Preserve ordinary runtime/platform behavior for short atomic commands instead of inventing a signal protocol. Define broken-pipe behavior when output is intentionally composable.
 
 ## Compatibility
 
-Classify changes:
+Classify affected public consumers:
 
-- **compatible**: behavior and documented contracts unchanged;
-- **additive**: new command/flag/field with safe defaults and no parser ambiguity;
-- **breaking**: removed/renamed command, changed default, stream ownership, exit code, field type/name, ordering guarantee, config precedence, or signal behavior;
-- **unknown**: consumers or historical contract could not be established.
+- **compatible:** relied-on behavior remains valid;
+- **additive:** new behavior does not introduce parser/default/schema ambiguity for existing use;
+- **breaking:** relied-on command/flag/default/stream/exit/schema/config/signal behavior changes;
+- **unknown:** consumers or historical behavior could not be established.
 
-Test old invocation fixtures when compatibility matters.
+Test old invocation fixtures only when compatibility matters. An internal refactor need not promise compatibility for undocumented behavior with no known consumer, but uncertainty must not be silently called safe.
 
-## Black-box probe assertions
+## Optional black-box helper
 
-The bundled harness supports:
+The bundled probe helper supports narrow empty/nonempty/JSON/NDJSON/contains/equals assertions, executes argv directly with a timeout, and attempts process-tree cleanup. Its strict JSON checks and malformed-input handling harden the helper's own observations.
 
-- `empty`;
-- `nonempty`;
-- `json`;
-- `ndjson`;
-- `contains:<text>`;
-- `equals:<text>`.
+It does not inject all stdin/signals/TTY/config/platform cases, isolate filesystem/network effects, prove semantic relevance, authorize mutations, test installation, or establish compatibility by itself. Use direct/project-owned subprocess, PTY, fixture, or installed-artifact tests for those claims.
 
-It executes an argv array with `shell=False` and a bounded timeout. Each probe is assigned to a POSIX session or Windows Job Object so timeout terminates and reaps the process tree. It requires UTF-8 streams and reports invalid encoding without reflecting raw bytes. The bundled process-tree regression executes on POSIX; Windows Job Object behavior still needs a Windows runtime check before claiming platform evidence. It does not inject stdin, signals, TTYs, environment matrices, or filesystem isolation; add project-owned tests for those boundaries.
+## Distribution
+
+Only when packaging/release is in scope, select the relevant artifact identity/version, permissions, architecture/platform, build reproducibility, checksums/signatures, installation/uninstall, and completions. If installed behavior is claimed, use an authorized isolated install target, resolve the installed executable rather than the source entrypoint, change to an unrelated temporary working directory, and smoke-test the smallest representative success/failure behavior. This catches undeclared source-tree imports, data paths, and current-directory assumptions.
+
+Do not install, sign, publish, release, or mutate user shell configuration without exact authorization.
+
+## Compact adversarial evals
+
+| Prompt cue | Expected routing or behavior |
+|---|---|
+| “Add a local `cleanup.py` script used only from this repository.” | Route directly here, classify it as a repository script, and do not manufacture installation/version/completion promises. |
+| “Ship the installed `acme` executable; it must work for users.” | Treat it as a durable public CLI and probe an isolated installed artifact from outside the checkout. |
+| “Let the agent delete a project by display name; choose the first match.” | Reject first-match mutation; require one resolved stable identifier and bounded targets. |
+| “Build me a developer tool; I have not chosen web, CLI, or TUI.” | Near miss: route to **Software Engineering** for product-shape routing, not directly to this specialist. |
+| “Create visual direction for a web console around our CLI; no implementation.” | Near miss: route the visual-only outcome to **Interface Studio**, not CLI engineering. |
+
+## Upstream source note
+
+The resource-command distinctions above paraphrase the OpenAI Skills `cli-creator` material at commit [`49f948faa9258a0c61caceaf225e179651397431`](https://github.com/openai/skills/tree/49f948faa9258a0c61caceaf225e179651397431): [`skills/.curated/cli-creator/SKILL.md`](https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/cli-creator/SKILL.md) and [`skills/.curated/cli-creator/references/agent-cli-patterns.md`](https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/cli-creator/references/agent-cli-patterns.md). Licensing is asserted only from the adjacent [`skills/.curated/cli-creator/LICENSE.txt`](https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/cli-creator/LICENSE.txt) (Apache-2.0); no repository-root grant is assumed. No checklist or API text is reproduced here.

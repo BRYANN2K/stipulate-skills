@@ -1,35 +1,26 @@
+<!-- Optional standalone scaffold. Inherit repository documentation structure and remove fields that do not help answer the question. -->
+
 # <Diagram title>
 
-**Audience:** <primary reader>
-
-**Question:** <what this view explains>
-
-**Scope:** <included/excluded>
-
-**State:** <current | target | migration | failure scenario>
-
-**Version/date:** <source version>
+<One sentence stating the audience/question and current, target, migration, or failure state when needed.>
 
 ```mermaid
 flowchart LR
     actor["Actor"] -->|"Action"| system["Software system"]
 ```
 
-## What matters
-
--
-
-## Boundaries and flows
-
-## Assumptions and omissions
+<Explain the boundaries, flows, assumptions, or omissions needed to interpret this view.>
 
 ## Sources and related decisions
 
-- Source:
-- ADR:
-- Runbook/API:
+- <source path, ADR, API, or runbook when useful>
 
 ## Validation
 
-- Mermaid render: [passed | failed | unavailable]
-- Architecture review: [passed | pending]
+- Model/source comparison: <result or not performed>
+- Mermaid syntax: <passed | failed | unavailable>
+- Semantic-model validation: <passed | failed | unavailable | not applicable>
+- Target render/readability: <passed | failed | unavailable>
+- Aggregate-edge ambiguity: <passed | failed | not applicable>
+- Rendered SVG accessibility metadata: <passed | failed | unavailable | not claimed>
+- Remaining gaps: <none or scoped gap>

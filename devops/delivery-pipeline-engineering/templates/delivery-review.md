@@ -1,28 +1,29 @@
-# Delivery pipeline review
+# Optional delivery pipeline review
 
-## Verdict
+Use only sections that answer the selected mode. This template is not a required gate matrix, provenance packet, rollout plan, or release certificate.
 
-**[READY | CONDITIONAL | BLOCKED]** — <reason>
+## Scope and requested decision
 
-## Delivery graph
+| Repository + immutable candidate/check identity | Artifact digest | Target/environment | Evidence limits |
+|---|---|---|---|
 
-## Findings
+## Relevant execution/trust path
 
-| Severity | Confidence | Boundary | Evidence | Recommendation |
+## Findings or failure diagnosis
+
+| Impact | Confidence | Boundary/job | Evidence | Smallest correction |
 |---|---|---|---|---|
 
-## Gate matrix
+## Applicable gates/artifact evidence (when relevant)
 
-| Gate | Input | Blocking | Pass criteria | Evidence |
+| Gate or artifact claim | Exact candidate/subject identity | Execution/crypto result | Required/advisory/allowed or policy result | Evidence/freshness |
 |---|---|---|---|---|
 
-## Artifact and provenance
+## Rollout/effect plan (when relevant)
 
-## Rollout plan
+| Deployment identity/state | Flag exposure identity/state | Analysis outcome → promote/hold/abort | Rollback/roll-forward/readback |
+|---|---|---|---|
 
-| Step | Exposure | SLI/threshold | Dwell | Abort/rollback |
-|---|---|---|---|---|
+## Decision or conditions (only when requested)
 
-## Conditions and approvals
-
-## Validation log
+## Validation and effects not performed

@@ -1,196 +1,166 @@
 ---
 name: product-story-and-copy
-description: "Use when a website, web application, or dashboard needs product positioning, message hierarchy, conversion copy, interface microcopy, SEO/social metadata, or a claims audit before visual design. Separates facts, hypotheses, proof, and unknowns; writes specific human copy from product evidence; and blocks invented metrics, testimonials, urgency, or benefits."
+description: "Use when a website, landing page, web application, or dashboard needs evidence-led product understanding, positioning, conversion copy, task/state microcopy, metadata, or claim control. Handles targeted copy edits directly without invoking the full design studio, and expands to storyboards or multiple routes only when the requested decision genuinely needs them. Preserves facts, hypotheses, proof, and unsupported-claim boundaries."
 license: Apache-2.0
 compatibility: Works with any product, website, application, or dashboard workflow and Agent Skills-compatible client.
 metadata:
-  version: "1.0.0"
+  version: "2.1.0"
   author: BRYANN2K
   category: design
-  tags: product-story, copywriting, conversion, marketing, claims, anti-slop
+  tags: product-story, copywriting, storyboarding, copy-routes, claims, interface-copy
 ---
 
 # Product Story and Copy
 
 ## Overview
 
-Turn verified product knowledge and customer language into a coherent story, page architecture, and interface copy before final composition. Copy is a product input, not filler: it determines hierarchy, proof placement, interaction labels, empty/error states, and the space components need.
+Create placement-ready content from product evidence. Choose the shortest safe mode: a targeted label, state, metadata, claim, section, or page-copy request stays bounded; a storyboard appears only when sequence is open; multiple copy routes appear only when a real strategic trade-off remains. Do not invoke the full Interface Studio merely because copy is being edited.
+
+Calibrate freedom deliberately. Exact product facts, claim scope, legal/privacy wording, destructive consequences, and evidence locators are low-freedom. Voice, structure, route count, artifact form, and presentation order are higher-freedom unless the user or repository fixes them.
 
 <HARD-GATE>
-Never publish or design around a claim without classifying its evidence. Do not invent customer quotes, logos, metrics, rankings, scarcity, urgency, compliance, availability, integrations, outcomes, or comparative superiority. Mark an unsupported idea as a hypothesis or exclude it from publishable copy.
+Never present an unsupported metric, customer outcome, quotation, logo, ranking, comparison, security/compliance statement, availability promise, urgency, scarcity, or capability as fact. Remove it, qualify it to supported scope, or keep it visibly internal. An explicit bounded copy request authorizes the named local copy/document/frontend-string edits; ask again only if scope/effect expands, a material unresolved choice needs the human, or publication/live/external/dependency effects appear.
 </HARD-GATE>
 
 ## When to use
 
-- Establish positioning, audience, value proposition, offer, objections, proof, or conversion flow for a website.
-- Write or rewrite headlines, sections, calls to action, pricing copy, forms, onboarding, empty states, errors, confirmations, or dashboard labels.
-- Audit copy that feels generic, hyperbolic, interchangeable, or AI-generated.
-- Prepare content before art direction, a design system, layout, or frontend implementation.
+- Write or revise a specific headline, section, CTA, form, metadata field, label, help text, or interface state.
+- Establish product understanding, positioning, message order, conversion copy, metadata, or interface microcopy.
+- Prepare real content for a new landing page or visual concept.
+- Define loading, empty, validation, error, permission, success, destructive, cancellation, retry, or dashboard context copy.
+- Audit generic, interchangeable, hyperbolic, or evidence-free wording and public claims.
 
-Do not use for a mechanical typo fix, private sales outreach, long-form editorial content, or visual direction. Do not force a landing-page funnel onto an authenticated product surface.
+Do not use for a purely visual styling task, private sales outreach, or long-form editorial work. Do not force marketing routes onto task-led surfaces, and do not route a targeted copy request through the full design studio.
 
 ## Workflow
 
-### 1. Build the evidence map
+### 1. Choose the shortest content mode
 
-Inspect the product source of truth: repository docs, features, routes, screenshots, demos, pricing, customer research, analytics definitions, support language, approved brand voice, and legal/compliance constraints. Record source locators. Treat current UI copy as evidence of implementation, not proof that a claim is true.
+Inspect enough repository and request context to select one mode:
 
-Classify each statement:
+| Mode | Use when | Minimum path |
+|---|---|---|
+| `TARGETED_COPY` | One bounded element, section, page, metadata set, or content defect is named | inspect governing facts/voice → edit requested copy and adjacent dependent states → truth/specificity check |
+| `CLAIMS_CONTROL` | The outcome is a claim audit, proof boundary, or claims ledger | inventory affected claims → verify/qualify/reject → update only requested surfaces/ledger |
+| `TASK_SURFACE` | App, dashboard, admin, onboarding, settings, or another task-led UI needs content | map affected task/state/consequence → draft exact copy → verify recovery and data scope |
+| `OPEN_MARKETING` | A new/material marketing argument or page sequence is genuinely open | product truth → storyboard if needed → one route or enough distinct routes to resolve the trade-off → select/hand off |
 
-- `fact` — directly supported by a primary source;
-- `derived` — follows from named facts through a stated inference;
-- `hypothesis` — plausible but not validated;
-- `unknown` — required information is absent;
-- `forbidden` — fabricated, misleading, private, or explicitly disallowed.
+A full product understanding record is not required for a bounded edit when existing sources already answer the relevant facts. A targeted mode may operate standalone and return inline output.
 
-Load [copy and evidence rules](references/copy-evidence-rules.md) when claims, testimonials, metrics, comparison, urgency, or regulated language appears.
+Record decision ownership only for a material choice: `human`, `delegated`, or `not-applicable`. If the user delegates content strategy, choose and continue. Selection does not authorize publication or unsupported proof.
 
-**Complete when:** audience, problem, mechanism, capabilities, constraints, proof, unknowns, and source locators are distinguishable without relying on marketing adjectives.
+### 2. Inspect the evidence the requested copy can rely on
 
-### 2. Define the product story
+Read repository instructions and the most relevant current sources: product docs, routes/UI strings, behavior/configuration, tests, demos, data models, pricing/policy, approved research/support language, brand voice, and legal constraints. Current copy proves wording exists, not that its claim is true.
 
-Copy [the product story template](templates/product-story.md) to `.design-flow/artifacts/PRODUCT-STORY.md`. Define:
+Record exact file/heading, route, test, URL, report/date, or equivalent reproducible locators for facts that matter. Do not inventory the whole repository for a one-line change. Load [copy and evidence rules](references/copy-evidence-rules.md) when claim status, route distinctness, or state completeness is nontrivial.
 
-- primary audience and context;
-- job to be done and current workaround;
-- product mechanism and differentiated choice;
-- promised outcome bounded by evidence;
-- constraints and honest non-fit;
-- objections and proof response;
-- voice samples and language to avoid;
-- primary journey and conversion event.
+**Complete when:** enough audience/task, mechanism, action, voice, constraints, and claim evidence is known for the selected mode.
 
-A product story is not a slogan list. Keep one central argument that can survive removal of the brand name.
+### 3. Ask only decision-changing questions
 
-**Complete when:** a skeptical reader can explain who the product is for, what changes, why this mechanism is credible, and when the product is not the right fit.
+Draft what the evidence supports. Ask a concise batched question only when its answer would materially change:
 
-### 3. Create and enforce the claims ledger
+- audience or qualifying/non-fit boundary;
+- primary task or conversion action;
+- product mechanism, offer, or availability;
+- legality, privacy, destructive consequence, or claim publishability;
+- a real choice between incompatible content strategies.
 
-Copy [the claims template](templates/claims.md) to `.design-flow/artifacts/CLAIMS.md`. Give every candidate claim an ID and record:
+If an answer would only tune reversible wording, state the assumption and proceed. Never ask the user for a plausible metric or testimonial merely to make copy persuasive.
 
-- exact wording;
-- type;
-- source and locator;
-- scope and caveat;
-- publishability decision;
-- surfaces where it may appear.
+### 4. Storyboard only when sequence or state flow is open
 
-Link publishable sections and data labels to claim IDs. Synthetic example data must be labeled and must not imply customer or production evidence.
+For a new/material sequence, map enough moments to support the reader/user decision. Each moment can record the question/state, source-backed content, proof or data/state evidence, desired action, and next clarity.
 
-**Complete when:** every measurable, comparative, testimonial, security, compliance, availability, and outcome claim has a decision and evidence locator; unresolved hypotheses are absent from final copy.
+- Marketing: keep product truth and proof inventory fair while routes may frame/order them differently.
+- Application: entry → task → consequence → feedback → recovery/next action.
+- Dashboard: scope/freshness → signal → supporting evidence → drill-down/operation → reconciliation.
 
-### 4. Design the message hierarchy
+Skip a new storyboard when the task names a bounded placement inside an established information architecture. No fixed beat count or stock hero/logo/cards/FAQ sequence applies.
 
-Choose the information order from the user's decision, not a default landing template. Depending on the surface, define:
+### 5. Draft one route or only decision-relevant alternatives
 
-- public website: recognition → mechanism → evidence → fit/objections → action;
-- application: current state → available action → consequence → feedback/recovery;
-- dashboard: scope/freshness → signal → evidence → drill-down/action.
+#### Open marketing
 
-A section earns space only if it advances understanding, confidence, or action. Do not add FAQ, logo walls, metrics, testimonials, “how it works,” or pricing merely because SaaS pages often contain them.
+When constraints select one argument, write one complete route. When a strategic trade-off remains, create enough distinct routes to expose it and stop when another would not change the decision. Distinguish routes in the relevant combination of audience tension, mechanism, proof strategy, objection, narrative topology, and CTA promise—not only headline, tone, or adjectives.
 
-**Complete when:** each section or screen has one job, one supported message, required proof, and a transition to the next user decision.
+Give every compared route fair access to the same supported truth and proof inventory. Couple a route to a visual direction only when its argument materially depends on that direction; do not create every copy × visual combination or blend alternatives before selection.
 
-### 5. Write human copy and state microcopy
+#### Task surface
 
-Copy [the page copy template](templates/page-copy.md) to `.design-flow/artifacts/PAGE-COPY.md`. Use concrete nouns and verbs, product terminology, real constraints, and varied sentence rhythm. Preserve an existing human voice unless the user asks for a new one.
+Draft only the affected task path, hierarchy labels, help, consequences, and applicable loading, empty, validation, error, permission, success, destructive, cancellation, retry, or stale-data states. Say what happened, what remained safe, and what can happen next. Do not fill a universal state matrix when states cannot occur or are outside scope.
 
-Write applicable states with the same care as the hero:
+#### Bounded existing copy
 
-- labels and helper text;
-- loading and progress;
-- empty and first-use;
-- validation and server error;
-- destructive confirmation;
-- success and next action;
-- forbidden/permission state;
-- cancellation and retry.
+Preserve established terminology, tone, navigation, and content structure unless the request changes them. Edit the smallest coherent set, including adjacent success/failure wording only when the changed action affects it. Skip artificial alternatives.
 
-Avoid pretending that every state should sound playful or branded. Error copy should identify what happened, what remained safe, and what the user can do.
+### 6. Keep claims traceable without forcing a file
 
-**Complete when:** final copy works without lorem ipsum, labels are unambiguous out of context, and state messages preserve action and recovery context.
+Create or update a claims ledger from [the claims template](templates/claims.md) only when it is requested, the project requires it, or material externally checkable wording needs durable traceability across surfaces/runs. Otherwise keep source and scope beside the draft or in an inline evidence note.
 
-### 6. Make the public surface marketing-ready
+Qualifying claims include metrics, testimonials/logos, comparisons, customer outcomes, performance, security/compliance, availability, consequential capabilities, guarantees, and urgency. Use `publish`, `qualify`, `internal`, `reject`, or `unknown`. Exclude `internal`, `reject`, and `unknown` wording from public copy. A missing claim does not block unrelated source-backed content.
 
-Where applicable, define:
+For proof that can age—such as counts, rankings, benchmarks, certification/status, pricing or availability, named customers, comparisons, and time-bounded outcomes—add lifecycle fields only when they improve control: evidence owner, checked/effective date, exact valid scope, expiry date or review/withdrawal trigger, and reverse locators for every active public use. Define who removes, replaces, or qualifies the wording when the trigger fires, and verify those locators during withdrawal. Do not force expiry metadata onto stable directly inspectable labels or timeless product mechanics, and do not create a ledger solely to satisfy these fields.
 
-- unique title and meta description;
-- canonical and indexability decision;
-- social title, description, and image brief;
-- semantic heading outline;
-- structured-data applicability without inventing fields;
-- conversion event and success condition;
-- form privacy/consent and error copy;
-- trust/legal links required by the actual offer.
+### 7. Add only requested and applicable completeness
 
-Do not call a page SEO-ready from metadata alone; technical implementation and crawl/runtime evidence belong to the website engineering workflow.
+For a public surface, add metadata, heading outline, social brief, canonical/indexability intent, consent/privacy, trust/legal, conversion event, or success copy only when the requested deliverable or downstream build needs it. These requirements do not prove runtime SEO, analytics, accessibility, consent delivery, deployment, or publication.
 
-**Complete when:** metadata, conversion, trust, and measurement requirements are explicit and traceable to the page's real content and offer.
+For an application/dashboard, include only states/data context that can affect the requested task or claim. Keep source, grain, scope, units, freshness, permissions, and consequences visible where interpretation depends on them.
 
-### 7. Run the anti-slop edit
+### 8. Recommend or select only when a choice exists
 
-For every paragraph, ask:
+Recommend the strongest route or hierarchy with evidence and trade-offs. If the user reserved the decision, ask one focused selection question. If judgment is delegated, record the choice and continue. If the request or inherited system already determines the content, use `not-applicable` and avoid a selection ritual.
 
-1. What specific fact or decision does this add?
-2. Could a competitor paste it unchanged?
-3. Is the claimed mechanism visible?
-4. Does the proof support the exact scope?
-5. Can one shorter sentence preserve the meaning?
+A targeted copy-only request may finish here. Cross-discipline visual exploration belongs to `design-direction` or full Interface Studio only when the scope actually expands.
 
-Remove unsupported intensifiers, duplicated claims, manufactured tension, fake precision, throat-clearing, and generic CTA labels. Do not flatten deliberate human quirks or rewrite a raw voice into corporate polish.
+### 9. Run the truth and specificity edit
 
-**Complete when:** every retained line carries product-specific meaning, interaction guidance, proof, or necessary trust information.
+For each retained line ask: What source or behavior supports it? Which decision does it help? Could an unrelated product paste it unchanged? Is the mechanism visible? Does the CTA name the real next step? Remove duplicated promises, manufactured tension, fake precision, unsupported intensifiers, and accidental uniform cadence while preserving deliberate voice and necessary domain language.
+
+Verify only affected copy, placement, wrapping/state behavior, and claim surfaces. A syntax, link, build, or automated check proves that check only, not copy quality, accessibility, publication, or runtime delivery.
 
 ## Output contract
 
+Preserve the following information, but reorder or chunk it for the user's focus. `focus-friendly-delivery` may change presentation without hiding claim evidence, assumptions, safety boundaries, or gaps.
+
 ```text
 Product story and copy: READY | PARTIAL | BLOCKED
-Audience / JTBD: <specific summary>
-Primary mechanism: <how the product creates the outcome>
-Conversion / task: <observable user action>
-
-Artifacts
-- PRODUCT-STORY.md: <path>
-- PAGE-COPY.md: <path>
-- CLAIMS.md: <path>
-
-Claims
-- Publishable: <IDs>
-- Hypotheses excluded: <IDs>
-- Unknown/blocking: <IDs>
-
-Marketing readiness
-- Metadata/heading/social: <status>
-- Conversion measurement: <status>
-- Trust/legal constraints: <status>
-
-Evidence
-- Sources inspected: <locators>
-- Existing voice samples: <locators>
-- Copy audit: <specific changes>
+Mode: TARGETED_COPY | CLAIMS_CONTROL | TASK_SURFACE | OPEN_MARKETING
+Requested scope and exclusions: <specific>
+Primary audience/task and action: <specific>
+Draft/edits: <inline copy or paths>
+Routes: <one selected route | candidate IDs and real differences | not applicable>
+Decision: <selected/pending/not applicable> — owner=<human|delegated|not-applicable>
+Claim evidence: <source locators, publishable/qualified/excluded wording; owner/date/scope/expiry and reverse withdrawal locators only where proof can age>
+States/metadata checked: <affected set or not applicable>
+Persistent artifacts: <paths or inline/not needed, with reason>
+Unresolved questions and effects not proven: <gaps, publication/runtime boundaries>
 ```
 
 ## Common pitfalls
 
-- Starting with headline formulas before understanding the product mechanism.
-- Treating current marketing copy as evidence for itself.
-- Hiding unknowns behind polished prose.
-- Writing the hero carefully while leaving forms, errors, and empty states generic.
-- Adding a section because a competitor has one.
-- Using “simple,” “fast,” “secure,” or “AI-powered” without scope and evidence.
-- Converting every sentence into the same short punchy cadence.
-- Fabricating urgency, customer volume, or production data in examples.
-- Claiming SEO or conversion readiness without implementation evidence.
+- Running full product discovery or Interface Studio for a targeted wording change.
+- Treating storyboards, route counts, state matrices, or files as universal quotas.
+- Calling headline synonyms distinct strategies or inventing proof to bias one route.
+- Forcing marketing funnels onto task surfaces.
+- Creating a claims file for every label, omitting traceability for a material public claim, or letting age-sensitive proof survive past its review/withdrawal trigger because active usage locators are unknown.
+- Treating current marketing copy, a mockup, synthetic data, or a successful build as proof.
+- Requesting approval after strategy was delegated or when constraints already select the wording.
+- Claiming SEO, analytics, accessibility, consent, deployment, or publication from copy alone.
 
 ## Verification checklist
 
-- [ ] Product, audience, job, mechanism, alternatives, constraints, and non-fit were inspected from sources.
-- [ ] Facts, derived statements, hypotheses, unknowns, and forbidden claims are separated.
-- [ ] Every publishable claim has an exact source locator, scope, and caveat.
-- [ ] No metric, quote, logo, testimonial, urgency, compliance, or superiority was invented.
-- [ ] The story has one product-specific argument rather than interchangeable benefits.
-- [ ] Message order follows the user's decision rather than a fixed SaaS template.
-- [ ] Headlines, body, CTA, labels, forms, loading, empty, success, and failure copy are covered where applicable.
-- [ ] Metadata, headings, conversion measurement, trust, and legal requirements are explicit for public pages.
-- [ ] Unsupported adjectives, repeated claims, generic filler, and fake precision were removed.
-- [ ] Existing human voice was preserved unless a change was requested.
+- [ ] The shortest content mode matches the bounded request; targeted work did not invoke the full studio.
+- [ ] Only decision-relevant repository evidence was inspected before questions or drafting.
+- [ ] Facts, hypotheses, proof, assumptions, and unsupported claims remain distinct.
+- [ ] Questions are limited to unresolved issues that change truth, strategy, scope, or consequence.
+- [ ] A storyboard exists only when sequence/flow is open and contains only needed moments.
+- [ ] One route was accepted when constraints selected it; alternatives exist only for a real strategic trade-off and share fair proof.
+- [ ] Task surfaces use task, data, consequence, feedback, and recovery copy only for applicable states.
+- [ ] Bounded work preserves established terminology and edits the smallest coherent set.
+- [ ] Material claims are supported, qualified, internal, rejected, or excluded; none were invented.
+- [ ] Claims whose proof can age have proportional owner/date/scope/review-or-expiry controls and reverse usage/withdrawal locators where durable control is warranted; stable claims were not burdened with ceremonial metadata.
+- [ ] Persistence is justified by deliverable, cross-run/agent memory, or project policy; inline output is accepted otherwise.
+- [ ] Verification covers affected copy/claims/placement only and does not overstate tool results or publication/runtime effects.

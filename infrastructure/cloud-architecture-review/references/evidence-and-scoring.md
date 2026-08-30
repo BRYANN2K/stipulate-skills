@@ -1,33 +1,36 @@
-# Cloud review evidence and scoring
+# Cloud review evidence and prioritization
 
-## Evidence ledger
+Load this reference for complex scoped/full assessments. A focused question needs only enough cited evidence to support its material claims; do not create one ledger row per sentence.
 
-Maintain one row per claim:
+## Optional material-claim ledger
 
-| ID | Claim/control | Source | Freshness | Confidence | Contradictions |
-|---|---|---|---|---|---|
+Use when several sources, contradictions, or handoffs make provenance hard to retain:
 
-Evidence expires at different rates. A current Terraform file may still differ from runtime; a diagram may remain conceptually useful while resource details drift. State the observation date when live data is used.
+| Claim/control | Source and observation date | Evidence class | Confidence/limits | Contradictions |
+|---|---|---|---|---|
 
-## Finding severity
+Useful evidence classes include tested/observed, current configuration, documented design, stakeholder-reported, inferred, and unknown. Evidence expires at different rates: IaC can differ from runtime, a current diagram can omit resource detail, and inventory is a point-in-time observation.
 
-- **Critical** — plausible compromise, unrecoverable data loss, or broad outage with no effective control.
-- **High** — major objective can fail; workaround or recovery is uncertain.
-- **Medium** — meaningful degradation, operational burden, or defense-in-depth gap.
-- **Low** — localized improvement with limited near-term exposure.
-- **Opportunity** — optimization not tied to a current control failure.
+## Finding language
 
-Severity is not confidence. A critical unknown remains critical and should trigger evidence collection.
+Severity and confidence are independent. Use the repository's vocabulary when one exists; otherwise describe impact directly or use:
 
-## Recommendation test
+- **Critical/High** for plausible compromise, unrecoverable data loss, or broad failure of a critical objective;
+- **Medium** for meaningful degradation, operational burden, or a material defense/recovery gap;
+- **Low** for localized improvement with limited near-term exposure;
+- **Opportunity** for optimization not tied to a current control failure.
 
-A recommendation is actionable only if it states:
+Do not turn these labels into maturity points or a checklist total. An important unknown remains visible because of its possible impact and low confidence.
 
-- failure or objective addressed;
-- smallest useful change;
-- owner role and dependencies;
+## Recommendation quality
+
+Include only fields needed to make or execute the decision:
+
+- objective/failure mode addressed;
+- smallest useful capability/change;
+- evidence and confidence;
+- trade-off, dependency, or cost driver;
 - validation signal;
-- cost/complexity trade-off;
-- rollback or migration strategy when applicable.
+- owner/effort/rollback/migration only when governance or production change needs them.
 
-Avoid vendor feature shopping. Recommend a capability first, then map it to provider-native or portable implementations.
+Prioritize qualitatively by impact, likelihood/exposure, uncertainty, dependency order, effort, and reversibility. Avoid false numeric precision. Recommend a capability first, then map it to target-provider or portable implementations.

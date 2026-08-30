@@ -1,31 +1,29 @@
-# Kubernetes engineering review
+# Optional Kubernetes engineering review
 
-## Context
+Use only sections that answer the requested mode. This template is not a production-readiness certificate.
 
-| Item | Value |
-|---|---|
-| Cluster/version | |
-| Environment/namespace | |
-| Source of truth | |
-| Render method | |
+## Scope and source of truth
 
-## Findings
+| Target/version/environment | Authoritative source | Evidence boundary |
+|---|---|---|
 
-| Severity | Confidence | Resource | Evidence | Recommendation |
+## Findings or diagnosis
+
+| Class | Confidence | Resource/contract | Evidence | Smallest correction |
 |---|---|---|---|---|
 
-## Cross-resource validation
+Classes: safety invariant, project/policy requirement, contextual recommendation, informational.
 
-| Contract | Status | Evidence |
+## Artifact or diff (when authored)
+
+## Relevant validation
+
+| Target/check | Status: passed/failed/skipped/unavailable | Evidence/limit |
 |---|---|---|
 
-## Proposed artifact or patch
+## Live effect plan/readback (when applicable)
 
-## Rollout and rollback
+| Exact target/action | Expected signal | Abort/rollback | Readback |
+|---|---|---|---|
 
-## Validation log
-
-| Check | Status | Evidence |
-|---|---|---|
-
-## Unknowns
+## Unknowns and effects not performed

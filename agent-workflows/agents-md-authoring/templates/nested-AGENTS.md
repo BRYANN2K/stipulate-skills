@@ -1,3 +1,5 @@
+<!-- Optional scaffold for a new instruction file. Prefer a bounded direct edit and inherit human rules; remove every unused section and comment. -->
+
 # Agent instructions: {{SCOPE_NAME}}
 
 <!--

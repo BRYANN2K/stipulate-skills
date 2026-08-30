@@ -2,30 +2,170 @@
   "schema_version": "1.0",
   "repository": "BRYANN2K/skills",
   "skills": [
-    {"name": "infrastructure-project-bootstrap", "category": "infrastructure", "path": "infrastructure/infrastructure-project-bootstrap"},
-    {"name": "terraform-change-safety", "category": "infrastructure", "path": "infrastructure/terraform-change-safety"},
-    {"name": "kubernetes-production-engineering", "category": "infrastructure", "path": "infrastructure/kubernetes-production-engineering"},
-    {"name": "cloud-architecture-review", "category": "infrastructure", "path": "infrastructure/cloud-architecture-review"},
-    {"name": "sre-incident-investigation", "category": "devops", "path": "devops/sre-incident-investigation"},
-    {"name": "gitops-operations", "category": "devops", "path": "devops/gitops-operations"},
-    {"name": "delivery-pipeline-engineering", "category": "devops", "path": "devops/delivery-pipeline-engineering"},
-    {"name": "software-project-bootstrap", "category": "software-development", "path": "software-development/software-project-bootstrap"},
-    {"name": "agents-md-authoring", "category": "agent-workflows", "path": "agent-workflows/agents-md-authoring"},
-    {"name": "website-production-engineering", "category": "software-development", "path": "software-development/website-production-engineering"},
-    {"name": "web-application-engineering", "category": "software-development", "path": "software-development/web-application-engineering"},
-    {"name": "dashboard-application-engineering", "category": "software-development", "path": "software-development/dashboard-application-engineering"},
-    {"name": "terminal-ui-engineering", "category": "software-development", "path": "software-development/terminal-ui-engineering"},
-    {"name": "command-line-tool-engineering", "category": "software-development", "path": "software-development/command-line-tool-engineering"},
-    {"name": "web-craft", "category": "design", "path": "design/web-craft"},
-    {"name": "product-story-and-copy", "category": "design", "path": "design/product-story-and-copy"},
-    {"name": "design-direction", "category": "design", "path": "design/design-direction"},
-    {"name": "design-system-first", "category": "design", "path": "design/design-system-first"},
-    {"name": "interface-motion", "category": "design", "path": "design/interface-motion"},
-    {"name": "anti-slop-review", "category": "design", "path": "design/anti-slop-review"},
-    {"name": "developer-documentation", "category": "doc-writer", "path": "doc-writer/developer-documentation"},
-    {"name": "architecture-decision-records", "category": "doc-writer", "path": "doc-writer/architecture-decision-records"},
-    {"name": "software-architecture-diagrams", "category": "doc-writer", "path": "doc-writer/software-architecture-diagrams"},
-    {"name": "build-in-public-journal", "category": "creator", "path": "creator/build-in-public-journal"},
-    {"name": "verified-completion", "category": "agent-workflows", "path": "agent-workflows/verified-completion"}
+    {
+      "name": "infrastructure",
+      "category": "infrastructure",
+      "path": "infrastructure/infrastructure"
+    },
+    {
+      "name": "infrastructure-project-bootstrap",
+      "category": "infrastructure",
+      "path": "infrastructure/infrastructure-project-bootstrap"
+    },
+    {
+      "name": "terraform-change-safety",
+      "category": "infrastructure",
+      "path": "infrastructure/terraform-change-safety"
+    },
+    {
+      "name": "kubernetes-production-engineering",
+      "category": "infrastructure",
+      "path": "infrastructure/kubernetes-production-engineering"
+    },
+    {
+      "name": "cloud-architecture-review",
+      "category": "infrastructure",
+      "path": "infrastructure/cloud-architecture-review"
+    },
+    {
+      "name": "devops",
+      "category": "devops",
+      "path": "devops/devops"
+    },
+    {
+      "name": "sre-incident-investigation",
+      "category": "devops",
+      "path": "devops/sre-incident-investigation"
+    },
+    {
+      "name": "gitops-operations",
+      "category": "devops",
+      "path": "devops/gitops-operations"
+    },
+    {
+      "name": "delivery-pipeline-engineering",
+      "category": "devops",
+      "path": "devops/delivery-pipeline-engineering"
+    },
+    {
+      "name": "software-engineering",
+      "category": "software-development",
+      "path": "software-development/software-engineering"
+    },
+    {
+      "name": "software-project-bootstrap",
+      "category": "software-development",
+      "path": "software-development/software-project-bootstrap"
+    },
+    {
+      "name": "agent-workflows",
+      "category": "agent-workflows",
+      "path": "agent-workflows/agent-workflows"
+    },
+    {
+      "name": "agents-md-authoring",
+      "category": "agent-workflows",
+      "path": "agent-workflows/agents-md-authoring"
+    },
+    {
+      "name": "focus-friendly-delivery",
+      "category": "agent-workflows",
+      "path": "agent-workflows/focus-friendly-delivery"
+    },
+    {
+      "name": "website-production-engineering",
+      "category": "software-development",
+      "path": "software-development/website-production-engineering"
+    },
+    {
+      "name": "web-application-engineering",
+      "category": "software-development",
+      "path": "software-development/web-application-engineering"
+    },
+    {
+      "name": "dashboard-application-engineering",
+      "category": "software-development",
+      "path": "software-development/dashboard-application-engineering"
+    },
+    {
+      "name": "terminal-ui-engineering",
+      "category": "software-development",
+      "path": "software-development/terminal-ui-engineering"
+    },
+    {
+      "name": "command-line-tool-engineering",
+      "category": "software-development",
+      "path": "software-development/command-line-tool-engineering"
+    },
+    {
+      "name": "interface-studio",
+      "category": "design",
+      "path": "design/interface-studio"
+    },
+    {
+      "name": "product-story-and-copy",
+      "category": "design",
+      "path": "design/product-story-and-copy"
+    },
+    {
+      "name": "design-direction",
+      "category": "design",
+      "path": "design/design-direction"
+    },
+    {
+      "name": "design-system-first",
+      "category": "design",
+      "path": "design/design-system-first"
+    },
+    {
+      "name": "interface-motion",
+      "category": "design",
+      "path": "design/interface-motion"
+    },
+    {
+      "name": "anti-slop-review",
+      "category": "design",
+      "path": "design/anti-slop-review"
+    },
+    {
+      "name": "documentation",
+      "category": "doc-writer",
+      "path": "doc-writer/documentation"
+    },
+    {
+      "name": "developer-documentation",
+      "category": "doc-writer",
+      "path": "doc-writer/developer-documentation"
+    },
+    {
+      "name": "architecture-decision-records",
+      "category": "doc-writer",
+      "path": "doc-writer/architecture-decision-records"
+    },
+    {
+      "name": "software-architecture-diagrams",
+      "category": "doc-writer",
+      "path": "doc-writer/software-architecture-diagrams"
+    },
+    {
+      "name": "creator-workflows",
+      "category": "creator",
+      "path": "creator/creator-workflows"
+    },
+    {
+      "name": "build-in-public-journal",
+      "category": "creator",
+      "path": "creator/build-in-public-journal"
+    },
+    {
+      "name": "prose-pattern-audit",
+      "category": "creator",
+      "path": "creator/prose-pattern-audit"
+    },
+    {
+      "name": "verified-completion",
+      "category": "agent-workflows",
+      "path": "agent-workflows/verified-completion"
+    }
   ]
 }

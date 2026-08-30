@@ -1,10 +1,10 @@
 ---
 name: build-in-public-journal
-description: "Use when AI-assisted product or software work produces a meaningful bug, failed approach, decision, experiment, surprise, pivot, or verified result worth preserving for possible build-in-public content. Maintains a private Git-ignored evidence journal and evaluates ideas for X, LinkedIn, and a personal blog without drafting posts."
+description: "Use when AI-assisted product or software work produces a meaningful bug, failed approach, decision, experiment, surprise, pivot, or verified result worth preserving in a private Git-ignored journal, or when the user asks to mine selected safe events for qualitative ideas on explicitly requested channels. Keeps capture separate from optional editorial review and never drafts publish-ready posts."
 license: Apache-2.0
-compatibility: Requires Git. The deterministic journal guard uses Python 3.10 or newer and standard-library modules only.
+compatibility: Requires Git for the bundled project-local journal path. The optional deterministic guard uses Python 3.10 or newer and standard-library modules only.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: creator
   tags: build-in-public, devlog, evidence-journal, content-ideas, x, linkedin, blog
@@ -14,198 +14,157 @@ metadata:
 
 ## Overview
 
-Preserve the parts of AI-assisted work that disappear behind a fast diff: wrong assumptions, failed approaches, real decisions, trade-offs, surprises, user feedback, and verified results. Maintain one private project-local evidence ledger, then derive neutral content opportunities from facts the author can inspect.
+Preserve consequential facts that disappear behind a fast diff: wrong assumptions, failed approaches, decisions, trade-offs, experiments, surprises, pivots, and verified results. Private capture is the core activity. Editorial mining is a separate, optional activity performed only when the user asks for ideas or channel evaluation.
 
-This skill never writes a post, thread, hook, article, or imitation of the author's voice. It supplies possible subjects, angles, proof, missing evidence, author questions, channel fit, and disclosure risks. The author decides what to say and writes it.
+This skill does not write a post, thread, hook, article, CTA, or imitation of the author's voice. It can identify a subject, neutral angle, proof, missing evidence, author questions, disclosure risks, and qualitative fit for only the channels the user requested. Capture never implies editorial eligibility, publication approval, or publication.
 
 <HARD-GATE>
-Never persist secrets, credentials, customer data, sensitive personal data, private conversations, proprietary material, confidential infrastructure details, or exploitable details of an unresolved vulnerability. A Git ignore rule prevents accidental commits; it does not make a file confidential. Sanitize before writing, keep the minimum useful fact, and block editorial mining when disclosure is unsafe or uncertain.
+Never persist secrets, credentials, customer data, sensitive personal data, private conversations, proprietary or contract-restricted material, confidential infrastructure details, raw private prompts/tool output, or exploitable details of an unresolved vulnerability. A Git ignore rule and restrictive permissions reduce accidental exposure; they do not make a file confidential. Sanitize before writing and omit the event when a safe summary would still disclose protected information. Publication, disclosure, customer quotation, and vulnerability detail require explicit human authorization through the applicable process.
 </HARD-GATE>
 
 ## When to use
 
-Use this skill:
+- Capture a non-trivial failure, corrected assumption, decision, experiment, feedback-driven change, pivot, stop, or verified result.
+- Maintain a private project-local devlog or evidence ledger.
+- Review existing entries for new evidence, duplicates, supersession, or safe retention.
+- On explicit request, mine selected safe entries for ideas on named channels such as X, LinkedIn, or a personal blog.
 
-- after a non-trivial bug, failed approach, corrected AI assumption, or surprising constraint;
-- when a product or engineering decision has real alternatives or consequences;
-- after an experiment, benchmark, release, user observation, pivot, or stop decision;
-- at a natural pause or session end to preserve meaningful evidence;
-- during a weekly review to mine possible ideas for X, LinkedIn, or a personal blog;
-- when the user asks for a private devlog, build log, evidence journal, or build-in-public ideas.
+Do not log every prompt, command, edit, commit, routine failure, dependency update, formatting change, or green test. Do not manufacture struggle, infer a person's feelings or motives, turn private life into content, or draft publication-ready copy.
 
-Do not use it to record every prompt, command, edit, commit, retry, routine dependency update, formatting change, or green test. Do not use it to manufacture struggle, infer emotions, turn private life into content, or draft publication-ready copy.
+## Modes
 
-## Operating modes
-
-| Mode | Purpose | Mutates project files? |
+| Mode | Purpose | Project mutation |
 |---|---|---|
-| `initialize` | Create and verify the private journal | Yes: one `.gitignore` rule and one ignored Markdown file |
-| `capture` | Add or update one consequential evidence event | Yes: private journal only |
-| `review` | Deduplicate, close, supersede, or enrich existing events | Yes: private journal only |
-| `mine-ideas` | Evaluate safe events and add neutral opportunity cards | Yes: private journal only |
+| `initialize` | Establish the ignored local journal boundary | selected ignore source and journal path |
+| `capture` | Add or update one meaningful private evidence event | journal only |
+| `review` | Read existing private evidence for duplicates, staleness, conflicts, privacy risk, or proposed disposition | none |
+| `reconcile` | Apply a specifically requested correction, update, supersession, deduplication, closure, or sensitive-payload removal | journal only |
+| `mine-ideas` | Optional qualitative editorial review after an explicit request | journal or caller-selected private output only |
 
-If the requested mode is unclear, infer it from context. Do not interrupt active work merely to create a low-value entry.
+Infer a clear read-only mode from the request, but never infer `reconcile`, `mine-ideas`, or another mutation from the word “review.” Journal changes need an explicit capture, reconciliation/edit, initialization, or requested private-output outcome. Do not interrupt active work for a low-value capture, and do not run `mine-ideas` as a hidden follow-on to `capture`.
 
 ## Workflow
 
-### 1. Establish the private boundary
+### 1. Establish or verify the private boundary
 
-For `initialize`, explain the exact intended mutation before running it:
+The bundled default is `.build-in-public/journal.md` under the target Git repository. Before any write, confirm that the path stays under `.build-in-public/`, has no symlink or hard-link alias, is not tracked or staged, and has never appeared at **any** path under `.build-in-public/` on any ref. A check of only the current filename misses deleted or renamed sibling journals. On platforms that support it, restrict group/other access.
 
-- append `/.build-in-public/` to the repository root `.gitignore` only when no current rule ignores the journal;
-- create `.build-in-public/journal.md` from the included template;
-- set restrictive file permissions where the platform supports them.
+Choose the ignore policy explicitly before initialization:
 
-Then run from the target project:
+- `repository` (default) may append `/.build-in-public/` to the repository-root `.gitignore`; use it only when a shared repository rule is intended.
+- `local` may append the same rule to Git's resolved `$GIT_DIR/info/exclude`; use it only when the user selects a repository-local, unshared rule. It must not create or alter `.gitignore`.
+
+Explain the selected mutation, then pass the same policy to `init` and later `check` calls:
 
 ```bash
-python3 <skill-directory>/scripts/journal_guard.py init --repo .
-python3 <skill-directory>/scripts/journal_guard.py check --repo .
+python3 <skill-directory>/scripts/journal_guard.py init --repo . --ignore-policy <repository|local>
+python3 <skill-directory>/scripts/journal_guard.py check --repo . --ignore-policy <repository|local>
 ```
 
-The guard must pass before any journal write. It rejects non-Git directories, paths outside the repository, symlinks, hard links, tracked journals, missing ignore coverage, and overly broad POSIX permissions. If a journal is already tracked or staged, stop and warn the user; adding `.gitignore` cannot make a tracked file private.
+The guard creates the journal from the optional template and sets restrictive POSIX permissions. It asks `git check-ignore -v` for the effective rule and reports its source; initialization or checking fails when Git reports a source other than the selected policy. This makes a higher-precedence `.gitignore` visible rather than falsely claiming that the local exclude controls the path.
 
-Do not edit `AGENTS.md`, `CLAUDE.md`, hooks, or other persistent agent configuration unless the user separately authorizes that mutation.
+Stop if the journal is tracked, staged, found anywhere in the dedicated directory's history, aliased, or outside the dedicated path. Adding an ignore rule cannot retract history. Do not edit agent instructions, hooks, or other persistent configuration without separate authorization. If the helper is unavailable, direct equivalent Git/path/history/permission checks are acceptable; do not weaken the boundary.
 
-**Complete when:** the journal exists, `git ls-files` does not report it, `git check-ignore -v` identifies a real ignore rule, and the guard exits successfully.
+The guard checks a bounded set of path, Git, link, permission, and pattern properties. It cannot certify confidentiality, prevent later disclosure, inspect backups/editor sync, or determine whether prose contains private facts.
 
-### 2. Decide whether an event deserves capture
+### 2. Capture only a meaningful event
 
-Load [event taxonomy](references/event-taxonomy.md). Capture only when at least one hard trigger applies and the event adds a reusable fact, decision, result, or learning.
+Load [the event taxonomy](references/event-taxonomy.md) when the event is ambiguous or needs a detailed record. Capture when the event preserves a useful decision, non-obvious observation, verified result, or learning; an explicit user request can override the routine-noise filter but not the privacy gate.
 
-Ask internally:
+Inspect only the evidence needed for the event, such as the relevant diff, test, benchmark, issue, decision note, release artifact, or user-provided fact. Link safe evidence rather than pasting logs, large diffs, transcripts, prompts, customer payloads, or tool output.
 
-1. What changed in the project or in our understanding?
-2. What did we expect, and what was observed?
-3. What evidence can another reviewer inspect?
-4. What future decision could this record improve?
+Separate:
 
-If the answer is only “work happened,” skip the entry. Silence is a valid result.
-
-**Complete when:** the event passes a hard trigger or is explicitly rejected as routine noise.
-
-### 3. Gather evidence without copying the session
-
-Inspect only the sources needed to support the event: relevant diff, tests, benchmark, issue, decision note, release artifact, or user-provided fact. Link to durable local or public evidence; do not paste complete tool output, raw AI conversations, full prompts, credentials, customer payloads, or large diffs.
-
-Record the division of labor accurately:
-
+- confirmed observation from interpretation or hypothesis;
 - what the human specified, corrected, decided, or verified;
 - what the agent researched, generated, tested, or got wrong;
-- which claim is a confirmed fact, interpretation, hypothesis, or content idea.
+- what the evidence establishes from what remains pending.
 
-Never infer the author's feelings or motives. If an outcome is not verified, mark it `evidence_pending` rather than making it sound complete.
+Do not infer emotions or motives. Mark unverified results as pending.
 
-**Complete when:** each factual claim has a source or an honest confidence label.
+### 3. Sanitize before and after persistence
 
-### 4. Sanitize before persistence
+Load [privacy and sanitization](references/privacy-and-sanitization.md) before storing a potentially sensitive event. Keep the minimum fact that preserves the decision or lesson. For an unresolved security issue, store at most a non-exploitable pointer to the approved secure system, generic remediation state, and `never_public` classification; omit it entirely if even that is risky.
 
-Load [privacy and sanitization](references/privacy-and-sanitization.md). Derive the minimum safe record before touching the journal.
-
-For an unresolved security issue, store only a non-exploitable pointer, owner, remediation state, and `never_public` classification. If sanitization would remove the meaning, do not record the event in this journal.
-
-After writing, run:
+The optional bundled heuristic can catch some common credential shapes:
 
 ```bash
 python3 <skill-directory>/scripts/journal_guard.py scan --repo .
-python3 <skill-directory>/scripts/journal_guard.py check --repo .
+python3 <skill-directory>/scripts/journal_guard.py check --repo . --ignore-policy <repository|local>
 ```
 
-The scanner catches common credential shapes but cannot prove that text is safe. Manual review remains mandatory for privacy, customer, contractual, infrastructure, and vulnerability risks.
+Only when the user requests it, an additional adapter may invoke a secret scanner that is **already installed and documented by the target repository**. Use the repository's existing command and configuration, confirm it can scan the exact ignored journal path, and do not install a package, enable a hook, change dependencies/configuration/baselines, or substitute a new scanner. Never echo a matched value into chat, the journal, or logs; report only a non-sensitive tool/status summary and safe finding class/location when the scanner supports that. If its output cannot be relayed safely, keep the raw output out of the response and direct the user to its protected local result.
 
-**Complete when:** the manual gate passes, the heuristic scan reports no findings, and the Git guard still passes.
+A clean bundled or repo-native scan means only that its configured detectors did not match. Neither `scan` nor `check` can certify confidentiality, customer safety, contractual permission, vulnerability safety, or publication readiness. Manual review remains necessary, and uncertainty means omit or keep private.
 
-### 5. Append or update one event
+### 4. Append or reconcile the smallest accurate record
 
-Use [the private journal template](templates/private-journal.md). Prefer one event per outcome or decision bundle, not one per action. Merge distinct attempts into a short attempts summary.
+Use the repository's existing private format or the [private journal template](templates/private-journal.md) as optional scaffolding. Before appending, compare the candidate's outcome/decision, stable ID, and evidence locators with existing events.
 
-- Reuse the existing event when new evidence closes or changes it.
-- Append a dated update instead of silently rewriting past observations.
-- Link superseding decisions rather than deleting history.
-- Keep event IDs stable.
-- Do not create a content opportunity during capture unless enough evidence already exists.
+- Same event and no new evidence: make no duplicate.
+- Same event plus new or conflicting evidence: keep the canonical event ID and append a dated `update`, `correction`, or `supersession` that names the evidence and resulting current status. Do not create a second event or silently rewrite the earlier observation.
+- A genuinely later decision that replaces the first: create or reuse its own stable event and add reciprocal supersession links without deleting either history.
 
-**Complete when:** the journal contains the smallest accurate event record and no duplicate entry describes the same outcome.
+A concise entry can omit inapplicable fields. `review` is read-only: report proposed duplicate reconciliation, new or conflicting evidence, stale hypotheses, low-value closure candidates, and sensitive-payload risks without changing the journal. Only an explicitly requested `reconcile` may retain a canonical record plus dated alias/reconciliation notes, add evidence, reject a hypothesis, close an entry, or remove an accidentally retained sensitive payload. Preserve the fact that a correction occurred while keeping protected values out of history; never echo the sensitive payload in the proposal or result.
 
-### 6. Review the ledger
+### 5. Mine ideas only on request
 
-For `review`, process unresolved and unmined events:
+When the user explicitly requests editorial mining, ask or infer which entries and channels are in scope. Evaluate only those channels, qualitatively—never assign signal, privacy, virality, or platform scores and never require an all-channel card.
 
-- merge duplicates;
-- add newly available evidence;
-- mark stale hypotheses `rejected`, `closed_no_content`, or `evidence_pending` with a concrete next check;
-- link superseded decisions;
-- preserve confirmed history;
-- remove accidental sensitive detail rather than propagating it.
+Apply the privacy/publication gate before editorial judgment. A mined idea is a derived view of its source event, not an independent claim: record the source event's current status and last update, and re-read that event before resurfacing the idea. If later evidence corrects, rejects, supersedes, reopens, or tightens the privacy state, update the idea's disposition or bind it to the superseding event before reuse; never carry forward the earlier candidate state unchanged.
 
-Do not maintain an immortal “maybe content” pile. Every reviewed event should have a current state and next disposition.
+Then load [qualitative editorial mining](references/editorial-mining.md) and optionally use [the opportunity template](templates/content-opportunity.md). Keep the result at idea level:
 
-**Complete when:** each reviewed event is current, deduplicated, and either private, waiting on named evidence, rejected, or eligible for mining.
-
-### 7. Mine content opportunities
-
-Load [scoring and platform fit](references/scoring-and-platform-fit.md) and [the opportunity template](templates/content-opportunity.md). Apply the publication gate before scoring. An event that is unsafe, unverified, generic, or useless outside the project does not become a candidate.
-
-Score signal strength and each platform separately. Never produce a global “viral” score. A single event may fit one channel, several channels, need more evidence, remain private, or have no editorial value.
-
-The output must stay at idea level:
-
-- possible subject and neutral angle;
-- why an audience may care;
-- confirmed proof and missing evidence;
+- source event and possible subject;
+- neutral angle and why the requested audience may care;
+- confirmed proof, missing evidence, and limitations;
 - questions only the author can answer;
-- possible platform and format;
-- facts to remove, delay, anonymize, or generalize.
+- qualitative rationale for each requested channel;
+- details to remove, generalize, delay, or keep private.
 
-Forbidden outputs include a completed opening line, post, thread, carousel script, LinkedIn update, blog draft, CTA, or prose “in the author's voice.”
-
-**Complete when:** every candidate points to a journal event, has passed the safety gate, and leaves voice and wording to the author.
+An unsafe, generic, or unproved event may remain private, have no editorial value, or need evidence. The author controls voice and publication. This skill does not turn approval to mine ideas into approval to publish.
 
 ## Output contract
 
-A capture operation returns only:
+For capture or review, preserve:
 
-- event ID and type;
-- one-line reason it qualified;
-- evidence status;
-- privacy class;
-- journal guard and scan results.
+- event identifier or the reason capture was skipped;
+- concise qualification and evidence state;
+- privacy classification and redactions/omissions;
+- guard/scan/manual-review results that were actually performed, with their limits.
 
-A mining operation returns opportunity cards containing:
+For editorial mining, also preserve:
 
-- source event ID;
-- possible subject and angle;
-- audience value;
-- available and missing proof;
-- questions for the author;
-- X, LinkedIn, and blog fit with rationale;
-- disclosure risks and required redactions;
-- one disposition: `KEEP_PRIVATE`, `NOT_USEFUL`, `NEEDS_EVIDENCE`, `X_CANDIDATE`, `LINKEDIN_CANDIDATE`, `BLOG_CANDIDATE`, or `MULTI_PLATFORM`.
+- source event ID, its current status/last update, possible subject/angle, audience value, proof, and gaps;
+- only the requested channels and qualitative fit rationale;
+- author questions, disclosure controls, and a private/not-useful/needs-evidence/candidate disposition.
 
-Do not include publish-ready prose.
+No fixed section order or mandatory card for every channel is required. A user-requested or host presentation adapter may reorder, chunk, summarize, or progressively disclose the response as long as it does not hide privacy, evidence, disclosure, publication, or unverified-content boundaries. Never include publish-ready prose.
 
 ## Common pitfalls
 
-- Treating `.gitignore` as encryption or forgetting that already tracked files stay tracked.
-- Saving raw AI transcripts because they seem like complete provenance.
-- Logging every coding action until the useful signal becomes impossible to find.
-- Turning a routine error into a dramatic story with an invented struggle or lesson.
-- Mixing confirmed observations, interpretations, hypotheses, and content ideas.
-- Treating AI speed, token count, or lines generated as an outcome by itself.
-- Recommending the same resized idea for every platform.
-- Publishing a vulnerability, customer detail, internal URL, or third-party quote before approval.
+- Treating `.gitignore`, file mode, a clean scan, or a passing guard as confidentiality.
+- Saving raw AI transcripts or private tool output as provenance.
+- Logging routine activity until useful evidence is buried.
+- Combining capture with unsolicited editorial mining.
+- Evaluating X, LinkedIn, and blog when the user requested only one channel.
+- Turning an unverified outcome into a dramatic lesson.
+- Publishing customer, vulnerability, private URL, or third-party material without authorization.
 - Writing the post instead of preserving the author's agency.
+
+## Source basis
+
+- Git ignore-source selection and verbose provenance independently implement factual command behavior verified against the GPL-2.0-licensed documentation at [`Documentation/gitignore.adoc`](https://github.com/git/git/blob/c73e85354c275c9d409b26445089bc16940fc527/Documentation/gitignore.adoc) and [`Documentation/git-check-ignore.adoc`](https://github.com/git/git/blob/c73e85354c275c9d409b26445089bc16940fc527/Documentation/git-check-ignore.adoc), commit `c73e85354c275c9d409b26445089bc16940fc527`. The whole-directory history guard is informed by path-history semantics in [`Documentation/git-log.adoc`](https://github.com/git/git/blob/c73e85354c275c9d409b26445089bc16940fc527/Documentation/git-log.adoc) at the same commit. Only factual command semantics are used; no Git documentation wording, structure, or implementation is copied or adapted.
+- Optional existing-scanner guidance paraphrases scan-scope and file-scan behavior from detect-secrets' Apache-2.0-licensed [`detect_secrets/core/usage/scan.py`](https://github.com/Yelp/detect-secrets/blob/5e141933554a0b74e7341841f318be21e895339c/detect_secrets/core/usage/scan.py) and [`detect_secrets/core/scan.py`](https://github.com/Yelp/detect-secrets/blob/5e141933554a0b74e7341841f318be21e895339c/detect_secrets/core/scan.py), commit `5e141933554a0b74e7341841f318be21e895339c`. No scanner, plugin, baseline, or required dependency is copied.
+- Additive reconciliation of an existing record is adapted at concept level from EveryInc compound-engineering-plugin's MIT-licensed [`skills/ce-strategy/references/update-run.md`](https://github.com/EveryInc/compound-engineering-plugin/blob/a1f601f17137f648be439965f8fdd9123303de5d/skills/ce-strategy/references/update-run.md), commit `a1f601f17137f648be439965f8fdd9123303de5d`. No workflow, template, or code is vendored.
 
 ## Verification checklist
 
-- [ ] The journal is inside the Git repository and the configured relative path is safe.
-- [ ] `journal_guard.py check` confirms the journal is ignored and untracked.
-- [ ] The entry passed a hard capture trigger and is not routine activity.
-- [ ] Facts, interpretations, hypotheses, and content ideas are distinguishable.
-- [ ] Evidence is linked or explicitly pending.
-- [ ] Human and AI contributions are described without invented motives.
-- [ ] No raw prompts, secrets, customer data, private conversations, or exploitable security details were persisted.
-- [ ] `journal_guard.py scan` reports no heuristic findings.
-- [ ] Content mining applied safety before scoring.
-- [ ] Platform fit was judged separately for X, LinkedIn, and blog.
-- [ ] The output contains ideas and author questions, never publish-ready copy.
+- Is the path untracked, unaliased, access-restricted where supported, and absent from every historical path under `.build-in-public/`?
+- Did `git check-ignore -v` report the explicitly selected repository or local source, with no unintended `.gitignore` mutation?
+- Does the entry retain only a necessary, source-backed, sanitized fact?
+- Did duplicate/new evidence become a dated correction, update, or supersession rather than duplicated or rewritten history?
+- Are observations, interpretations, hypotheses, and human/AI contributions distinguishable?
+- Are guard and scan results described as bounded heuristics rather than confidentiality proof?
+- Was editorial mining explicitly requested, limited to named channels, and reconciled with the source event's current status?
+- Does the result stop before publish-ready copy or publication?

@@ -1,47 +1,52 @@
-# Product Story
+# Product Understanding
 
-## Evidence boundary
+> Optional durable artifact. Inline product understanding is valid; persist only when requested, required, or needed across runs/agents.
 
-- Primary sources:
-- Known constraints:
-- Unknowns:
-- Forbidden/private material:
+## Working contract
 
-## Audience and context
+- Surface/route:
+- Content mode: `TARGETED_COPY` / `CLAIMS_CONTROL` / `TASK_SURFACE` / `OPEN_MARKETING`
+- Decision mode: `human` / `delegated` / `not-applicable`
+- Requested outcome:
+- Primary user action or task:
+- Existing voice/IA/system to inherit:
 
-- Primary audience:
-- Triggering situation:
-- Job to be done:
-- Current workaround:
-- Cost or friction of the status quo:
+## Evidence map
 
-## Product mechanism
+| ID | Source and exact locator | What it directly supports | Recency/scope | Confidence or limitation |
+|---|---|---|---|---|
+| E1 | | | | |
 
-- What the product does:
-- How it creates the outcome:
-- Why this approach differs:
-- What it does not do:
-- Non-fit:
+For material proof that can age, link its claims-ledger owner, checked/effective date, exact valid scope, expiry/review trigger, and reverse usage locators. Omit this lifecycle metadata for stable evidence when it adds no control value.
 
-## Story
+## Product truth
 
-- Recognition:
-- Central argument:
-- Proof:
-- Main objection and response:
-- Primary action:
-- Success condition:
+- Primary audience and triggering context:
+- Job/task and current alternative:
+- Product mechanism (inputs → action → output):
+- Supported outcome:
+- Constraints, limits, and non-fit:
+- Offer/access/availability:
+- Proof currently available:
+- Primary objection or risk:
+- Required trust, privacy, legal, or safety context:
 
-## Voice
+## Language evidence
 
-- Existing source samples:
-- Vocabulary to preserve:
-- Tone constraints:
-- Language to avoid:
+- Existing voice samples and locators:
+- Product/domain vocabulary to preserve:
+- Terminology that must remain exact:
+- Unsupported, stale, or generic wording to avoid:
 
-## Journey and measurement
+## Unknowns and assumptions
 
-- Entry context:
-- Primary journey:
-- Conversion or task event:
-- Required trust/legal context:
+| Item | Why it matters | Blocking truth gap? | Ask user or reversible assumption | Resolution |
+|---|---|---|---|---|
+| | | yes / no | | |
+
+## Decision summary
+
+- Central product argument or task hierarchy:
+- Observable success condition:
+- Content that must appear in every fair comparison:
+- Claims-ledger decision: `required` / `not created — no qualifying publishable claims/proof`

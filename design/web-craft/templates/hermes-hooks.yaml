@@ -1,8 +1,0 @@
-# Copy this block into the active Hermes profile config, then replace
-# /absolute/path/to with the checked-out or installed skill location.
-hooks:
-  pre_tool_call:
-    - matcher: "^(write_file|patch|terminal)$"
-      command: "python3 /absolute/path/to/web-craft/scripts/hermes_pre_tool_guard.py"
-      timeout: 10
-      fail_closed: true

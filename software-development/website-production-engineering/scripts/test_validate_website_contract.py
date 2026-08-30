@@ -57,8 +57,8 @@ class WebsiteContractTests(unittest.TestCase):
         self.write(redirects=[{"from":"/old","to":"/old","status":301}]); self.assertNotEqual(self.run_cli().returncode,0)
     def test_redirects_must_terminate_at_a_known_live_page(self):
         self.write(redirects=[{"from":"/old","to":"/missing","status":301}]); self.assertNotEqual(self.run_cli().returncode,0)
-    def test_quality_requires_multiple_viewports_and_positive_budgets(self):
-        q=self.data()["quality"]; q["viewports"]=["desktop"]; self.write(quality=q); self.assertNotEqual(self.run_cli().returncode,0)
+    def test_quality_accepts_one_claim_relevant_viewport_and_requires_positive_budgets(self):
+        q=self.data()["quality"]; q["viewports"]=["desktop"]; self.write(quality=q); self.assertEqual(self.run_cli().returncode,0)
         q=self.data()["quality"]; q["performance_budgets"]["lcp_ms"]=0; self.write(quality=q); self.assertNotEqual(self.run_cli().returncode,0)
     def test_performance_budgets_reject_booleans_and_non_finite_numbers(self):
         q=self.data()["quality"]; q["performance_budgets"]["lcp_ms"]=True; self.write(quality=q); self.assertNotEqual(self.run_cli().returncode,0)

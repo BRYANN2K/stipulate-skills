@@ -1,3 +1,5 @@
+<!-- Optional structured report for complex or machine-recorded work. A presentation adapter may reorder or chunk it, but must preserve outcome, proof, evidence, gaps, publication readback, and claim boundary. -->
+
 # Completion report
 
 **Outcome:** `COMPLETE | PARTIAL | BLOCKED`

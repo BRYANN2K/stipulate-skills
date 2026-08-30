@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and verify a private, Git-ignored build-in-public journal."""
+"""Create and check a Git-ignored journal without claiming confidentiality."""
 
 from __future__ import annotations
 
@@ -14,10 +14,15 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 DEFAULT_JOURNAL = ".build-in-public/journal.md"
+JOURNAL_HISTORY_PATHSPEC = ":(glob).build-in-public/**"
 MAX_SCAN_BYTES = 10 * 1024 * 1024
 MAX_SCAN_FINDINGS = 100
 IGNORE_RULE = "/.build-in-public/"
 IGNORE_COMMENT = "# Private build-in-public evidence journal"
+IGNORE_POLICIES = ("repository", "local")
+LIMIT_MESSAGE = (
+    "LIMIT: path/Git/permission/pattern checks cannot certify confidentiality or publication safety"
+)
 SAFE_PATH_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 
 SECRET_PATTERNS = (
@@ -132,8 +137,16 @@ def tracked(root: Path, relative: str) -> bool:
     return bool(result.stdout.strip())
 
 
-def present_in_history(root: Path, relative: str) -> bool:
-    result = git(root, "log", "--all", "--format=%H", "--", relative)
+def journal_tree_present_in_history(root: Path) -> bool:
+    """Return whether any ref records any path below .build-in-public/."""
+    result = git(
+        root,
+        "log",
+        "--all",
+        "--format=%H",
+        "--",
+        JOURNAL_HISTORY_PATHSPEC,
+    )
     return bool(result.stdout.strip())
 
 
@@ -156,19 +169,45 @@ def ignore_source(root: Path, relative: str) -> IgnoreMatch | None:
     raise GuardError(f"git check-ignore failed: {detail}")
 
 
-def ignored_by_root_gitignore(root: Path, match: IgnoreMatch | None) -> bool:
+def ignore_match_path(root: Path, match: IgnoreMatch | None) -> Path | None:
     if match is None:
-        return False
+        return None
     source = Path(match.source).expanduser()
     if not source.is_absolute():
         source = root / source
-    return source.resolve(strict=False) == (root / ".gitignore").resolve(strict=False)
+    return source.resolve(strict=False)
 
 
-def append_ignore_rule(root: Path) -> bool:
-    path = root / ".gitignore"
+def git_local_exclude(root: Path) -> Path:
+    """Resolve Git's repository-local exclude file, including linked worktrees."""
+    result = git(root, "rev-parse", "--git-path", "info/exclude")
+    raw = result.stdout.strip()
+    if not raw:
+        raise GuardError("git rev-parse returned no path for info/exclude")
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = root / path
+    return path
+
+
+def ignore_file_for_policy(root: Path, policy: str) -> Path:
+    if policy == "repository":
+        return root / ".gitignore"
+    if policy == "local":
+        return git_local_exclude(root)
+    raise GuardError(f"unsupported ignore policy: {policy}")
+
+
+def ignored_by_policy(root: Path, match: IgnoreMatch | None, policy: str) -> bool:
+    expected = ignore_file_for_policy(root, policy).resolve(strict=False)
+    return ignore_match_path(root, match) == expected
+
+
+def append_ignore_rule(path: Path, *, policy: str) -> bool:
     if os.path.lexists(path) and path.is_symlink():
-        raise GuardError("refusing to mutate a symlinked .gitignore")
+        raise GuardError(f"refusing to mutate a symlinked {path.name}")
+    if path.exists() and not path.is_file():
+        raise GuardError(f"ignore source is not a regular file: {path}")
     existing = path.read_bytes() if path.exists() else b""
     rule = IGNORE_RULE.encode("ascii")
     if any(line.strip() == rule for line in existing.splitlines()):
@@ -180,8 +219,35 @@ def append_ignore_rule(root: Path) -> bool:
         prefix += newline
     if prefix and not prefix.endswith(newline * 2):
         prefix += newline
-    path.write_bytes(prefix + IGNORE_COMMENT.encode("ascii") + newline + rule + newline)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    comment = f"{IGNORE_COMMENT} ({policy})".encode("ascii")
+    path.write_bytes(prefix + comment + newline + rule + newline)
     return True
+
+
+def configure_ignore_policy(
+    root: Path,
+    relative: str,
+    policy: str,
+) -> tuple[bool, IgnoreMatch]:
+    source = ignore_source(root, relative)
+    if source is not None and ignored_by_policy(root, source, policy):
+        return False, source
+    if policy == "local" and source is not None and Path(source.source).name == ".gitignore":
+        raise GuardError(
+            "selected local ignore policy was not reported by git check-ignore -v; "
+            f"a higher-precedence worktree rule was reported: {source}"
+        )
+
+    changed = append_ignore_rule(ignore_file_for_policy(root, policy), policy=policy)
+    source = ignore_source(root, relative)
+    if source is None or not ignored_by_policy(root, source, policy):
+        actual = str(source) if source is not None else "no matching source"
+        raise GuardError(
+            f"selected {policy} ignore policy was not reported by git check-ignore -v; "
+            f"reported source: {actual}"
+        )
+    return changed, source
 
 
 def template_text(root: Path) -> str:
@@ -245,13 +311,15 @@ def checked_target(repo: str, journal: str, *, require_exists: bool = True) -> t
 
     if tracked(root, relative):
         raise GuardError(
-            f"journal is tracked or staged: {relative}; .gitignore cannot protect tracked files. "
+            f"journal is tracked or staged: {relative}; ignore rules cannot protect tracked files. "
             "Review its history and remove it from the index before continuing."
         )
-    if present_in_history(root, relative):
+    if journal_tree_present_in_history(root):
         raise GuardError(
-            f"journal appears in Git history: {relative}; ignoring or untracking it does not remove "
-            "earlier content. Review the history and rotate any exposed secret before continuing."
+            "a path under .build-in-public/ appears in Git history; the guard checks the whole "
+            "journal tree so deleted or renamed sibling journals are not missed. Ignoring or "
+            "untracking does not remove earlier content. Review history and rotate any exposed "
+            "secret before continuing."
         )
     if require_exists and not os.path.lexists(target):
         raise GuardError(f"journal does not exist: {relative}; run init first")
@@ -262,14 +330,7 @@ def checked_target(repo: str, journal: str, *, require_exists: bool = True) -> t
 
 def command_init(args: argparse.Namespace) -> int:
     root, relative, target = checked_target(args.repo, args.journal, require_exists=False)
-    changed_ignore = False
-
-    source = ignore_source(root, relative)
-    if not ignored_by_root_gitignore(root, source):
-        changed_ignore = append_ignore_rule(root)
-    source = ignore_source(root, relative)
-    if not ignored_by_root_gitignore(root, source):
-        raise GuardError(f"journal is not ignored by the repository root .gitignore: {relative}")
+    changed_ignore, source = configure_ignore_policy(root, relative, args.ignore_policy)
 
     created = False
     if not target.exists():
@@ -292,17 +353,23 @@ def command_init(args: argparse.Namespace) -> int:
 
     print(f"OK: repository={root}")
     print(f"OK: journal={relative} ({'created' if created else 'preserved'})")
+    print(f"OK: ignore_policy={args.ignore_policy}")
     print(f"OK: ignore_rule={'updated' if changed_ignore else 'already-covered'}")
     print(f"OK: ignored_by={source}")
     print("OK: secret_scan=0 findings")
+    print(LIMIT_MESSAGE)
     return 0
 
 
 def command_check(args: argparse.Namespace) -> int:
     root, relative, target = checked_target(args.repo, args.journal)
     source = ignore_source(root, relative)
-    if not ignored_by_root_gitignore(root, source):
-        raise GuardError(f"journal is not ignored by the repository root .gitignore: {relative}")
+    if not ignored_by_policy(root, source, args.ignore_policy):
+        actual = str(source) if source is not None else "no matching source"
+        raise GuardError(
+            f"selected {args.ignore_policy} ignore policy was not reported by "
+            f"git check-ignore -v; reported source: {actual}"
+        )
     issue = permission_problem(target)
     if issue:
         raise GuardError(issue)
@@ -310,8 +377,13 @@ def command_check(args: argparse.Namespace) -> int:
     print(f"OK: repository={root}")
     print(f"OK: journal={relative}")
     print("OK: tracked=false")
+    print(f"OK: ignore_policy={args.ignore_policy}")
     print(f"OK: ignored_by={source}")
-    print("OK: permissions=private")
+    if os.name == "posix":
+        print("OK: permissions=no-group-or-other-access")
+    else:
+        print("UNAVAILABLE: permissions=POSIX-mode-check-not-supported")
+    print(LIMIT_MESSAGE)
     return 0
 
 
@@ -324,6 +396,7 @@ def command_scan(args: argparse.Namespace) -> int:
             print(f"  - line {line}: {label}", file=sys.stderr)
         return 1
     print(f"OK: secret_scan=0 findings in {relative}")
+    print(LIMIT_MESSAGE)
     return 0
 
 
@@ -342,6 +415,16 @@ def parser() -> argparse.ArgumentParser:
             default=DEFAULT_JOURNAL,
             help=f"project-relative Markdown path (default: {DEFAULT_JOURNAL})",
         )
+        if command in {"init", "check"}:
+            child.add_argument(
+                "--ignore-policy",
+                choices=IGNORE_POLICIES,
+                default="repository",
+                help=(
+                    "repository writes the root .gitignore; local writes Git's resolved "
+                    "$GIT_DIR/info/exclude without touching .gitignore"
+                ),
+            )
         child.set_defaults(handler=handler)
     return root
 

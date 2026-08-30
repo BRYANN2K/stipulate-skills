@@ -1,10 +1,10 @@
 ---
 name: software-architecture-diagrams
-description: Use when designing, generating, reviewing, or fixing Mermaid software diagrams, including C4-style context/container/component views, sequence, flow, deployment, state, and ER diagrams. Models boundaries and flows first, then validates syntax and readability.
+description: "Use when designing, generating, reviewing, or fixing Mermaid software architecture diagrams, including context, deployable-unit, component, sequence, flow, deployment, state, and ER views. Separates the architecture model from Mermaid source and rendered presentation, and validates only the claims each check can establish."
 license: Apache-2.0
-compatibility: Produces Mermaid embedded in Markdown or .mmd files. Mermaid CLI is optional for rendering validation.
+compatibility: Produces Mermaid embedded in Markdown or .mmd files. A Mermaid renderer is optional unless a rendered/readability claim or repository protocol requires it.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: doc-writer
   tags: mermaid, c4, architecture, sequence-diagram, deployment-diagram
@@ -14,149 +14,107 @@ metadata:
 
 ## Overview
 
-Create diagrams that answer one architectural question for one audience. Build the system model before Mermaid syntax, choose the smallest useful diagram type, expose trust/deployment/data boundaries, and validate the rendered result.
+Create the smallest architecture view that answers the reader's question. Keep three layers distinct:
+
+1. **Model:** real elements, boundaries, relationships, state, and uncertainty.
+2. **Source:** Mermaid notation that projects the selected view.
+3. **Presentation:** the rendered diagram plus enough adjacent prose to interpret it.
+
+A syntax check evaluates source syntax. It does not prove model truth, useful scope, readability, accessibility, or renderer compatibility. The named steps below are guidance and may be combined for a bounded repair.
+
+<HARD-GATE>
+Do not invent a service, data flow, protocol, ownership boundary, deployment, runtime state, or trust relationship to make a diagram look complete. Do not expose secrets, customer identifiers, private endpoints, account IDs, sensitive topology, or exploitable security detail in an artifact whose audience is not authorized to see it.
+</HARD-GATE>
 
 ## When to use
 
-- System context, container, component, deployment, data flow, dependency, or topology diagrams.
-- Sequence, state, flowchart, ER, and operational/change diagrams.
-- Review or repair unreadable, misleading, or invalid Mermaid.
+- Context, deployable-unit, component, deployment, data-flow, dependency, topology, sequence, state, flowchart, ER, or operational/change views.
+- Mermaid generation, repair, simplification, portability, or rendered-readability review.
+- C4-style views when that vocabulary is already useful to the repository or audience.
 
-Do not use a diagram when a table or short list communicates the answer more accurately. Do not use C4 labels mechanically for non-software relationships.
+Use a table, list, or prose instead when it communicates the answer more accurately. Do not force C4-style labels onto a question that needs another view.
 
 ## Workflow
 
-### 1. State the diagram question
+### 1. Name the question and inspect the sources
 
-Define:
+Identify the audience, the question or decision, current/target/migration/failure state, scope, and authoritative sources. For a small Mermaid repair, the existing diagram and affected source may be enough.
 
-- audience;
-- decision/question the diagram supports;
-- scope and abstraction level;
-- time/state: current, target, migration, failure, or request flow;
-- authoritative sources and unknowns.
+Inspect only the code, configuration, IaC, schemas, runtime evidence, ADRs, or user-provided facts needed to establish the model. Label assumptions and omitted detail rather than drawing them as fact.
 
-Examples: “How does a user request cross trust boundaries?” or “Which deployable units own transactional data?”
+### 2. Build the model before notation
 
-**Complete when:** one sentence defines what a reader should understand after viewing the diagram.
+List the elements and relationships needed to answer the question. Include actors, external systems, deployable units, components, stores, queues, control planes, or boundaries only when relevant. Give relationships a direction and meaningful purpose; add protocol, event, or data labels only when they affect interpretation.
 
-### 2. Build the model before syntax
+Keep a shared vocabulary across views, but do not require a separate model file unless the repository or tooling uses one. Load [diagram selection and modeling](references/diagram-selection-and-modeling.md) when the view type or abstraction is uncertain.
 
-Inventory:
+### 3. Project the smallest useful Mermaid view
 
-- people/actors and external systems;
-- software systems, deployable containers/services, components only if needed;
-- data stores, queues, control planes, and operational tools;
-- ownership, trust, network, deployment, region/AZ, and data boundaries;
-- relationships with direction, protocol/data, and purpose;
-- assumptions and omitted detail.
+Choose the diagram type that best exposes the requested fact:
 
-Names must reflect real repository/runtime concepts. Do not invent a service to improve visual symmetry.
-
-### 3. Choose the diagram type
-
-Load `references/diagram-selection-and-modeling.md`.
-
-| Question | Diagram |
+| Reader question | Likely view |
 |---|---|
-| Who uses the system and what surrounds it? | C4-style context |
-| What deployable units and data stores exist? | Container/deployment flowchart |
-| How does one scenario unfold over time? | Sequence |
-| How do states and transitions behave? | State |
-| How does data/entities relate? | ER or data flow |
-| How does a decision/process branch? | Flowchart |
+| What surrounds and uses the focal system? | Context |
+| What runs independently or stores data? | Deployable-unit or deployment |
+| How does one scenario unfold? | Sequence |
+| How do lifecycle transitions work? | State |
+| How are entities or transformations related? | ER or data flow |
+| Where does a process or dependency branch? | Flowchart |
 
-Use multiple focused diagrams rather than one diagram mixing every abstraction level.
+Use meaningful boundaries and stable node IDs, concise human labels, explicit direction, and a legend only when notation is not self-explanatory. Split or change orientation when the rendered result becomes hard to scan; there is no required node count, bullet count, or universal layout direction.
 
-### 4. Draft structure
+Mermaid C4 syntax varies across renderers. A portable flowchart can express context/deployable/component semantics when the target does not support the specialized syntax. Use Mermaid `accTitle` and `accDescr` only when the target Mermaid version and diagram type support them; otherwise keep an equivalent title and description in adjacent prose or repository-native host metadata. Load [Mermaid safety and portability](references/mermaid-safety.md) for untrusted labels, directives, links, renderer differences, and accessibility.
 
-For architecture flowcharts:
+### 4. Add only enough prose
 
-- choose `flowchart LR` for pipelines/interactions or `TB` for layers/hierarchy;
-- group meaningful boundaries with subgraphs;
-- keep node IDs stable and labels human-readable;
-- label important edges with protocol/event/data/purpose;
-- show direction explicitly; use two arrows when interaction is truly bidirectional;
-- include a legend only when notation is not obvious.
+Surround the diagram with enough title, scope/state, explanation, assumptions, omissions, and source/decision links for the reader to answer the stated question. Some diagrams need one sentence; a migration or security view may need more. Do not narrate every arrow or fill a fixed number of bullets.
 
-For C4-style diagrams, keep context, container, and component views separate. Mermaid's C4 syntax may be experimental across renderers; a disciplined flowchart with C4 semantics is often more portable.
+[The architecture diagram template](templates/architecture-diagram.md) is optional for a new standalone artifact. Inherit the repository's existing documentation structure when present.
 
-### 5. Apply readability constraints
+### 5. Validate the claims that matter
 
-- One abstraction level and primary story per diagram.
-- Aim for 7±2 primary elements per visual group; split when scanning fails.
-- Avoid crossing edges through declaration/order and orientation changes.
-- Use short labels; move explanation to nearby prose.
-- Use color redundantly with shape/border/text; preserve dark/light contrast.
-- No emoji by default in professional diagrams.
-- Do not encode status only by red/green.
-- Avoid custom icons or remote assets unless the renderer is known to support them.
+Use the smallest applicable checks:
 
-Load `references/mermaid-safety.md` for syntax and security.
+- compare nodes, boundaries, and relationships with their sources to assess architecture fidelity;
+- parse Mermaid when syntax validity is claimed;
+- when a repository already has a structured architecture model or compatible validator, optionally check identifier resolution, boundary membership, and relationship endpoints after parsing and report this semantic-model result separately;
+- render in the repository's actual or compatible renderer when readability, layout, visual hierarchy, or target compatibility is claimed;
+- inspect the render for clipping, overlap, contrast, intended-width readability, ambiguous crossings, and aggregate edges that hide materially different underlying directions, protocols, or trust paths;
+- when rendered SVG accessibility metadata is claimed, inspect the delivered SVG or host wrapper for an exposed accessible name and description; report this separately from visual readability;
+- provide meaningful adjacent text or a text/table equivalent when accessibility or a critical procedure requires it.
 
-### 6. Write explanatory prose
-
-A diagram artifact includes:
-
-- title and question;
-- scope/state/date or version;
-- Mermaid source;
-- 3–8 bullets explaining critical boundaries/flows;
-- assumptions and intentionally omitted detail;
-- links to related ADRs, APIs, runbooks, or source files.
-
-The prose should explain decisions and caveats, not narrate every arrow.
-
-### 7. Validate
-
-1. Parse/render with the project's Mermaid tool or Mermaid CLI when available.
-2. Inspect the rendered image, not source alone.
-3. Check clipped labels, overlap, unreadable contrast, edge crossings, and mobile/README width.
-4. Verify every node/relationship against sources.
-5. Verify GitHub/docs renderer compatibility and accessible surrounding text.
-
-If no renderer is available, label rendering unverified and still perform syntax/static checks. Use `templates/architecture-diagram.md`.
-
-### 8. Review for architectural truth
-
-Ask:
-
-- Does the diagram answer its stated question?
-- Are actors, the actual product/system, and external dependencies distinct?
-- Are trust, data, deployment, and ownership boundaries clear where relevant?
-- Are arrows semantically accurate and directional?
-- Is one node standing in for several materially different responsibilities?
-- Does the diagram contradict code, IaC, ADRs, or runtime evidence?
-- What important fact was omitted, and is that omission declared?
+If no renderer is available, report rendering as unavailable or unverified. A parser success can support only a syntax claim; semantic-model validation is stronger than parsing but still does not prove the real architecture, and neither can be relabeled as a rendered-quality pass. Re-run only checks affected by the final diagram change.
 
 ## Output contract
 
-- File path and diagram type
-- Audience/question/scope/state
-- Mermaid source
-- Explanation, assumptions, and omissions
-- Source links/paths
-- Render validation status
+Preserve this information in the artifact or response:
+
+- path and view type;
+- audience, question, scope, and state where needed for interpretation;
+- Mermaid source;
+- enough explanation, assumptions, omissions, and source locators to answer the question;
+- syntax, optional semantic-model, render/readability, and rendered-accessibility-metadata status as separate claims;
+- any fidelity, aggregate-edge ambiguity, compatibility, accessibility, or sensitivity gap.
+
+No fixed section order is required. A repository template or presentation adapter may reorder, chunk, or progressively disclose the information as long as it does not hide the model/source/render distinction, evidence, or gaps.
 
 ## Common pitfalls
 
-- Starting with Mermaid syntax before understanding architecture.
-- Mixing context, containers, components, deployment, and sequence in one diagram.
-- Using “Frontend,” “Backend,” and “Database” when real boundaries are known.
-- Treating a UI box as the entire product/system.
-- Omitting external actors, identity linking, or reverse flows.
-- Duplicating the same sync relationship as arrows and a “Sync” box.
-- Overusing styling to hide an unclear model.
-- Assuming valid syntax means a readable or truthful diagram.
-- Putting sensitive hostnames, account IDs, or internal topology in public docs.
+- Starting with Mermaid syntax before establishing the architecture fact.
+- Mixing unrelated abstraction levels or stories into one unreadable view.
+- Using generic labels when real boundaries are known.
+- Duplicating one relationship as both an arrow and a pseudo-component.
+- Treating color or styling as a substitute for a clear model.
+- Treating valid syntax—or an optional semantic-model pass—as proof of a truthful or readable diagram.
+- Letting one aggregate edge imply a single relationship when it hides materially different flows.
+- Treating `accTitle`/`accDescr` in source as proof that the delivered SVG exposes accessibility metadata.
+- Publishing sensitive topology to an audience that should not receive it.
 
 ## Verification checklist
 
-- [ ] Audience, question, scope, abstraction, and current/target state are explicit.
-- [ ] Nodes and relationships trace to real sources or labeled assumptions.
-- [ ] Diagram type fits the question.
-- [ ] Boundaries and direction are accurate.
-- [ ] Syntax was rendered or rendering is honestly marked unavailable.
-- [ ] The rendered output is readable and accessible.
-- [ ] Related ADRs/docs and omissions are linked.
-- [ ] No sensitive infrastructure detail is exposed unintentionally.
+- Does the view answer its stated question without invented elements?
+- Are direction, boundaries, and relationship semantics traceable to sources or labeled assumptions?
+- Are syntax, optional semantic-model, render/readability, rendered accessibility metadata, and architecture-fidelity results reported without collapsing their claims?
+- Were aggregate edges checked for misleading compression?
+- Is adjacent prose sufficient for this audience rather than a quota?
+- Are unavailable checks and sensitive omissions explicit?

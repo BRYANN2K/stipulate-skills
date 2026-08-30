@@ -33,7 +33,7 @@ category/skill-name/
 - include `version`, `author`, and `license`;
 - keep its always-loaded body focused on execution;
 - link bulky or conditional material under `references/`;
-- define safety boundaries, output format, pitfalls, and verification;
+- define safety boundaries, required output information or machine format, pitfalls, and verification;
 - avoid vendor telemetry, hidden network calls, and credentials;
 - keep private journals and personal state out of the skill repository;
 - never treat a dry-run, plan, or successful command as authorization for a production mutation.
@@ -43,7 +43,13 @@ category/skill-name/
 - Prefer checkable instructions over “be careful” or “use best practices.”
 - Separate observations, hypotheses, decisions, and actions.
 - Include negative triggers: when the skill should not be used.
-- Use exact completion criteria for every workflow phase.
+- Calibrate freedom per step: use judgment where several approaches are valid, parameterized guidance where constraints matter, and exact commands or schemas only where deviation breaks a real boundary.
+- Start from the requested outcome and choose the shortest safe path. Named phases are navigation, not admission gates.
+- Attach hard gates to effects: credentials/private data, destructive or live/remote mutations, auth/permission changes, dependency installation, publication/deployment/DNS/releases, and compatibility-sensitive public protocols.
+- Treat artifacts, templates, manifests, and helper scripts as optional memory or hardened profiles unless the repository, user, or machine interface requires them.
+- Use observable completion and evidence proportional to the claim and risk; do not manufacture phases, option counts, thresholds, or coverage merely to satisfy a skill.
+- State what a validator proves. Syntax, links, schemas, streams, paths, or digests do not establish semantic quality, accessibility, safety, architecture correctness, or production behavior.
+- Human-facing output contracts describe information that must survive, not a mandatory prose order. An explicit presentation adapter may reorder, chunk, or progressively disclose it without hiding safety, authorization, evidence, gaps, or claim boundaries.
 - Keep examples realistic but free of secrets and proprietary identifiers.
 - Do not hardcode time-sensitive version claims unless the workflow verifies them.
 

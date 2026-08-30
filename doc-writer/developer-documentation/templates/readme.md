@@ -1,3 +1,5 @@
+<!-- Optional scaffold for a new page. Inherit repository structure and remove inapplicable sections. -->
+
 # <Project name>
 
 > <What it does, for whom, and why it matters — one sentence.>

@@ -1,84 +1,89 @@
-# TUI architecture and testing
+# TUI architecture and testing menu
 
-## Portable architecture
+Use this reference when a TUI change reaches architecture, async work, destructive operations, lifecycle, or compatibility. It offers portable concerns and evidence layers, not a mandatory model or test ladder. Preserve the chosen framework and repository conventions.
 
-Use framework-native names when they exist, but preserve four roles:
+## Match the stack
 
-1. **Model** — current application state: screen, focus, selection, dimensions, data, operation state, messages.
-2. **Update** — deterministic transition from state plus event to new state plus effects.
-3. **Effects** — network, filesystem, process, timer, and stream work outside the event loop; effects return events.
-4. **View** — pure or observational rendering of state into a frame or widget tree.
+| Stack | Native concepts to prefer |
+|---|---|
+| Bubble Tea | Model, `Update`, `View`, messages, commands, program options |
+| Textual | App, screens/widgets, reactive state, messages/events, workers, Pilot/tests |
+| Ratatui | The repository's app/event/render organization, backend and `TestBackend` conventions |
+| curses, Ink, or other | Their established state, input, task, rendering, and cleanup ownership |
 
-Terminal initialization and cleanup wrap the application lifecycle. No background task writes directly to the renderer-owned screen.
+The portable questions are:
 
-## Event classes
+1. where current screen/widget/focus/selection/dimensions/operation state lives;
+2. how input, resize, timer, data, progress, completion, failure, and shutdown become updates;
+3. where blocking I/O and child processes run;
+4. how stale async results are rejected or reconciled;
+5. which renderer owns terminal output;
+6. which lifecycle wrapper restores terminal state.
 
-Model at least:
+Do not rename code or introduce a second architecture solely to fit this list.
 
-- key and paste input;
-- resize;
-- timer/tick;
-- data loaded/updated;
-- progress/stream record;
-- operation accepted/completed/failed;
-- cancellation;
-- signal/shutdown;
-- terminal capability or fallback.
+## Key, focus, and operation choices
 
-Attach operation/resource identity to asynchronous results. Ignore or reconcile stale results rather than applying them to the current selection.
+Apply only what the changed interaction needs:
 
-## Focus and keymap
+- avoid silent conflicts between global keys and focused text/widget editing;
+- keep changed primary actions discoverable according to the local UI;
+- preserve or deterministically relocate focus when a target disappears;
+- provide a cancel path for operations that are meaningfully cancellable or abandonable;
+- use confirmation for destructive, irreversible, costly, or broad effects, bound to the actual target/effect;
+- default to the safe action when a consequential confirmation is used;
+- prevent duplicate action keys when repeated execution has consequence.
 
-- One visible focus owner at a time unless the framework explicitly models composite focus.
-- Global bindings must not silently conflict with focused-widget editing.
-- Provide explicit quit and contextual cancel paths.
-- Discover primary actions in persistent hints or contextual help.
-- A destructive operation uses a distinct confirmation screen whose declared purpose identifies the operation and whose focus order exposes `cancel` and `confirm`.
-- Runtime confirmation defaults to the safe action and identifies the exact target and effect; the static manifest validator cannot prove dynamic text or target binding.
-- Preserve focus after refresh when the same stable identity remains.
-- When a target disappears, choose and test a deterministic fallback.
+A harmless navigation or atomic local update does not need a confirmation screen or cancellation state.
 
-## Terminal lifecycle
+## Terminal lifecycle kernel
 
-Tests must cover cleanup after:
+When the program owns raw/cooked mode, echo, cursor visibility, alternate screen, mouse/paste modes, or child processes, restoration is non-optional. Select the exit paths the application claims and the change can affect:
 
 - normal quit;
 - command/domain error;
-- panic/exception where the runtime permits recovery hooks;
-- SIGINT and SIGTERM or platform equivalents;
-- cancelled child task/process;
-- failed initialization after partial mode changes.
+- exception/panic where the runtime supports recovery hooks;
+- SIGINT/SIGTERM or platform equivalents that the program handles;
+- cancelled/failed child task;
+- initialization failure after partial terminal mutation.
 
-Observable recovery includes cursor visibility, echo/input mode, raw/cooked mode, alternate-screen exit, and child cleanup. Do not promise signal behavior on a platform not exercised.
+Observe only owned state: cursor visibility, echo/input mode, raw/cooked mode, alternate-screen/mouse/paste exit, and child cleanup. Do not promise signal recovery on a platform/runtime path that cannot be exercised.
 
-## Layered verification
+## Evidence layers
 
-### State tests
+Choose the cheapest layer that can falsify the claim, then cross the real terminal boundary only when the claim reaches it.
 
-Drive events without a terminal. Assert state, emitted effects, operation identity, cancellation, stale-result handling, and focus fallback.
+### Transition or state tests
 
-### Snapshot tests
+Use for deterministic event/update logic, emitted tasks/effects, operation identity, cancellation when applicable, stale-result handling, and focus fallback.
 
-Render representative states and sizes. Include long text, Unicode, narrow layout, errors, confirmations, and selected/focused variants. Normalize only unstable values such as timestamps, not whitespace or clipping bugs.
+### Widget/render or snapshot tests
 
-### Virtual terminal
+Use for representative visual states/sizes, clipping, long text, selection/focus, errors, and confirmations when present. Normalize only truly nondeterministic data, not layout defects.
 
-Exercise composed frames and control sequences: cursor, clearing, dimensions, clipping, and redraw. Verify that background output cannot corrupt frames.
+### Framework harness or virtual terminal
+
+Use for composed frames, focus/key dispatch, cursor movement, clearing, dimensions, and ensuring background output cannot corrupt renderer-owned frames.
 
 ### PTY or ConPTY
 
-Spawn the actual executable. Exercise startup, key sequences, resize, non-TTY behavior, signal, exit code, and terminal cleanup. Use bounded timeouts and deterministic fixture data.
+Use for actual startup, key input, resize, signals, process exit, non-TTY behavior, and terminal restoration. Bound timeouts and use deterministic fixtures.
 
-## Compatibility
+### Installed/package probe
 
-Contract fields for operation success/failure, resize, color, Unicode fallback, non-TTY behavior, and cleanup evidence must state an actionable present contract rather than an exact deferred placeholder such as `TODO`, `TBD`, `later`, `pending`, `unknown`, or `placeholder`. This is a bounded syntax guard, not proof that the behavior works at runtime.
+Use only when claiming packaging, installation, or platform distribution.
 
-Select a matrix from actual claims:
+A state test does not prove frames; a snapshot does not prove input/resize/cleanup; a POSIX PTY does not prove Windows; and a single terminal does not prove all terminal claims. Conversely, a bounded render edit does not need every layer.
 
-- POSIX PTY for Linux/macOS behavior;
-- ConPTY or a Windows-native harness for Windows claims;
-- representative xterm-compatible terminal;
-- terminals/capabilities materially used by the product;
-- `TERM=dumb`, `NO_COLOR`, redirected stdin/stdout, and missing Unicode capability where supported.
+## Capability and compatibility selection
 
-A green Linux PTY test is not Windows evidence.
+Select only capabilities the project exposes or the change touches:
+
+- narrow/short sizes or a declared minimum-size state;
+- redirected stdin/stdout and `TERM=dumb` behavior;
+- `NO_COLOR` or project-specific color controls;
+- Unicode width/combining and ASCII fallback;
+- mouse, bracketed paste, hyperlinks, clipboard, or other terminal modes;
+- POSIX PTY, ConPTY, or named terminal families.
+
+The optional JSON validator's fields and boolean verification plan are a hardened schema, not runtime proof or universal requirements. Use safe fixtures and keep real backend mutation separately authorized.

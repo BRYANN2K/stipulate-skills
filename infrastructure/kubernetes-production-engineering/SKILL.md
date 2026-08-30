@@ -1,10 +1,10 @@
 ---
 name: kubernetes-production-engineering
-description: Use when generating, reviewing, hardening, validating, or troubleshooting Kubernetes manifests, Helm charts, Kustomize overlays, workloads, RBAC, networking, storage, rollouts, and cluster behavior. Uses failure-mode analysis and read-only diagnosis before proposing changes.
+description: "Use when answering, generating, reviewing, hardening, validating, or troubleshooting Kubernetes manifests, Helm charts, Kustomize overlays, workloads, RBAC, networking, storage, rollouts, or cluster behavior. Routes focused work narrowly and reserves live remediation controls for actual effects."
 license: Apache-2.0
-compatibility: Works statically from repository files. kubectl, Helm, Kustomize, and schema/policy tools are optional for deeper validation.
+compatibility: Works statically from repository files. kubectl, Helm, Kustomize, schema/policy tools, and cluster access are optional and used only when the requested claim needs them.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: infrastructure
   tags: kubernetes, helm, kustomize, security, reliability, troubleshooting
@@ -14,151 +14,155 @@ metadata:
 
 ## Overview
 
-Generate and operate Kubernetes artifacts by diagnosing likely failure modes first. Validate both individual resources and cross-resource contracts: selectors, ports, identities, policies, storage, rollout behavior, and controller ownership.
+Take the shortest safe path from the Kubernetes outcome. A selector question, one manifest edit, or a bounded symptom does not trigger a universal production-readiness review. Inspect and validate only the objects, generated targets, runtime signals, and risks needed to support the requested claim.
+
+A direct request to author bounded repository files authorizes those local edits. Static source work, read-only live diagnosis, and live remediation are separate effect boundaries.
 
 <HARD-GATE>
-Default to repository inspection and read-only cluster commands. Do not apply, patch, delete, scale, restart, roll out, roll back, drain, cordon, exec into a workload, expose a service, reconcile GitOps, or reveal Secret values without explicit authorization for that action and target.
+Never reveal Secret values, credentials, private workload data, or unnecessary personal data. Installing tools or plugins; changing authentication, RBAC, admission, or privileges; and applying, patching, deleting, scaling, restarting, rolling out/back, draining, cordoning, executing in workloads, exposing services, reconciling GitOps, deploying, or publishing require explicit authorization for the exact action, cluster/context, namespace, resource, and environment. `kubectl debug` is not a read-only diagnostic: adding an ephemeral container, creating a copied Pod, or creating a node-debug Pod is a live mutation. Local manifest authoring does not authorize those effects.
 </HARD-GATE>
 
 ## When to use
 
-- Create or review manifests, Helm charts, Kustomize overlays, operators, and policies.
-- Diagnose Pending, CrashLoopBackOff, OOMKilled, probe failures, failed rollouts, networking, DNS, or storage.
-- Harden workloads, RBAC, Pod Security, NetworkPolicy, admission, and multi-tenancy.
-- Validate Kubernetes API compatibility and production readiness.
+- Answer a focused Kubernetes API, controller, workload, policy, networking, or storage question.
+- Create or review raw manifests, Helm charts, Kustomize overlays, operators, or policies.
+- Diagnose Pending, CrashLoopBackOff, OOMKilled, probe, rollout, Service/DNS/network, storage, admission, or RBAC failures.
+- Assess a relevant security, reliability, API-compatibility, or hardening concern.
+- Prepare or, after exact authorization, perform a live remediation.
 
-Do not use for infrastructure outside Kubernetes or for vendor-only observability queries with no Kubernetes context.
+Do not use for infrastructure outside Kubernetes or vendor-only telemetry work with no Kubernetes contract.
 
-## Modes
+## Task modes
 
-| Mode | Boundary |
-|---|---|
-| **Generate/review** | Repository files only; no cluster mutation |
-| **Live diagnose** | Read-only cluster observation |
-| **Remediate** | Proposed patch first; execute only after explicit approval |
+Choose the narrowest mode; the modes are routing labels, not phases every request must complete.
 
-If mode is unclear, use **Generate/review**.
+| Mode | Outcome | Default boundary |
+|---|---|---|
+| **Focused guidance** | Explain or decide one Kubernetes question | Relevant source/docs only |
+| **Author** | Create or change bounded repository artifacts | Local writes; no cluster mutation |
+| **Static review** | Review source, rendered objects, or a diff | Read-only repository evidence |
+| **Targeted hardening** | Assess a named threat/policy/failure concern | Only applicable security/reliability branches |
+| **Validate/render** | Support a syntax, render, schema, or policy claim | Existing project tooling and exact target inputs |
+| **Live diagnose** | Test a runtime hypothesis | Confirmed target; read-only queries |
+| **Remediate** | Prepare or execute a fix | Proposed source/patch first; live execution gated |
+
+Infer the mode from the request. Do not query a cluster merely because kubeconfig or a context exists. If live diagnosis is requested, confirm any ambiguous cluster/namespace before reading it; do not silently expand a static task into live access.
 
 ## Workflow
 
-### 1. Capture context
+Use only applicable branches. Headings are navigation, not admission or completion gates.
 
-Determine from files or read-only discovery:
+### Bound target and source of truth
 
-- Kubernetes version/distribution and environment;
-- namespace, cluster context, and workload/controller type;
-- deployment method: raw YAML, Helm, Kustomize, operator, Argo CD, or Flux;
-- policy engines, Pod Security posture, CNI/ingress, CSI/storage, and autoscaling;
-- ownership and whether the repository or a controller is authoritative.
+Establish only what the task needs: Kubernetes/API/CRD version, distribution if relevant, environment, cluster/context, namespace, controller/workload type, and whether raw YAML, Helm, Kustomize, an operator, Argo CD, Flux, or another source is authoritative.
 
-Never query a live cluster merely because a kubeconfig exists; confirm the requested target and use read-only access.
+For a focused source question, stop when the relevant file/object evidence supports the answer. For live or rollout claims, preserve the exact target, observed generation/revision, and observation time.
 
-**Complete when:** version, target, source of truth, controller, and key unknowns are recorded.
+Load provider-, distribution-, controller-, or version-specific guidance only after discovering that branch. Do not universalize one platform's golden defaults.
 
-### 2. Diagnose failure modes before editing
+### Trace the relevant object contracts
 
-Evaluate these six classes:
+Build only the portion of the rendered-object graph needed for the claim. Possible edges include owner/controller, namespace, labels/selectors, named and target ports, ServiceAccount/RBAC, ConfigMap/Secret references, PVC/storage, ingress/gateway, policy selectors, CRD/API compatibility, and GitOps ownership.
 
-1. **Insecure defaults** — privileged execution, root, writable root FS, capability sprawl, unsafe host access.
-2. **Resource starvation** — missing/incorrect requests and limits, QoS, quotas, scheduling, eviction, OOM.
-3. **Network exposure** — Service/Ingress/Gateway, selectors, ports, TLS, DNS, NetworkPolicy.
-4. **Privilege sprawl** — ServiceAccounts, tokens, RBAC wildcards, cluster scope, secret access.
-5. **Fragile lifecycle** — probes, startup, graceful shutdown, PDB, rollout strategy, jobs, disruption.
-6. **API/config drift** — removed APIs, CRD schema mismatch, Helm values drift, immutable fields, GitOps ownership.
+Diagnose the first broken contract rather than checking every possible dimension. When authoring, fix the authoritative source rather than generated output.
 
-For runtime symptom mapping, load `references/runtime-troubleshooting.md`. For security depth, load `references/security-and-multitenancy.md`.
+Classify findings so contextual advice is not mistaken for a universal blocker:
 
-### 3. Render the actual artifact
+- **Safety invariant** — an objectively invalid, leaking, or dangerous contract for the stated target;
+- **Project/policy requirement** — established by repository or organizational evidence;
+- **Contextual recommendation** — beneficial only under named workload and risk assumptions;
+- **Informational** — an option or unknown that does not block the requested outcome.
 
-Review generated output, not only templates:
+Do not invent requests/limits, probe endpoints, replica counts, storage classes, domains, issuers, identities, annotations, or tag/digest policies.
 
-- Helm: render with the exact values/environment when available.
-- Kustomize: build the target overlay.
-- Operators/GitOps: identify generated/owned fields and reconciliation order.
-- Raw YAML: include every document and namespace interaction.
+### Author or review the smallest change
 
-Never edit generated output when the source template or values are authoritative.
+Preserve local composition, values ownership, generated-file rules, and controller conventions. A focused edit does not require unrelated RBAC, NetworkPolicy, PDB, probe, limit, backup, or multi-tenancy additions.
 
-### 4. Validate in layers
+Load [security and multi-tenancy](references/security-and-multitenancy.md) only when the request or observed exposure involves those concerns. Treat its topics as conditional review prompts, not a mandatory baseline for every workload. Evaluate Pod Security Admission `enforce`, `audit`, and `warn` labels only when the selected target actually uses that admission path, and bind any level/version recommendation to the target Kubernetes version and workload compatibility.
 
-Use repository commands first, then available tools:
+### Validate in proportion to the claim
 
-1. YAML parse and duplicate-key detection;
-2. API schema validation for the target version and installed CRDs;
-3. client/server dry-run when target access is authorized;
-4. Helm/Kustomize lint/render checks;
-5. policy and security scanners configured by the project;
-6. cross-resource consistency checks;
-7. rollout and rollback reasoning.
+Classify a proposed “render” command from its actual inputs, flags, configuration, and extensions before running it:
 
-Cross-resource checks must include labels/selectors, named ports, Service target ports, ingress backends, ServiceAccounts/RBAC, PVC names, ConfigMap/Secret references, namespace boundaries, and policy selectors.
+- **offline parse/local render** — reads only reviewed local files with network, kubeconfig, API discovery, auth helpers, plugins, hooks, and post-render executables disabled;
+- **dependency/network resolution** — can fetch chart repositories, remote Kustomize bases/URLs, schemas, images, or other dependencies;
+- **plugin/local execution** — can invoke a generator, renderer, authentication exec helper, shell hook, or other local program;
+- **server dry-run** — sends a request to the selected API server and exercises applicable authorization, defaulting, validation, and admission without intending persistence; it is live target access, not offline rendering;
+- **lookup/live read** — performs API discovery, chart/template lookup, schema/CRD lookup, or any other cluster query; it requires confirmed read scope even when output is only YAML.
 
-**Complete when:** every applicable layer is passed, failed, skipped, or unavailable with evidence.
+A command can occupy multiple classes. A tool's name or `template`, `render`, `diff`, `dry-run`, or `kustomize` label is not proof of offline behavior. Resolve remote inputs and executable extensions explicitly; do not let a render check silently install a plugin, execute unreviewed local code, or contact the current kube context.
 
-### 5. Generate or propose the smallest safe change
+Use repository commands first and the lowest useful evidence rung:
 
-Production defaults should normally include:
+- source/diff inspection for declared behavior;
+- YAML parse/duplicate-key checks for syntax claims;
+- exact Helm/Kustomize/operator rendering when the claim depends on generated output and its command class is acceptable;
+- target-version API/CRD schema checks for compatibility claims;
+- project-configured policy/security checks for the policies they encode;
+- client/server dry-run when the requested claim and authorized target need API-side evidence;
+- read-only runtime observation for live behavior;
+- post-remediation readback and user/workload health for executed changes.
 
-- non-root/restricted security context unless the workload proves a need;
-- immutable image reference or controlled tag policy;
-- meaningful requests and limits based on observed/declared workload needs;
-- startup/readiness/liveness behavior matched to failure semantics;
-- graceful termination and rollout settings;
-- least-privilege identity and scoped RBAC;
-- explicit network exposure and policy;
-- observability labels/signals and owner metadata;
-- backup/restore for stateful data.
+Render only affected targets needed to substantiate the claim. Record the command class plus passed, failed, skipped, and unavailable checks. Missing optional tools lower the supported proof; they do not automatically make a focused artifact wrong. Conversely, render/schema/linter PASS is not production-readiness proof.
 
-Do not invent resource values, probe endpoints, storage classes, domains, issuers, or cloud annotations. Mark unresolved inputs.
+### Diagnose a live symptom
 
-### 6. Live diagnosis: observation ladder
+Use [runtime troubleshooting](references/runtime-troubleshooting.md) for the relevant symptom branch. Confirm context and namespace, then choose the smallest read-only query that can distinguish the current hypotheses. Useful evidence may include conditions/observed generation, events, pod/container status and previous termination, bounded logs, Service/EndpointSlice/policy paths, PVC/storage events, admission/RBAC errors, or a recent revision.
 
-In read-only mode:
+Do not follow a fixed query ladder or collect all logs. Inspect only the branch predicted by the symptom, preserve time/revision correlation, and stop when evidence supports an actionable diagnosis or access limits make it inconclusive. Never read Secret values during ordinary diagnosis.
 
-1. confirm context and namespace;
-2. inspect desired vs current workload state;
-3. inspect events ordered by time;
-4. inspect pod/container status, previous termination, conditions, and scheduling;
-5. inspect controller ownership and rollout history metadata;
-6. inspect logs, including previous container logs when relevant;
-7. inspect Service endpoints, policies, DNS, storage, and nodes only as the hypothesis requires;
-8. correlate with deployment/config changes.
+### Prepare or execute remediation
 
-Every query must test a stated hypothesis. Stop broad collection once evidence discriminates the likely cause.
+Prefer the durable source-of-truth change. A direct request can authorize the bounded local patch/diff, but not its live application. Distinguish a temporary incident mitigation from the Git-tracked correction, especially for reconciled objects.
 
-### 7. Deliver and gate remediation
+Before any authorized live effect, bind the action to:
 
-Return findings with evidence, confidence, proposed patch, impact, validation, and rollback. For live incidents, distinguish immediate mitigation from durable Git-tracked correction. Never patch a GitOps-managed object as the durable fix.
+1. actor identity, context/cluster, environment, namespace, and exact resources;
+2. the proposed manifest/patch/diff and ownership/controller behavior;
+3. expected rollout or user-health signals and observation window;
+4. blast radius, prerequisites, and abort condition;
+5. rollback/reversal path, including data/state constraints;
+6. post-action readback of generation/revision, conditions, ownership, and workload/user health.
+
+Reconfirm the target and diff immediately before execution. Run only the authorized action; stop on mismatch, unexpected affected objects, admission differences, or health regression. A successful command is not convergence or recovery.
 
 ## Output contract
 
-- **Context and source of truth**
-- **Observed symptoms or requested behavior**
-- **Failure modes assessed**
-- **Findings**: confirmed / likely / possible / unknown
-- **Artifact or patch**
-- **Validation results**
-- **Rollout and rollback plan**
-- **Unresolved inputs**
+Adapt to the requested mode:
+
+- **Focused guidance:** direct answer, governing object/API evidence, assumptions, and smallest unresolved input.
+- **Author/static review:** changed artifact or findings, affected object contracts, relevant diff, and checks actually run.
+- **Live diagnose:** exact target/time/revision, symptom, discriminating evidence, confidence, and next safe query or proposed fix.
+- **Remediation:** source/patch diff, exact live target, impact, authorization boundary, rollout/abort/rollback, and readback if executed.
+
+Use `templates/review-report.md` only when a durable multi-finding report helps. A template or validator is optional scaffolding and never quality proof. Make a broad “production-ready” claim only when evidence covers the material risks and target behavior implied by that claim; otherwise state the narrower verified result.
 
 ## Common pitfalls
 
-- Generating an API version without checking the target cluster.
-- Adding liveness probes that restart slow or dependency-bound workloads.
-- Setting CPU limits by habit and causing throttling.
-- Writing a NetworkPolicy whose selector matches nothing.
-- Granting wildcard RBAC to make an error disappear.
-- Reading Kubernetes Secret values during ordinary diagnosis.
-- Patching a live GitOps-managed object without fixing its source.
-- Calling a manifest “production-ready” when render/schema/policy validation was unavailable.
+- Turning one manifest question into a universal six-dimension or full-cluster audit.
+- Reviewing templates while claiming rendered behavior.
+- Rendering every repository target for an unrelated focused question.
+- Calling a render offline when it fetches a remote base/chart, runs a plugin or auth helper, uses a lookup, or contacts the API server.
+- Treating `kubectl debug`, ephemeral-container injection, or a copied debug Pod as read-only observation.
+- Treating linter defaults, two replicas, CPU limits, liveness probes, read-only filesystems, or one Pod Security level/version as universal blockers.
+- Generating an API version without checking the target compatibility when it matters.
+- Granting wildcard RBAC or broad Secret access to make an error disappear.
+- Querying broad logs or Secret values during ordinary diagnosis.
+- Patching a GitOps-managed object as the durable fix.
+- Treating parse/schema/policy PASS as proof of production quality.
 
 ## Verification checklist
 
-- [ ] Target version, namespace, environment, and source of truth are known.
-- [ ] Rendered resources—not just templates—were reviewed.
-- [ ] Six failure-mode classes were considered.
-- [ ] Cross-resource identities and references match.
-- [ ] Validation status is honest and reproducible.
-- [ ] Runtime evidence supports the diagnosis.
-- [ ] Rollout, health signals, and rollback are explicit.
-- [ ] No live mutation or secret exposure occurred without authorization.
+Apply only relevant items:
+
+- [ ] The mode and scope are no broader than the requested outcome.
+- [ ] Target version/environment/source of truth are known to the level required by the claim.
+- [ ] Only relevant object relationships and risks were inspected.
+- [ ] Local authoring proceeded without a redundant approval and preserved generated ownership.
+- [ ] Render/schema/policy/runtime evidence is proportional and status-labeled.
+- [ ] Findings distinguish safety invariants, project policy, contextual advice, and information.
+- [ ] Live diagnosis used confirmed scope, bounded read-only evidence, and no Secret disclosure.
+- [ ] Any live effect names exact target, diff, abort/rollback, and post-action readback.
+- [ ] Optional tools/templates were not represented as production-readiness proof.
+- [ ] No install, auth/privilege change, live mutation, deployment, or publication occurred without explicit authorization.

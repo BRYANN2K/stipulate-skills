@@ -1,108 +1,88 @@
-# Design System
+# Design / UI Contract
 
-## Inputs and scope
+> Optional durable contract. Use only when it is a requested standalone deliverable, an established project/consumer contract, or needed for re-entry across runs, agents, or teams. Update the repository's existing contract instead when one owns these decisions. Delete unused sections; never mirror canonical runtime values into a parallel source of truth.
 
-- Product story:
-- Copy and claims:
-- Reference ledger and selected direction:
-- Protected surface(s):
-- Existing system/migration boundary:
+## Scope and status
 
-## Principles
+- Mode: `BOUNDED_EXTENSION` / `CONSEQUENTIAL_SHARED_SYSTEM_CHANGE` / `STANDALONE_SYSTEM_DELIVERABLE_OR_AUDIT`
+- Affected surfaces/contracts:
+- Exclusions:
+- Decision owner, only when material: `HUMAN` / `DELEGATED` / `INHERITED_OR_NOT_APPLICABLE`
+- Status vocabulary: `INHERITED` / `OBSERVED_REPEAT` / `PROPOSED` / `UNVERIFIED`
+- Last verified source/revision, if applicable:
 
-1. Principle and trade-off:
-2. Principle and trade-off:
-3. Principle and trade-off:
+## Canonical ownership
 
-## Visual thesis
+| Concern | Canonical path or package | Canonical/generated direction | Affected scope or consumer |
+|---|---|---|---|
+| Runtime tokens, if affected | | | |
+| Shared primitives/components, if affected | | | |
+| Durable prose contract, if this file is one | | | |
+| Portable exchange or generated output, if any | | | |
 
-- Tension:
-- Product-derived signature:
-- Density:
-- Restraint/no-go list:
+### Conditional token interoperability — only for a real external consumer
 
-## Foundations
+- Named external consumer and supported format/version:
+- DTCG boundary, if required: effective `$type` and group type inheritance / token aliases and target compatibility / optional `$extends` override behavior / unresolved-reference and cycle handling
+- Canonical source → generated/exchange output direction and generated-file owner/header:
+- Existing Style Dictionary config/version/source/include/transform/platform/output paths, only if that pipeline actually exists:
+- Focused consumer/build/round-trip checks and limitations:
 
-### Typography
+## Affected evidence or proposal basis
 
-- Families and source/license:
-- Roles and scale:
-- Weight/line-height/letter-spacing:
-- Long, numeric, code, and multilingual content behavior:
+Include rows only for affected reused contracts, observed audit findings, or proposed decisions the deliverable must explain. Proposed rules need a brief/decision basis, not invented implementation evidence.
 
-### Color
+| Rule, component, or state | Status | Source/render locator or proposal basis | Affected consumers/scope |
+|---|---|---|---|
+| | | | |
 
-- Primitive palette:
-- Semantic roles:
-- Supported modes:
-- Contrast targets:
-- Data-color rules:
+## Affected semantic foundations
 
-### Spacing, size, and grid
+Retain only roles changed/reused by the scope or required by the standalone deliverable.
 
-- Base/rhythm:
-- Content widths:
-- Grid and gutters:
-- Density modes:
-- Breakpoints as behavior changes:
+- Typography roles and content behavior:
+- Semantic colors, modes, and non-color meaning:
+- Spacing, density, layout, and surface relationships:
+- Responsive behavior changes:
+- Icon, image, and data semantics:
+- Focus, keyboard, announcements, contrast/non-color cues, target size, zoom/reflow, and reduced-motion posture:
 
-### Geometry and surfaces
+## Shared/reusable components, if needed
 
-- Radius:
-- Borders:
-- Elevation:
-- Nested-surface rules:
-- Focus indicator:
+Include an inherited or observed component only when its contract is affected. A standalone proposal may include a component whose intended reuse is confirmed. Use a separate state matrix only when the deliverable, project, or re-entry need requires it.
 
-### Iconography, imagery, and data
+| Component/source | Purpose and non-purpose | Existing repetition or intended reuse | Changed variants/content limits | Affected states and accessibility semantics | Narrow behavior |
+|---|---|---|---|---|---|
+| | | | | | |
 
-- Icon source and sizing:
-- Illustration/product imagery:
-- Chart/table decision rule:
-- Synthetic-data labeling:
+For a semantically matching composite/overlay only, record the exact APG pattern used as a behavior oracle, repository-contract differences, and exercised keyboard/focus/state/dismissal evidence. Omit for native/simple or nonmatching controls.
 
-## Composition
+## Affected composition rules, if any
 
-- Page shell:
-- Navigation:
-- Section/screen hierarchy:
-- Dense versus quiet regions:
-- Narrow-screen reflow:
-- Overlay behavior:
+- Page or application shell:
+- Hierarchy and dense/quiet regions:
+- Grouping and container rules:
+- Overlay and navigation behavior:
+- Long, empty, error, permission, stale, and partial-data distinctions:
 
-## Components
+## Local exceptions, proposals, and gaps
 
-See `COMPONENTS.md` for the inventory and state matrix.
+| Decision | Why local, proposed, or unverified | Locator or basis | Promotion/removal/verification condition |
+|---|---|---|---|
+| | | | |
 
-## Motion posture
+## Migration, only when in scope
 
-- Intent classes:
-- Duration/easing tokens:
-- Interruption and exit:
-- Reduced-motion behavior:
+- Compatibility boundary and affected consumers:
+- Temporary aliases:
+- Rollout/rollback condition:
+- Removal condition:
 
-## Accessibility
+## Focused verification and claim boundary
 
-- Semantics and landmarks:
-- Keyboard and focus:
-- Announcements:
-- Contrast and non-color cues:
-- Target size and zoom/reflow:
-
-## Implementation mapping
-
-- Token source and generated/runtime mapping:
-- Primitive path:
-- Product component path:
-- Styling convention:
-- Exception process:
-- Migration aliases and removal condition:
-
-## Review evidence
-
-- Preview locator:
-- Viewports:
-- States exercised:
-- Keyboard/tree/contrast:
-- Console/network:
-- Open decisions:
+- Affected source/native checks:
+- Affected rendered consumers/states:
+- Keyboard/semantic/accessibility/runtime probes:
+- Parser or validator scope: syntax/schema only; no semantic, state, accessibility, integration, or visual-quality proof implied.
+- Unverified or proposed decisions:
+- Not selected, approved, implemented, deployed, live, or published by this artifact:

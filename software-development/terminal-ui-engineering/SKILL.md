@@ -1,10 +1,10 @@
 ---
 name: terminal-ui-engineering
-description: "Use when building or changing a full-screen interactive terminal application with screens, focus, keybindings, asynchronous work, resize behavior, and terminal lifecycle ownership. Defines screen and operation contracts, separates state/update/view, handles compatibility and cleanup, and requires layered state, snapshot, virtual-terminal, and PTY evidence."
+description: "Use when building or changing a full-screen interactive terminal application with screens, focus, keybindings, asynchronous work, resize behavior, and terminal lifecycle ownership. Inherits the selected framework's architecture, keeps restoration strict, and applies cancellation, confirmation, contract lint, snapshots, virtual terminals, and PTY evidence only when the behavior or claim needs them."
 license: Apache-2.0
-compatibility: Works with Bubble Tea, Textual, Ratatui, curses, Ink, and other terminal UI stacks. The optional contract validator requires Python 3.10 or newer and uses only the standard library.
+compatibility: Works with Bubble Tea, Textual, Ratatui, curses, Ink, and other terminal UI stacks. The bundled JSON template and validator are optional structural lint; the validator requires Python 3.10 or newer and uses only the standard library.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: software-development
   tags: tui, terminal, interactive, accessibility, pty, testing
@@ -14,145 +14,135 @@ metadata:
 
 ## Overview
 
-Build terminal user interfaces as state machines with strict terminal ownership, not as loops that print colored text. Separate model, update, effects, and view; make focus, keybindings, resize, cancellation, compatibility, cleanup, and non-TTY behavior explicit. Framework-specific mechanisms may differ, but the observable contract remains portable.
+Build full-screen terminal interfaces through the repository's chosen framework and conventions. Protect the observable terminal lifecycle while leaving state, message, command, widget, component, and task architecture to the selected stack. Bubble Tea, Textual, and Ratatui mechanisms apply only when that is the actual project stack; do not translate one framework into another's taxonomy.
+
+A clear request to change a bounded local screen or interaction authorizes the necessary local source writes. It does not require a TUI manifest, model/update/view rewrite, confirmation screen, cancellation path, every test layer, or separate implementation approval.
 
 <HARD-GATE>
-Never leave the terminal in raw mode, hide the cursor, or corrupt the alternate screen after exit, error, panic, cancellation, or signal. Never run destructive operations merely to test a keybinding. Real resource mutations, shell execution, credential access, package installation, publication, and deployment require explicit authorization and safe test boundaries.
+A full-screen program that changes raw/cooked mode, echo, cursor visibility, mouse/paste modes, or the alternate screen must restore what it owns after every supported exit path, including relevant error and signal paths. Never run destructive operations merely to test a keybinding. Real resource mutation, shell/process execution with untrusted input, credential access, dependency installation or changes, packaging/release, publication, and deployment require explicit authorization and safe targets.
 </HARD-GATE>
 
 ## When to use
 
-- Build or modify a full-screen terminal application, dashboard, wizard, file browser, monitor, or interactive client.
-- Add screens, modal flows, focus, keybindings, async operations, streaming/log follow, resize behavior, color, Unicode, mouse support, or terminal compatibility.
-- Debug flicker, frozen input, blocked event loops, corrupt terminal state, focus loss, resize defects, or inconsistent snapshots.
-- Design layered tests for a terminal interface.
+- Build or modify a full-screen terminal application, dashboard, wizard, browser, monitor, or interactive client.
+- Add screens/widgets, focus, keybindings, async work, streaming, resize, color, Unicode, mouse, or terminal compatibility behavior.
+- Fix event-loop blocking, frozen input, flicker, corrupt frames, focus loss, resize defects, stale async updates, or terminal restoration.
+- Select proportional state/render/process evidence for a TUI change.
 
-Do not use this skill for a line-oriented script, UNIX filter, or command whose stable contract is stdout/stderr and exit codes. Use `command-line-tool-engineering` for those tools.
+Use `command-line-tool-engineering` for line-oriented commands and filters whose stable boundary is stdout/stderr and exit status rather than an owned terminal frame.
+
+## Task modes
+
+| Mode | Default path | Evidence target |
+|---|---|---|
+| Bounded edit | Inspect the affected widget/update/render/lifecycle path, edit directly | Focused state/render check; PTY only if the claim reaches the process/terminal boundary |
+| New behavior or surface | Define one user operation and build one independently useful screen/interaction slice | Relevant state plus rendered or real-terminal interaction evidence |
+| Complex contract or migration | Coordinate several screens, global/local keys, async tasks, destructive actions, or terminal/platform compatibility | Targeted transition/size/platform matrix; optional JSON structural lint |
+| Release or live effect | Separate local readiness from real backend mutation, packaging, installation, release, or deployment | Exact authorization plus installed/process/platform evidence actually claimed |
 
 ## Workflow
 
-### 1. Inspect terminal ownership and architecture
+### 1. Inspect framework and terminal ownership
 
-Read repository instructions, entrypoint, framework lifecycle, model/state, update/event loop, view/render path, effect/task boundary, keymap, screen routing, terminal initialization/cleanup, tests, and Git status. Identify whether any code blocks the UI thread, writes outside the renderer, owns raw mode twice, or bypasses normal shutdown.
+Read applicable instructions, entrypoint, framework lifecycle, state/widget tree, update/event handling, task/effect boundary, keymap, routing/screens, terminal initialization/cleanup, tests, commands, and Git status as needed. Identify which layer owns terminal modes and which exit paths already restore them.
 
-**Complete when:** scope names screens, state owners, events, effects, keybindings, terminal modes, supported environments, and test harness.
+Name the user operation, affected screen/widget, state/event path, terminal features touched, supported environment claims, and existing test harness. Ask only when an unresolved behavior or compatibility choice materially changes the result.
 
-### 2. Define the TUI contract
+### 2. Inherit the selected stack
 
-Copy `templates/tui-contract.json` to a temporary path. Record:
+Use framework-native architecture:
 
-- screens, purpose, minimum size, focus order, and states;
-- global and screen keybindings with discoverability;
-- operations, async/cancellation behavior, confirmation, success, and failure;
-- alternate-screen, cleanup, resize, color, Unicode, and non-TTY behavior;
-- platform/terminal matrix and layered verification.
+- Bubble Tea projects may use model/update/view and commands/messages;
+- Textual projects may use apps/screens/widgets, reactive state, messages, workers, and pilots;
+- Ratatui projects may use the repository's app/event/render organization and backend/test-buffer conventions;
+- other stacks keep their own established ownership.
 
-Validate read-only:
+The portable concern is clear ownership of state, input/events, background I/O, rendering, and terminal cleanup—not identical names or a required rewrite.
+
+For complex cross-screen, keybinding, operation, or compatibility work, optionally use `templates/tui-contract.json` as scratch memory and run:
 
 ```bash
-python3 <skill-directory>/scripts/validate_tui_contract.py check \
-  --manifest /tmp/tui-contract.json \
-  --json
+python3 <skill-directory>/scripts/validate_tui_contract.py check --manifest /tmp/tui-contract.json --json
 ```
 
-The validator rejects credential-like assignments after bounded ASCII canonicalization, including repeated-quote serialized assignments, bounded-punctuation Basic/Bearer wrappers, dot- or space-separated credential names, and compact identifiers in any case with environment or version prefixes/suffixes, without reflecting the rejected value. This conservative filter does not prove arbitrary text secret-free.
+This bundled schema is **optional structural lint** for references inside its own model. Its required IDs, global keys, screen states, confirmation layout, cancellation flags, and verification booleans are a hardened profile, not universal TUI architecture or a quality gate. Use it only when the work maps cleanly; do not modify the application to make it pass. A pass does not prove input, rendering, cleanup, cancellation, confirmation, or platform behavior. Its secret and malformed-input checks harden only that optional file.
 
-Malformed manifests, including numeric literals beyond the runtime's bounded integer conversion, fail with a controlled generic JSON diagnostic rather than a traceback.
+Load [the TUI architecture and testing guide](references/tui-architecture-and-testing.md) as a conditional menu for new async work, destructive operations, lifecycle changes, or compatibility claims.
 
-Load [the TUI architecture and test matrix](references/tui-architecture-and-testing.md) when adding screens, async work, or compatibility branches.
+### 3. Implement one operation slice
 
-**Complete when:** IDs and scopes are unique, global quit and cancel paths exist, each destructive operation references a distinct confirmation screen whose purpose identifies the operation and whose focus order exposes cancel before confirmation, async operations are cancellable, success/failure states and cleanup/fallbacks are explicit rather than exact deferred placeholders, and all test layers are planned. The bounded placeholder guard rejects standalone values such as `TODO`, `TBD`, `later`, `pending`, `unknown`, and `placeholder` after bounded ASCII canonicalization while preserving actionable prose. This structural check does not prove that runtime confirmation text names the exact resource and effect; state and PTY tests must do that.
+Prefer one independently useful interaction across event/input → state → task/effect → render/result rather than separate architecture artifacts. Keep blocking network/filesystem/process/stream work outside the UI loop using the framework's normal mechanism. Attach operation identity or otherwise reject stale results when concurrent work can outlive its initiating selection.
 
-### 3. Model events and state transitions
+Add only applicable behavior:
 
-Define events before rendering changes:
+- cancellation for work that is meaningfully cancellable or whose abandonment must be represented;
+- confirmation for destructive, irreversible, costly, or unusually broad actions, bound to the exact target/effect;
+- duplicate prevention or idempotency for repeatable action keys when consequence requires it;
+- focus restoration/fallback when the changed interaction moves or removes focus;
+- progress and failure states when users otherwise cannot understand ongoing work.
 
-- input, resize, timer, data, progress, completion, failure, cancellation, and shutdown;
-- active screen/modal, focus target, selection, scroll, viewport dimensions, async operation state, and transient messages;
-- transition outputs: new state plus effects, not direct blocking I/O.
+Do not manufacture cancel semantics for an atomic local update or a confirmation modal for a harmless action. Never write background output outside a renderer-owned frame.
 
-Keep update logic deterministic where possible. Effects perform I/O and return events. The renderer reads state and emits frames; it must not become a second state owner.
+### 4. Handle terminal constraints that the surface exposes
 
-**Complete when:** every operation has normal, failure, cancellation, and shutdown transitions that tests can drive without a real terminal.
+Keep critical actions usable at the supported narrow/short boundary. Reflow, reduce, scroll, or show an actionable minimum-size state according to local conventions. Preserve focus visibility and discoverability for changed keys. Provide non-color meaning when color conveys state; honor `NO_COLOR` only when the project claims or already supports it. Check Unicode width/ASCII fallback only when those capabilities are part of the output.
 
-### 4. Implement one screen/operation slice
+If stdin/stdout can be redirected or the executable documents non-TTY behavior, preserve that contract and avoid control sequences in data streams. Do not invent CLI parity or a non-TTY export mode merely because the template contains one.
 
-Write a failing state-transition or public behavior test before implementation. Keep the event loop responsive:
+### 5. Verify from cheapest layer to claimed boundary
 
-- move network, filesystem, process, and streaming work to the framework's effect/task mechanism;
-- attach operation identity so stale completion events cannot update the wrong selection;
-- throttle/coalesce high-frequency progress or resize events where required;
-- preserve focus and selection through refresh where identity still exists;
-- bind confirmation to the exact destructive target and effect;
-- keep status and errors visible without writing outside the frame renderer.
+Choose the smallest evidence that can falsify the claim:
 
-**Complete when:** deterministic state tests are GREEN and the event loop contains no blocking work for the new path.
+- transition/state test for event and operation logic;
+- widget/render or snapshot test for stable visual states and sizes;
+- framework test harness or virtual terminal for focus, composed frames, cursor/clearing, and dimensions;
+- PTY/ConPTY for actual startup, input, resize, signal, exit, and terminal-mode behavior;
+- installed/package probe only for distribution claims.
 
-### 5. Design for terminal constraints
+These are layers, not a mandatory ladder. A copy/layout change may need a focused render snapshot; async logic may need deterministic state/task tests; a raw-mode, resize, signal, input, or cleanup claim needs the relevant actual terminal boundary. Do not claim Windows from a POSIX PTY or all terminals from one emulator.
 
-Handle narrow and short terminals explicitly. Reflow, reduce nonessential columns, or present a minimum-size message without panic or hidden critical actions. Define focus visibility, tab/shift-tab order where applicable, discoverable key hints, escape/cancel behavior, text alternatives for color, `NO_COLOR`, Unicode width/combining behavior, and ASCII fallback.
+Regardless of other layers, changes to terminal ownership or exit handling must directly verify restoration for the affected normal and abnormal paths. Observe cursor, echo/input mode, raw/cooked mode, alternate-screen/mouse/paste state, and child cleanup only as the application owns them.
 
-When output is redirected or no TTY is available, follow the declared non-TTY behavior. Do not emit control sequences into pipes or files.
+Use safe fixtures. Test destructive UI flow without executing the real backend unless that mutation is separately authorized.
 
-### 6. Verify in layers
+### 6. Separate release and live effects
 
-Use the cheapest relevant layer first, then the actual terminal boundary:
+Run focused and relevant repository-native checks after the final mutation, inspect snapshots/diff, and distinguish untested platforms from supported ones. Evidence should match the claim, not fill every template slot.
 
-1. **State/update tests** — events produce expected state and effects.
-2. **Snapshot/golden tests** — stable frames at representative states and sizes.
-3. **Virtual-terminal tests** — cursor movement, clearing, dimensions, and composed frames.
-4. **PTY/ConPTY tests** — startup, input, resize, signal, exit, non-TTY, and actual process behavior.
-5. **Cleanup tests** — cursor, echo, raw mode, alternate screen, and process children recover after normal exit, error, panic, and signal.
-
-Normalize only nondeterministic values, not layout defects. Exercise minimum and representative sizes, slow async work, cancellation, stale completion, and Unicode/color fallbacks.
-
-**Complete when:** claims about real terminal behavior have PTY/ConPTY evidence after the final mutation.
-
-### 7. Report interface readiness
-
-Run repository-native static, unit, integration, snapshot, virtual-terminal, PTY, and platform checks that apply. Distinguish a platform not tested from one supported by evidence. Inspect the final diff and generated snapshots. Real backends and destructive operations remain outside scope unless separately authorized.
+Real backends, shell/process side effects, dependencies, packaging, installation, signing, release, publication, and deployment remain separate. Perform them only with exact authorization, bounded targets, and process/resource readback.
 
 ## Output contract
 
-```text
-TUI: IMPLEMENTED | VERIFIED | PARTIAL | BLOCKED
-Screens / operation: <scope>
-Framework and terminal boundary: <observed facts>
+Report these semantics, in any order or adapter-specific presentation:
 
-Evidence
-- Contract: PASS | FAIL
-- State transitions: <command/result>
-- Snapshots: <sizes/states/result>
-- Virtual terminal: <result>
-- PTY/ConPTY: <startup/input/resize/signal/exit result>
-- Cleanup/non-TTY/fallbacks: <result>
-- Platforms: <tested / unavailable>
+- outcome, user operation, screen/widget, and framework/terminal boundary;
+- changed state/event/task/render/lifecycle paths;
+- fresh evidence from the layers actually needed;
+- terminal restoration result when applicable;
+- untested platforms/terminals and live/distribution effects not performed.
 
-Gaps / not performed
-- <real backend mutations, untested terminals/platforms, packaging, publication, deployment>
-```
+An optional manifest or unused evidence layer need not appear. Never present a snapshot as input, resize, signal, cleanup, or platform proof.
 
 ## Common pitfalls
 
-- Blocking the event loop with network, process, file, or stream work.
-- Updating state from background work without an operation identity.
-- Writing logs directly while a frame renderer owns the screen.
-- Treating one screenshot as resize, input, or cleanup proof.
-- Depending on color or Unicode as the only meaning.
-- Hiding keybindings or omitting a reliable cancel/quit path.
-- Using terminal dimensions without handling zero, narrow, or resize events.
-- Passing snapshots while never running the actual process in a PTY.
-- Claiming Windows compatibility from POSIX PTY tests.
+- Rewriting a Textual or Ratatui project into Bubble Tea vocabulary, or vice versa.
+- Requiring cancellation, a confirmation screen, or every state for harmless bounded work.
+- Running the full state/snapshot/virtual-terminal/PTY ladder regardless of claim.
+- Blocking the UI loop or applying stale async results to current selection.
+- Writing logs directly while the renderer owns the screen.
+- Depending on color or Unicode as the only meaning when fallbacks are claimed.
+- Passing snapshots while leaving terminal modes corrupted after real exit.
+- Claiming platform compatibility from an untested terminal boundary.
 
 ## Verification checklist
 
-- [ ] Entrypoint, event loop, state, effects, rendering, keymap, lifecycle, tests, and commands were traced.
-- [ ] The TUI contract passes and references resolve.
-- [ ] Model/update/effects/view ownership is explicit.
-- [ ] Blocking I/O is outside the event loop and stale events cannot corrupt current state.
-- [ ] Focus, key hints, cancel, quit, confirmation, and failure paths are discoverable and deterministic.
-- [ ] Resize, minimum size, non-TTY, `NO_COLOR`, Unicode, and ASCII fallback behavior are defined.
-- [ ] State, snapshot, virtual-terminal, PTY/ConPTY, and cleanup evidence ran after the final mutation.
-- [ ] Normal exit, error, panic, cancellation, and signal restore terminal modes.
-- [ ] Tested platforms and terminals are distinguished from claimed support.
-- [ ] Destructive backends, packaging, publication, and deployment were not performed implicitly.
+- [ ] Task mode, operation, local boundary, selected framework conventions, and terminal ownership are clear.
+- [ ] Bounded requested writes proceeded without mandatory artifacts or redundant approval.
+- [ ] State/event/task/render architecture follows the matching stack rather than a forced taxonomy.
+- [ ] Optional JSON/template use, if any, is described only as structural lint for complex work.
+- [ ] Cancellation, confirmation, duplicate handling, focus fallback, and non-TTY behavior exist only when applicable.
+- [ ] Blocking work and stale async results cannot corrupt the changed interaction.
+- [ ] Relevant focus, keys, size, color, Unicode, and accessibility behavior were checked proportionately.
+- [ ] Evidence layers stop at the cheapest layer that supports the claim; terminal-boundary claims have PTY/ConPTY or equivalent evidence.
+- [ ] Affected terminal modes and child processes restore after applicable normal/error/signal exits.
+- [ ] Real mutations, shell effects, dependencies, packaging, release, publication, and deployment remained separately authorized and verified.

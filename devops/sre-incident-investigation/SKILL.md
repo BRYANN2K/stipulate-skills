@@ -1,10 +1,10 @@
 ---
 name: sre-incident-investigation
-description: Use when triaging, investigating, mitigating, or reviewing production incidents using metrics, logs, traces, events, deployments, and system context. Runs hypothesis-driven read-only investigation, separates evidence from inference, and gates every remediation.
+description: "Use when quickly triaging, deeply investigating, planning or executing mitigation for, communicating about, or reviewing a production incident using metrics, logs, traces, events, deployments, and system context. Scales coordination and evidence to incident complexity without forcing hypothesis quotas."
 license: Apache-2.0
-compatibility: Works with any available observability or infrastructure tools. Live access should be read-only during investigation.
+compatibility: Works with available observability and infrastructure tools. Requested live investigation remains read-only unless an exact remediation is separately authorized.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: BRYANN2K
   category: devops
   tags: sre, incident-response, observability, metrics, logs, traces, postmortem
@@ -14,173 +14,134 @@ metadata:
 
 ## Overview
 
-Unify incident command and technical investigation. Stabilize coordination, establish a timeline, test hypotheses across metrics/logs/traces/changes, then propose the smallest reversible mitigation. Preserve uncertainty instead of manufacturing a root cause.
+Restore understanding or service by the shortest safe route. A known alert or narrow query does not require incident roles, a full timeline, multiple hypotheses, every signal type, a mitigation packet, and a postmortem. Add coordination and evidence only as impact, ambiguity, duration, or handoff needs grow.
+
+Separate read-only investigation, mitigation recommendation, effect authorization, recovery evidence, and later learning. A direct request to create or update bounded local incident notes authorizes those writes without a second approval. Root-cause certainty is not required before a reversible mitigation when the predicted user benefit and risks are understood.
 
 <HARD-GATE>
-Investigation is read-only. Do not restart, scale, fail over, rollback, disable controls, modify traffic, rotate credentials, patch configuration, execute database changes, or acknowledge/close an incident unless the user explicitly authorizes the exact action. Never query or print secret values or unnecessary personal data.
+Never expose credentials, secret values, unnecessary personal/customer data, or sensitive incident evidence. Installing tools; changing authentication or privileges; and restarting, scaling, failing over, rolling back, disabling controls, modifying traffic/configuration/data, rotating credentials, acknowledging/closing an incident, deploying, releasing, or publishing require explicit authorization for the exact action, service/resource, environment/region, and observation/rollback boundary. Read-only investigation or local report authoring does not authorize those effects.
 </HARD-GATE>
 
 ## When to use
 
-- Active production degradation, outage, alert storm, latency/error spike, saturation, or dependency failure.
-- Root-cause investigation across metrics, logs, traces, events, deploys, and configuration changes.
-- Mitigation planning, incident updates, handoffs, or evidence-based postmortems.
+- Triage an active degradation, outage, alert storm, latency/error spike, saturation, or dependency failure.
+- Test a focused operational hypothesis or explain a telemetry signal.
+- Investigate across metrics, logs, traces, events, deploys, configuration, and topology.
+- Plan or, after exact authorization, execute the smallest stabilizing mitigation.
+- Write an incident update, handoff, timeline, or evidence-based postmortem.
 
-Do not use for speculative performance tuning without an incident signal. Use `cloud-architecture-review` for broad design assessment.
+Do not use for speculative tuning with no incident signal. Use `cloud-architecture-review` for broad design assessment and the relevant security response workflow for containment or forensic evidence acquisition.
 
-## Modes
+## Task modes
+
+Choose the smallest mode that serves the current incident. Modes can change as evidence changes; they are navigation, not gates.
 
 | Mode | Goal | Default boundary |
 |---|---|---|
-| **Triage** | Establish impact, severity, ownership, and first hypotheses | Read-only |
-| **Investigate** | Discriminate causes using correlated evidence | Read-only |
-| **Mitigate** | Propose/execute smallest reversible stabilizer | Approval required |
-| **Learn** | Build blameless timeline, causes, and actions | Documents only |
+| **Quick triage** | Confirm impact/scope and next discriminating check | Minimal read-only evidence |
+| **Targeted query** | Test or explain one hypothesis/signal | One bounded service/environment/time window |
+| **Investigation** | Discriminate uncertain causes across relevant signals | Read-only, hypothesis-driven |
+| **Mitigation design** | Select a reversible stabilizer | Exact proposal; no execution |
+| **Mitigation execute** | Perform an authorized stabilizer | Exact target/action with abort/rollback/readback |
+| **Update/handoff** | Communicate current state and next action | Sourced concise summary |
+| **Postmortem** | Explain contributing conditions and improve controls | Documents and follow-up evidence |
 
-Select one primary mode and state it. Active incidents prioritize restoration over exhaustive diagnosis.
+Active incidents prioritize restoration. Formal incident-command roles are optional and useful only when coordination complexity justifies them.
 
 ## Workflow
 
-### 1. Open the incident frame
+Use only applicable branches. The section names do not require an incident to pass through nine phases.
 
-Capture:
+### Frame the current question
 
-- start/detection time, current time window, environment, services, regions/tenants;
-- user-visible impact and affected critical journeys;
-- severity criteria, incident commander, technical lead, communications owner;
-- known recent changes and external dependencies;
-- available telemetry and access limitations.
+For quick triage, establish the affected service/journey, environment/region or tenant segment, time window/time basis, observed impact without invented numbers, current status, and available evidence. Record alert evaluation/data presence, notification disposition, incident workflow state, and service recovery separately: no-data, silenced, inhibited, or cleared is not by itself recovery. Add severity policy, incident commander, technical lead, communications owner, or scribe only when the organization already uses them or multiple actors need coordination.
 
-If formal roles do not exist, name temporary roles without creating bureaucracy. Never invent impact numbers.
+A focused query can stop after the exact target, time window, result, interpretation, and uncertainty are recorded. A longer investigation may keep a sourced timeline of material alerts, deploys, configuration/traffic shifts, dependency failures, mitigation, and recovery. Use `templates/incident-report.md` only when a durable notebook improves coordination.
 
-**Complete when:** scope, impact, severity rationale, owner, and observation window are explicit.
+### Form and test only useful hypotheses
 
-### 2. Establish a minimal timeline
+When the cause is uncertain, write one or more hypotheses that predict observable signals and choose the smallest query that can distinguish them. Include an alternative only when it could change the next action. There is no minimum or maximum hypothesis count; a known failure may need direct confirmation rather than invented competitors.
 
-Record only sourced events: alert fired, deployment, config change, traffic shift, dependency error, saturation onset, mitigation, recovery. Normalize timestamps to one timezone and preserve source links/query identifiers.
+Track, as useful: claim, predicted/rejecting signals, query/source/time window, result, confidence change, and next test. Mark unavailable or contradictory evidence as inconclusive. Load [hypothesis and signal correlation](references/hypothesis-and-signal-correlation.md) when several signals or competing explanations need a ledger.
 
-Use `templates/incident-report.md` as the live notebook. Facts and hypotheses belong in separate sections.
+Do not query every backend. Stop when the leading explanation is actionable and alternatives no longer change mitigation, the requested answer is supported, or evidence/access limits prevent discrimination.
 
-### 3. Form competing hypotheses
+### Correlate signals with a common scope
 
-Start with 2–5 hypotheses that predict observable signals. Include at least one alternative to the leading theory. Use the table in `references/hypothesis-and-signal-correlation.md`.
+Join resource identity (service/workload, environment, region/cluster, runtime unit, version/deployment/configuration) with trace identity (trace/span and parent/link, valid request correlation, sampling decision when known) instead of correlating only by service and time. Add tenant segment only where appropriate. Check sampling probability and selection bias, aggregation, cardinality, retention, missing telemetry, event versus ingestion time, and clock uncertainty before treating absence or ordering as proof.
 
-Bad: “The database is slow.”
+Use signals for their supported claims:
 
-Good: “A connection-pool limit introduced in deploy X causes request queueing; predicts rising acquisition latency, flat DB CPU, and failures concentrated on new pods.”
+- metrics quantify when, where, and how much;
+- traces locate paths, dependencies, fan-out, and latency contribution;
+- logs report component-observed events within their logging/privacy limits;
+- deploy/config/infrastructure events identify plausible changes;
+- topology explains propagation and shared fate.
 
-### 4. Query from broad to discriminating
+Correlation with a deployment is not causation. For each material causal edge, record the predicted mechanism, matching resource/trace path, order within clock uncertainty, control/intervention/counterfactual evidence, contradictions, and edge confidence. Seek a healthy/control population, version split, regional difference, or response to a reversible change where feasible.
 
-Use the smallest query that can reject or support a hypothesis:
+### Select mitigation independently from root-cause certainty
 
-1. user-facing rate/errors/duration and affected segment;
-2. resource saturation and queueing;
-3. service/dependency topology and trace exemplars;
-4. structured logs around trace/request IDs;
-5. deployment/config/infrastructure events;
-6. deeper platform queries only when needed.
+Compare only plausible candidates by expected user benefit, time to effect, blast radius, reversibility, prerequisites, confidence, and new risk. Prefer the smallest controlled intervention that can restore the critical journey. Preserve evidence needed for later diagnosis when delay is safe; do not let postmortem completeness block urgent restoration.
 
-Prefer rate and ratio over raw cumulative counters. Compare against a useful baseline. Check aggregation, label cardinality, sampling, clock skew, retention, and missing telemetry before interpreting absence.
+A mitigation proposal should state only the decision-critical fields: exact target and action/procedure, expected user/system signal, observation window, abort condition, reversal/rollback, and ownership/communications when coordination needs them.
 
-For query discipline and anti-cardinality safeguards, load `references/hypothesis-and-signal-correlation.md`.
+### Execute and read back an authorized effect
 
-**Complete when:** each query changes the probability of a hypothesis or is explicitly marked inconclusive.
+Immediately before an authorized action:
 
-### 5. Correlate signals
+1. re-confirm actor, service/resource, environment, region/cluster/account, and current incident scope;
+2. show the exact command/configuration/deployment diff or operation;
+3. confirm expected effect, blast radius, prerequisites, and authorization;
+4. confirm abort threshold and rollback/reversal path;
+5. execute only that action and capture real output;
+6. read back target state and user-facing/system health over the justified observation window.
 
-Build a causal narrative only when ordering and mechanism agree:
+Stop on target mismatch, changed procedure, unexpected scope, unavailable rollback, or regression. One meaningful change at a time is a useful default when causality matters, not an absolute rule during coordinated recovery.
 
-- metrics establish **when/where/how much**;
-- traces establish **which path/dependency**;
-- logs establish **what the component reported**;
-- changes establish **what could have altered behavior**;
-- topology establishes **how failure propagates**.
+Command success, healthy pods, no-data, a silence/inhibition, or a cleared alert/control-plane condition alone does not prove recovery. Use the affected user journey/SLI plus enough system evidence to rule out missing telemetry and displaced failure for the claim made.
 
-Correlation with a deploy is not causation. Look for canary/control populations, version split, regional difference, rollback response, or a mechanism in code/config.
+### Learn at the useful depth
 
-### 6. Update confidence and stop intelligently
+Run a postmortem only when requested or organizational policy requires it. Preserve sourced timeline, trigger, contributing conditions, propagation, detection, response, and recovery without forcing one root cause or “five whys.” Restore decisions and causal certainty can have different confidence.
 
-Label every conclusion:
-
-- **Confirmed** — direct evidence and mechanism, meaningful alternatives contradicted.
-- **Likely** — multiple independent signals align; one material gap remains.
-- **Possible** — plausible but weak or non-discriminating evidence.
-- **Unknown** — evidence unavailable or contradictory.
-
-Stop expanding when the leading hypothesis is actionable and alternatives no longer change mitigation, or when evidence limits are reached. State why.
-
-### 7. Select mitigation
-
-Rank candidates by time-to-effect, blast radius, reversibility, confidence, and new risk. Prefer configuration/traffic/release rollback over unbounded manual repair when it safely restores service.
-
-Before any approved action provide:
-
-- exact target and command/procedure;
-- expected signal and observation window;
-- abort threshold;
-- rollback/reversal;
-- owner and communication impact.
-
-Execute one meaningful change at a time when possible; otherwise causality is lost.
-
-### 8. Verify recovery
-
-Recovery requires user-facing and system evidence across a stable observation window:
-
-- critical SLI returned to acceptable range;
-- saturation/queue/backlog is draining;
-- no displaced failure appeared elsewhere;
-- synthetic/real journey succeeds;
-- alerts are resolving for the right reason.
-
-“Pods are running” or “command succeeded” is not service recovery.
-
-### 9. Learn without hindsight bias
-
-For postmortem depth load `references/postmortem-and-actions.md`. Preserve detection, contributing conditions, propagation, response, and recovery. Avoid a single-person “root cause” when system controls could have prevented or contained the event.
+Load [postmortem and actions](references/postmortem-and-actions.md) for durable learning work. Corrective actions should address an evidenced failure mode and predeclare baseline, predicted system/user outcome, evidence source, and effectiveness readback. Keep implementation status separate from effective/ineffective/inconclusive results. Add owner, priority, due condition/date, tracking ID, or counterfactual analysis when the team needs accountable follow-through; do not manufacture administrative fields for a small retrospective.
 
 ## Output contract
 
-### Active incident update
+Adapt to the current mode and urgency:
 
-- Status and severity
-- User impact
-- Timeline since last update
-- Confirmed facts
-- Hypotheses with confidence
-- Actions taken and observed result
-- Next read-only query or proposed gated mitigation
-- Risks/blockers
-- Next update time/condition
+- **Quick triage/targeted query:** current impact/scope, evidence and time window, interpretation/confidence, and next safe check.
+- **Investigation:** material timeline, useful hypothesis ledger, resource/trace correlation identity, alert/data/notification/recovery states, causal-edge confidence, contradictions/limits, and stopping reason.
+- **Mitigation design:** exact target/action, expected benefit, blast radius, authorization boundary, abort/rollback, and readback plan.
+- **Executed mitigation:** authorization and target, action/output, post-action user/system readback, residual risk, and next observation.
+- **Update/handoff/postmortem:** use the organization's format and include only facts, uncertainty, actions, and ownership needed by that audience.
 
-### Investigation report
-
-- Scope/evidence limitations
-- Timeline
-- Hypothesis matrix
-- Findings and confidence
-- Causal/contributing factors
-- Mitigation and recovery evidence
-- Follow-up actions with owners and validation
+Templates and query helpers are optional coordination aids, never evidence that an incident was understood or recovered. Do not emit both an active update and full investigation report unless both were requested or useful.
 
 ## Common pitfalls
 
-- Querying everything and drowning in non-discriminating data.
+- Turning a bounded alert into a full incident bureaucracy.
+- Inventing extra hypotheses to satisfy a quota.
+- Querying everything and worsening load or losing the discriminating signal.
 - Treating the first correlated deploy as root cause.
-- Using high-cardinality labels or regex queries that worsen the incident.
-- Restarting workloads before capturing previous state/logs.
-- Confusing mitigation with permanent correction.
-- Declaring recovery from control-plane health only.
-- Writing a clean causal story that hides uncertainty or contradictory evidence.
-- Creating vague actions such as “improve monitoring.”
+- Using high-cardinality labels or broad logs containing private data.
+- Restarting before preserving the small amount of volatile evidence needed.
+- Confusing mitigation, durable correction, root cause, and recovery.
+- Declaring recovery from command or control-plane health alone.
+- Creating vague or administratively complete follow-ups with no failure-mode link.
 
 ## Verification checklist
 
-- [ ] Impact, severity, ownership, target, and time window are explicit.
-- [ ] Timeline entries and claims link to evidence.
-- [ ] Competing hypotheses were tested with discriminating queries.
-- [ ] Confidence labels reflect evidence quality.
-- [ ] No mutation occurred during investigation without authorization.
-- [ ] Mitigation included expected signal, abort, and rollback.
-- [ ] Recovery is proven at the user and system levels.
-- [ ] Follow-ups have owners, due criteria, and measurable validation.
+Apply only relevant items:
+
+- [ ] Scope, environment, time window, and impact are explicit enough for the current mode.
+- [ ] Roles, timeline, hypotheses, and signal types were added only when useful.
+- [ ] No hypothesis quota or fixed query ladder drove the investigation.
+- [ ] Queries were bounded, privacy-safe, and changed confidence or were marked inconclusive.
+- [ ] Conclusions preserve resource/trace identity, sampling and clock unknowns, contradictions, and causal-edge confidence.
+- [ ] No-data, silenced, inhibited, or cleared states were mistaken for recovery; templates/helpers were not treated as proof.
+- [ ] Local reports and read-only work proceeded without redundant approval.
+- [ ] Any mitigation effect names exact target/action, diff/procedure, expected signal, abort/rollback, and readback.
+- [ ] Recovery claims include proportionate user-facing/system readback, and corrective-action delivery remains separate from effectiveness readback.
+- [ ] No credential/private-data access, install, auth/privilege effect, live mutation, closure, deployment, release, or publication occurred without explicit authorization.
