@@ -11,10 +11,10 @@ git --version
 
 ### 2. Get this version of Stip
 
-The rebuilt workflow is currently on `codex/spec-workflow-core`; `main` still contains the legacy collection. Clone the workflow branch explicitly:
+The rebuilt workflow is available on `main`. Clone the repository:
 
 ```sh
-git clone --branch codex/spec-workflow-core https://github.com/BRYANN2K/stipulate-skills.git
+git clone https://github.com/BRYANN2K/stipulate-skills.git
 cd stipulate-skills
 ```
 
@@ -204,7 +204,7 @@ Accepted specifications describe current accepted behavior. A change specificati
 
 ## Updates and removal
 
-From a clean Stipulate Skills checkout on the workflow branch, fetch updates and rerun the installer for the destination you originally chose:
+From a clean Stipulate Skills checkout on `main`, fetch updates and rerun the installer for the destination you originally chose:
 
 ```sh
 git pull --ff-only
@@ -229,7 +229,7 @@ Use your project-level destination instead if that is where you installed. Unins
 | Symptom | What to check |
 | --- | --- |
 | No `stip-*` skills appear | Verify the install destination, then refresh the client's catalog or open a new conversation. |
-| `scripts/install.py` is missing | Confirm you cloned `codex/spec-workflow-core` and are running commands from the Stipulate Skills checkout. |
+| `scripts/install.py` is missing | Confirm you are using the current `main` branch and are running commands from the Stipulate Skills checkout. |
 | `Changed or foreign installation` | Preserve the local files and compare them with the package. The installer deliberately refuses an unsafe overwrite. |
 | `Use a physical destination path` | Use an absolute path with no symlink components. |
 | An extension is unavailable | Bootstrap first, install its exact catalog ID into that project, and inspect the runtime `extensions` output. |

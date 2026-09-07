@@ -38,14 +38,14 @@ Start a new project or adopt an existing repository. Bootstrap preserves useful 
 
 You need **Python 3.10+**, **Git**, and a coding-agent environment with skill support. Commands below use a macOS/Linux shell.
 
-> **Workflow branch:** this rebuild currently lives on `codex/spec-workflow-core`. `main` still contains the legacy collection. Use the branch in the clone command below.
+> **Current workflow:** `main` contains Stipulate Skills. The previous skill collection remains available in Git history.
 
 ### 1. Install the core
 
 Run in a terminal:
 
 ```sh
-git clone --branch codex/spec-workflow-core https://github.com/BRYANN2K/stipulate-skills.git
+git clone https://github.com/BRYANN2K/stipulate-skills.git
 cd stipulate-skills
 python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
 python3 scripts/install.py --destination "$HOME/.agents/skills"
