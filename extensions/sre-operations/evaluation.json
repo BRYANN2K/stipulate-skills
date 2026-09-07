@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "sre-operations",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Définir et tester une alerte actionnable pour un service dont le taux d’erreur augmente.",
+      "expected": "select",
+      "reason": "Relier fiabilité perçue, indicateurs, objectifs, alertes et réponse aux dégradations."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier un document sans service, signal ou procédure opérationnelle affectés.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Définir et tester une alerte actionnable pour un service dont le taux d’erreur augmente. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le dashboard existe, mais une panne représentative ne déclenche aucune alerte actionnable.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

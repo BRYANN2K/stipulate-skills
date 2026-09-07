@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "ai-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter un assistant qui extrait des données et propose un appel d’outil contrôlé.",
+      "expected": "select",
+      "reason": "Borner et évaluer une capacité de modèle avec ses outils, erreurs, coûts et recours humains."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Ajouter une règle déterministe sans modèle ni comportement probabiliste.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter un assistant qui extrait des données et propose un appel d’outil contrôlé. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le dataset existe et l’eval s’exécute, mais le seuil de qualité de la classe critique est manqué.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "content-design",
+  "description": "Aider une personne à comprendre et accomplir sa tâche par un contenu clair dans le bon contexte.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}

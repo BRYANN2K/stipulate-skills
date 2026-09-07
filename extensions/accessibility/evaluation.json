@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "accessibility",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter un dialogue interactif utilisable au clavier et avec un lecteur d’écran.",
+      "expected": "select",
+      "reason": "Rendre les tâches et contenus perceptibles, opérables, compréhensibles et robustes pour les publics concernés."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Changer un processus serveur sans surface ou sortie destinée à une personne affectée.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter un dialogue interactif utilisable au clavier et avec un lecteur d’écran. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le scan automatique passe, mais le focus clavier sort du dialogue et empêche de terminer la tâche.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

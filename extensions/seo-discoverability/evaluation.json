@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "seo-discoverability",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Publier une page de documentation publique qui doit être trouvée via recherche organique.",
+      "expected": "select",
+      "reason": "Rendre des contenus publics découvrables et indexables selon leur intention et leurs contraintes."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier un dashboard privé non destiné à l’indexation.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Publier une page de documentation publique qui doit être trouvée via recherche organique. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Les métadonnées existent, mais la page publique reste bloquée par robots ou noindex.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

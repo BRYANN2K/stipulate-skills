@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "release-management",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Préparer une nouvelle version distribuable avec migration et notes de compatibilité.",
+      "expected": "select",
+      "reason": "Préparer une version identifiable avec compatibilité, artefacts, notes et récupération."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Explorer un prototype sans version ou distribution prévue.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Préparer une nouvelle version distribuable avec migration et notes de compatibilité. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "L’archive est créée, mais l’artefact ne s’installe pas sur une plateforme annoncée comme supportée.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

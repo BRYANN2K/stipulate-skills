@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "customer-support",
+  "description": "Préparer diagnostic, aide et escalade pour les problèmes réellement rencontrés par les utilisateurs.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}

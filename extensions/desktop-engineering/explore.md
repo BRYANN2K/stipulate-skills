@@ -1,0 +1,31 @@
+# desktop-engineering — explorer
+
+Vérifier une application de bureau dans ses fenêtres, processus, fichiers, permissions et packaging.
+
+## Décider de la pertinence
+
+La disponibilité dans la configuration n’active pas ce métier. Pendant `spec-explore`, sélectionner cette extension seulement si sa responsabilité touche le changement ou une inconnue décisive. Ne pas lancer tout le catalogue. Exemple pertinent : Corriger un brouillon perdu quand un processus compagnon redémarre dans une application macOS. Exemple hors périmètre : Modifier une API distante sans intégration ni runtime desktop affecté.
+
+Cette extension transforme une fonctionnalité native desktop en application installable, isolée et maintenable : fenêtres, menus, raccourcis, fichiers, processus, permissions, mises à jour, packaging, crash et intégration OS. Elle s’active dans `spec-explore` dès qu’un changement touche macOS, Windows ou Linux au-delà d’une page web : shell Electron/Tauri, WinUI, menu système, protocole, filesystem, notification ou distribution signée. Elle s’active aussi lorsqu’un frontend web est embarqué avec des capacités natives.
+
+Elle ne s’active pas pour une API sans client desktop, une simple modification visuelle sans impact natif, ou une page web redimensionnée. Elle ne choisit pas Electron, Tauri, WinUI, AppKit/SwiftUI ou un mécanisme de signature à la place du projet. Electron rappelle que la surface web et le processus principal forment des frontières de confiance et recommande notamment isolation de contexte, sandbox, CSP, validation des messages IPC, absence de Node pour du contenu distant et usage de versions courantes ([Security](https://www.electronjs.org/docs/latest/tutorial/security)). Tauri décrit des capabilities qui accordent ou refusent des permissions par fenêtre/webview, tout en précisant qu’un périmètre trop large, du Rust dangereux ou une dépendance compromise restent des risques ([Capabilities](https://v2.tauri.app/security/capabilities/)).
+
+## Reconnaître et réutiliser l’existant
+
+Pour un projet neuf, chercher le runtime desktop, les fenêtres/webviews, les canaux IPC, les permissions, le stockage, les protocoles, la signature, l’auto-update éventuel, les scripts de packaging et les plateformes supportées. Pour un projet en cours, installer l’artefact produit, ouvrir un fichier local ou distant, inspecter les permissions effectives, couper le réseau, lancer avec un profil vierge, mettre à jour et fermer pendant une opération. Classer chaque constat comme **établi** (artefact, configuration ou test reproductible), **inféré** (intention sans preuve), **incomplet** (une plateforme ou un chemin manque), **manquant** (recherche sans trace) ou **non applicable** (capacité non utilisée). Un manifeste de permission ne prouve pas que la fenêtre ne peut pas appeler un canal dangereux ; un build local ne prouve pas que le package signé est identique.
+
+Microsoft recommande Windows App SDK/WinUI 3 pour développer, empaqueter et déployer des apps Windows modernes ([Windows apps](https://learn.microsoft.com/en-us/windows/apps/)). Sa page d’inclusive design situe l’accessibilité comme une responsabilité de qualité à intégrer dès le début ([Designing inclusive software](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/designing-inclusive-software)). Côté macOS, Apple décrit AppKit comme le framework d’interface événementielle et explique qu’il peut être combiné avec SwiftUI ([AppKit](https://developer.apple.com/documentation/appkit)). Apple distingue aussi distribution Mac App Store et distribution Developer ID, avec signature, Gatekeeper et notarisation ([Distributing software on macOS](https://developer.apple.com/macos/distribution/)). Ces références restent propres à leurs plateformes et ne remplacent pas les essais de l’application choisie.
+
+Consulter la carte du bootstrap puis rechercher seulement les preuves utiles au changement. Pour chaque élément, noter **établi, inféré, incomplet, manquant ou non applicable**, avec preuve ou justification. Ne pas confondre absence de document et absence de pratique. Décider de réutiliser, compléter ou remplacer ; une étape déjà satisfaite peut ne demander aucun travail.
+
+## Borner la contribution au contrat commun
+
+Le MVP couvre l’OS cible, lancement/fermeture, une capacité native explicitement bornée, un test IPC ou permission, un package installable et une vérification de crash/reprise. Approfondir si l’app ouvre du contenu distant, exécute des fichiers, accède aux secrets, traite des données sensibles, se met à jour automatiquement ou supporte plusieurs OS : revoir toutes les règles Electron/Tauri pertinentes, signer et comparer les artefacts, tester profils vierges, permissions refusées, downgrade/rollback et accessibilité OS. Ne pas considérer l’absence d’alerte comme preuve de sécurité.
+
+Proposer seulement les propriétés nécessaires et leurs moyens de vérification, en utilisant les candidats de [check.md](check.md). L’agent les adapte et les remappe en identifiants `AC-1`, `AC-2`, etc., uniques dans la **spec commune** ; le moteur ne remappe aucun identifiant métier. Ne pas créer une approbation ou une spec parallèle. Chaque critère doit préciser résultat, contexte et preuve attendue. Une nouvelle exigence après accord impose révision et nouvel accord sur le contrat.
+
+## Frontières
+
+`frontend-engineering` décrit les états de webview ; `backend-engineering` et `api-integrations` portent réseau et auth ; `mobile-engineering` partage certaines contraintes d’installation ; `security-engineering` approfondit les menaces. Éviter de laisser Node ou une capability globale à du contenu distant, de valider un package différent de celui distribué, de tester seulement le profil développeur, ou de déclarer “cross-platform” après un seul OS. Les checklists Electron/Tauri sont des cadres de risque, pas une certification. Une app web sans processus ni permission native n’active pas cette extension.
+
+Les autres métiers cités sont des collaborations possibles, jamais des dépendances automatiquement activées. Le travail cloud seul n’active pas UX/design. Les sources détaillées sont dans [sources.md](sources.md) ; elles éclairent les décisions et ne constituent pas des critères supplémentaires implicites.

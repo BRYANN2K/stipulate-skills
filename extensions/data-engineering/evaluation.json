@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "data-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter une ingestion incrémentale qui gère doublons, retard et évolution de schéma.",
+      "expected": "select",
+      "reason": "Rendre un flux de données traçable, rejouable et vérifiable de la source au consommateur."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Changer une interface sans flux ou transformation de données affectés.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter une ingestion incrémentale qui gère doublons, retard et évolution de schéma. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le pipeline termine sans erreur, mais des lignes disparaissent lors d’un rejeu.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

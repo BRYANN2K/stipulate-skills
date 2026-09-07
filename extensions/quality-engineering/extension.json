@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "quality-engineering",
+  "description": "Choisir des vérifications qui réduisent les risques réels et relier leurs résultats aux critères.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}

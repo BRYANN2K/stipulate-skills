@@ -35,7 +35,7 @@ python3 scripts/install.py --destination "$HOME/.agents/skills" --uninstall
 
 Exemple de conversation : « $spec-bootstrap, reprends ce dépôt et préserve ses conventions. » Puis : « $spec-explore, ajoutons l’annulation des traitements. » Après revue de la spec : « J’approuve cette version ; $spec-apply. » Les corrections reviennent vers apply/check. Une nouvelle exigence revient vers validate. Docs et archive clôturent le changement.
 
-Les extensions interviennent dans **explore** pour poser les questions métier et contribuer aux critères. Les phases suivantes consomment ces décisions. Le bootstrap reconnaît les métiers applicables et les fondations existantes, sans lancer tous leurs processus. Aucun métier n’est livré dans cette version du noyau.
+Les extensions interviennent dans **explore** pour poser les questions métier et contribuer aux critères. Les phases suivantes consomment ces décisions. Le bootstrap reconnaît les métiers applicables et les fondations existantes, sans lancer tous leurs processus. Le catalogue fournit 28 extensions locales facultatives, séparées des sept skills core. Leur installation ciblée et leur sélection sont décrites dans [Extensions](docs/extensions.md). Aucun métier n’est activé par défaut.
 
 ## Structure d’un projet
 
@@ -66,7 +66,7 @@ Bootstrap crée les dossiers vides ; il ne crée pas de fausse fonctionnalité `
 - Archive refuse les sources périmées, un index déjà rempli, les fichiers sélectionnés déjà modifiés au début, un HEAD déplacé et les mises à jour concurrentes de la spec cible. Il n’absorbe pas les autres travaux et n’effectue aucun push.
 - Les sous-modules ne sont pas pris en charge dans l’empreinte v1. Utiliser la racine physique du dépôt. Linux et macOS sont les cibles du CI ; seul l’environnement local indiqué dans le rapport de livraison est vérifié lors de cette livraison.
 
-Les tests couvrent le moteur et l’installation. Une évaluation comportementale d’Astra sur des projets réels reste distincte : ce noyau ne certifie pas à lui seul qu’un produit est prêt pour la production.
+Les tests couvrent le moteur, l’installation et les cycles synthétiques des 28 extensions. Une évaluation comportementale d’Astra sur des projets réels reste distincte : ce noyau ne certifie pas à lui seul qu’un produit est prêt pour la production.
 
 [Contrat et commandes](docs/workflow.md) · [Extensions](docs/extensions.md) · [Développement](CONTRIBUTING.md) · [Sécurité](SECURITY.md)
 

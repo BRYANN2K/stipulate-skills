@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "storytelling",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Aligner la promesse d’une landing, l’onboarding et la démonstration sur les capacités livrées.",
+      "expected": "select",
+      "reason": "Relier intention, promesse prouvable, messages et narration cohérente entre les surfaces du produit."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Corriger un calcul interne sans changer le positionnement ni les messages du produit.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Aligner la promesse d’une landing, l’onboarding et la démonstration sur les capacités livrées. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "La narration est cohérente entre pages, mais promet une capacité absente du produit livré.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

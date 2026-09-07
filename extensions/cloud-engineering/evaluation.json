@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "cloud-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Migrer un service managé et définir sa restauration, ses accès et son budget.",
+      "expected": "select",
+      "reason": "Concevoir des ressources cloud reproductibles avec leurs accès, récupération, santé et coût."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier une application locale sans service cloud ni topologie affectés.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Migrer un service managé et définir sa restauration, ses accès et son budget. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le plan IaC réussit, mais aucune restauration n’est testée alors que le contrat exige un RTO/RPO.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

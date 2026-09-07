@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "desktop-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Corriger un brouillon perdu quand un processus compagnon redémarre dans une application macOS.",
+      "expected": "select",
+      "reason": "Vérifier une application de bureau dans ses fenêtres, processus, fichiers, permissions et packaging."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier une API distante sans intégration ni runtime desktop affecté.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Corriger un brouillon perdu quand un processus compagnon redémarre dans une application macOS. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le binaire compile, mais le parcours réel échoue encore et laisse un brouillon non récupérable.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

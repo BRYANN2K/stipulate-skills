@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "security-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter un accès à des données privées avec une nouvelle frontière d’autorisation.",
+      "expected": "select",
+      "reason": "Réduire les risques d’abus sur les actifs et frontières de confiance touchés par le changement."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier un espace typographique sans actif, droit ou flux de confiance affecté.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter un accès à des données privées avec une nouvelle frontière d’autorisation. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le chemin autorisé passe, mais un autre utilisateur peut accéder à la même ressource en changeant son identifiant.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

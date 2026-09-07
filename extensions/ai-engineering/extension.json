@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "ai-engineering",
+  "description": "Borner et évaluer une capacité de modèle avec ses outils, erreurs, coûts et recours humains.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}

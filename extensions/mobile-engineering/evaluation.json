@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "mobile-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter une synchronisation mobile après suspension et retour du réseau.",
+      "expected": "select",
+      "reason": "Construire et vérifier une expérience mobile avec son cycle de vie, réseau, permissions et distribution."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Corriger une page web sans comportement mobile natif ni package mobile affecté.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter une synchronisation mobile après suspension et retour du réseau. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le simulateur affiche l’écran, mais le retour après suspension perd une opération en cours.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

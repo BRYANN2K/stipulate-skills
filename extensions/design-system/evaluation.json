@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "design-system",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Unifier un composant de formulaire réutilisé dans plusieurs parcours en préservant ses consommateurs.",
+      "expected": "select",
+      "reason": "Faire évoluer des primitives et composants partagés avec leurs usages, contrats et migrations."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Réaliser une esquisse ponctuelle sans besoin démontré de réutilisation.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Unifier un composant de formulaire réutilisé dans plusieurs parcours en préservant ses consommateurs. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le composant isolé passe ses tests, mais un consommateur existant casse avec la nouvelle API.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

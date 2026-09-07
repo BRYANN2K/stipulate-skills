@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "visual-design",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Corriger une hiérarchie illisible et les états visuels d’un tableau sur petit écran.",
+      "expected": "select",
+      "reason": "Définir hiérarchie, lisibilité, couleurs, typographie, espaces et états visuels adaptés."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Changer un worker serveur sans surface visuelle affectée.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Corriger une hiérarchie illisible et les états visuels d’un tableau sur petit écran. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Une maquette attractive est livrée, mais les textes réels débordent et un état repose uniquement sur la couleur.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

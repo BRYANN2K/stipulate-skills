@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "quality-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Définir une stratégie de test pour une migration comportant plusieurs modes de panne.",
+      "expected": "select",
+      "reason": "Choisir des vérifications qui réduisent les risques réels et relier leurs résultats aux critères."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Ajouter une vérification miroir pour une modification textuelle triviale déjà inspectée sans risque distinct.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Définir une stratégie de test pour une migration comportant plusieurs modes de panne. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Tous les tests exécutés passent, mais le seul test du risque critique a été désactivé.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

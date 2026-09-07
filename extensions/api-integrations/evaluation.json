@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "api-integrations",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Intégrer un webhook avec signature, doublons, délai et réponse partielle.",
+      "expected": "select",
+      "reason": "Définir et vérifier une frontière API, ses identités, erreurs, répétitions et versions."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier une fonction purement locale sans frontière API.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Intégrer un webhook avec signature, doublons, délai et réponse partielle. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le mock réussit, mais aucun test ne vérifie qu’un webhook répété ne duplique pas l’effet.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "content-design",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Réécrire les erreurs et instructions d’un formulaire pour rendre la récupération compréhensible.",
+      "expected": "select",
+      "reason": "Aider une personne à comprendre et accomplir sa tâche par un contenu clair dans le bon contexte."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier une configuration interne sans texte destiné à un lecteur affecté.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Réécrire les erreurs et instructions d’un formulaire pour rendre la récupération compréhensible. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le texte respecte le guide de style, mais le lecteur ne comprend toujours pas comment corriger son erreur.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

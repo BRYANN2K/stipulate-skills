@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "frontend-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Implémenter une recherche web avec chargement, erreur, navigation clavier et résultats asynchrones.",
+      "expected": "select",
+      "reason": "Construire le comportement web rendu, ses états, données, accessibilité et performances."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Modifier exclusivement une infrastructure sans comportement frontend affecté.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Implémenter une recherche web avec chargement, erreur, navigation clavier et résultats asynchrones. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le build réussit, mais le navigateur affiche une liste vide car le service dépendant est indisponible.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

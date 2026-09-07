@@ -13,4 +13,5 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python scripts/validate_skills.py
+      - run: python scripts/validate_extensions.py
       - run: python -m unittest discover -s tests -v

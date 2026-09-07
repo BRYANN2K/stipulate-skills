@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "analytics-experimentation",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Instrumenter et préparer un test de conversion avec métrique primaire et garde-fous.",
+      "expected": "select",
+      "reason": "Relier hypothèse, instrumentation et méthode d’analyse à une décision mesurable."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Corriger une faute de frappe sans question de mesure ou hypothèse produit.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Instrumenter et préparer un test de conversion avec métrique primaire et garde-fous. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Un dashboard affiche une hausse, mais l’assignation est déséquilibrée et la fenêtre d’analyse n’est pas terminée.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

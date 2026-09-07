@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "backend-engineering",
+  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "Ajouter un worker qui applique une règle métier sans double effet après retry.",
+      "expected": "select",
+      "reason": "Garantir un comportement serveur cohérent en succès, erreur, concurrence et récupération."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "Changer uniquement la typographie d’un écran sans effet de service.",
+      "expected": "do-not-select",
+      "reason": "Aucune responsabilité de ce métier affectée."
+    },
+    {
+      "id": "existing",
+      "prompt": "Ajouter un worker qui applique une règle métier sans double effet après retry. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "expected": "inspect-and-reuse",
+      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "Le chemin nominal réussit, mais un retry crédite deux fois le même compte dans la fixture.",
+      "expected": "failed-or-unverified",
+      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+    }
+  ]
+}

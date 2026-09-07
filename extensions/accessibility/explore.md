@@ -1,0 +1,33 @@
+# accessibility — explorer
+
+Rendre les tâches et contenus perceptibles, opérables, compréhensibles et robustes pour les publics concernés.
+
+## Décider de la pertinence
+
+La disponibilité dans la configuration n’active pas ce métier. Pendant `spec-explore`, sélectionner cette extension seulement si sa responsabilité touche le changement ou une inconnue décisive. Ne pas lancer tout le catalogue. Exemple pertinent : Ajouter un dialogue interactif utilisable au clavier et avec un lecteur d’écran. Exemple hors périmètre : Changer un processus serveur sans surface ou sortie destinée à une personne affectée.
+
+Cette extension rend le changement utilisable par des personnes ayant des capacités, appareils, environnements et technologies d’assistance variés. Elle transforme les besoins d’accès en décisions de contenu, interaction, code, test et suivi ; elle ne se limite pas à un audit final ni à une case « conforme ». WCAG 2 organise les exigences autour de quatre principes — perceptible, utilisable, compréhensible et robuste — et de critères de succès testables aux niveaux A, AA et AAA ([WCAG 2 Overview](https://www.w3.org/WAI/standards-guidelines/wcag/)). Le niveau applicable dépend du contexte légal, du public et du contrat ; l’équipe ne doit pas présenter AA comme une garantie générale hors de son périmètre.
+
+Elle s’active dès `spec-explore` si le changement modifie une interface, un contenu, un parcours, une interaction clavier, une technologie d’assistance, un composant réutilisé, un document, une obligation contractuelle ou un public exposé à un risque d’exclusion. Elle peut aussi être sélectionnée pour une correction d’un défaut constaté. Elle ne s’active pas pour un changement purement serveur sans sortie accessible ni effet sur une tâche. Un service cloud seul ne déclenche pas automatiquement accessibilité/design. Si une surface ou une exigence d’accès apparaît après l’approbation, revenir à `explore`, puis `validate`, et faire approuver le contrat révisé ; aucune activation silencieuse après accord.
+
+L’ARIA Authoring Practices Guide (APG) fournit des patterns, des exemples et des conventions de clavier, mais précise qu’il est informatif, non normatif, et qu’il ne constitue pas un design system ou du code prêt pour la production ([APG introduction](https://www.w3.org/WAI/ARIA/apg/about/introduction/)). WCAG et les exigences locales restent la référence de conformité ; APG aide à concevoir et à tester le comportement.
+
+## Reconnaître et réutiliser l’existant
+
+Pour un projet neuf, chercher les parcours, publics, modalités d’accès, contraintes de plateforme, composants, contenus, documents et critères légaux ou contractuels. Identifier les tâches critiques, les alternatives non numériques et les technologies d’assistance plausibles ; prévoir un budget de recherche, de correction et d’audit. Pour un projet en cours, reprendre déclarations d’accessibilité, audits, tickets, résultats de tests automatiques et manuels, composants partagés, régressions, retours de personnes handicapées et combinaisons navigateur/technologie réellement supportées.
+
+Classer chaque élément en **établi** (exigence, comportement ou preuve vérifiable), **inféré** (risque ou hypothèse tiré d’un indice), **incomplet** (parcours ou test partiellement couvert), **manquant** (recherche explicitée sans preuve exploitable) ou **non applicable** (surface, population ou technologie hors périmètre justifié). Une absence d’audit n’établit pas la conformité ; un score d’outil automatique ne couvre pas toutes les barrières ; un composant ARIA copié ne prouve ni le clavier ni la compatibilité avec une technologie d’assistance. L’introduction GOV.UK insiste sur le fait de penser accessibilité avant design et de la traiter comme la responsabilité de toute l’équipe ([Making your service accessible](https://www.gov.uk/service-manual/helping-people-to-use-your-service/making-your-service-accessible-an-introduction)).
+
+Consulter la carte du bootstrap puis rechercher seulement les preuves utiles au changement. Pour chaque élément, noter **établi, inféré, incomplet, manquant ou non applicable**, avec preuve ou justification. Ne pas confondre absence de document et absence de pratique. Décider de réutiliser, compléter ou remplacer ; une étape déjà satisfaite peut ne demander aucun travail.
+
+## Borner la contribution au contrat commun
+
+Le MVP couvre la tâche principale : clavier seul, focus visible et ordre cohérent, noms/labels, contrastes et alternatives, zoom/reflow si pertinent, messages d’erreur et un test avec la plateforme ou AT annoncée. Approfondir si le service est public ou réglementé, s’il touche paiement/santé/droit, s’il fournit des composants réutilisables, s’il a plusieurs canaux ou si une régression est coûteuse : audit indépendant, échantillon de parcours, plusieurs navigateurs/lecteurs d’écran, recrutement de personnes handicapées, rapport de conformité et surveillance continue. Un outil automatique peut accélérer le tri ; il ne remplace pas les tests manuels et humains.
+
+Proposer seulement les propriétés nécessaires et leurs moyens de vérification, en utilisant les candidats de [check.md](check.md). L’agent les adapte et les remappe en identifiants `AC-1`, `AC-2`, etc., uniques dans la **spec commune** ; le moteur ne remappe aucun identifiant métier. Ne pas créer une approbation ou une spec parallèle. Chaque critère doit préciser résultat, contexte et preuve attendue. Une nouvelle exigence après accord impose révision et nouvel accord sur le contrat.
+
+## Frontières
+
+`ux-design` décrit tâche et états ; `content-design` rend instructions, labels et erreurs compréhensibles ; `visual-design` et `design-system` portent contrastes, focus et composants ; `user-research` recrute et écoute les personnes concernées ; `quality-engineering` automatise des contrôles sans les confondre avec une validation complète. Pièges : ajouter ARIA à un élément natif utilisable, cacher le focus, tester uniquement une page heureuse, confondre conformité WCAG et expérience réelle, ou annoncer une certification non obtenue. Ne pas déclencher pour un job purement backend sans sortie ou impact accessible. Les exigences W3C et obligations locales sont normatives selon leur champ ; APG, GOV.UK et USWDS décrivent des pratiques situées ; notre matrice et nos critères sont la synthèse proposée au Spec Workflow.
+
+Les autres métiers cités sont des collaborations possibles, jamais des dépendances automatiquement activées. Le travail cloud seul n’active pas UX/design. Les sources détaillées sont dans [sources.md](sources.md) ; elles éclairent les décisions et ne constituent pas des critères supplémentaires implicites.

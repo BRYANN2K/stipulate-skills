@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "storytelling",
+  "description": "Relier intention, promesse prouvable, messages et narration cohérente entre les surfaces du produit.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}

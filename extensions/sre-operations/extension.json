@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "sre-operations",
+  "description": "Relier fiabilité perçue, indicateurs, objectifs, alertes et réponse aux dégradations.",
+  "explore": "explore.md",
+  "apply": "apply.md",
+  "check": "check.md",
+  "docs": "docs.md"
+}
