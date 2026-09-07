@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" role="img" aria-labelledby="title desc">
+<title id="title">Stipulate Skills — From intent to evidence.</title><desc id="desc">A spec-driven workflow for AI-assisted development. Seven core skills and optional domain extensions.</desc>
+<defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#24414c"/></pattern><linearGradient id="bg"><stop stop-color="#08131f"/><stop offset="1" stop-color="#0d292c"/></linearGradient></defs>
+<rect width="1280" height="380" rx="24" fill="url(#bg)"/><rect width="1280" height="380" rx="24" fill="url(#grid)"/>
+<text x="70" y="75" fill="#00d7bb" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="3">SPEC-DRIVEN DEVELOPMENT</text>
+<text x="66" y="164" fill="#f0f6f7" font-family="Arial,sans-serif" font-size="70" font-weight="700">Stipulate Skills</text>
+<text x="70" y="217" fill="#b5cad0" font-family="Arial,sans-serif" font-size="28">From intent to evidence.</text>
+<path d="M72 293H1196" stroke="#2b5058" stroke-width="2"/>
+<path d="M72 293H790" stroke="#00d7bb" stroke-width="3"/>
+<g fill="#00d7bb"><circle cx="72" cy="293" r="5"/><circle cx="430" cy="293" r="5"/><circle cx="790" cy="293" r="5"/></g>
+<g fill="#a4bdc5" font-family="Arial,sans-serif" font-size="17"><text x="70" y="331">Explore the idea</text><text x="430" y="331">Agree on the contract</text><text x="790" y="331">Build. Check. Document.</text></g>
+<g transform="translate(1050 100)"><rect width="130" height="112" rx="20" fill="#0e3839" stroke="#17756f"/><path d="M1084 155l17 17 37-39" transform="translate(-1050 -100)" fill="none" stroke="#00d7bb" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

@@ -1,287 +1,169 @@
-# Stipulate Skills
+<div align="center">
 
-[![X — @bryann2k_dev](https://img.shields.io/badge/%40bryann2k__dev-000000?style=flat&logo=x&logoColor=white)](https://x.com/bryann2k_dev)
+<img src="assets/banner.svg" alt="Stipulate Skills — From intent to evidence. A spec-driven workflow for AI-assisted development." width="100%">
 
-**From intent to evidence.**
+<br>
 
-The spec-driven workflow for AI-assisted development. Explore in natural language, agree on a specification, and build against verifiable outcomes.
+[![Core skills](https://img.shields.io/badge/core_skills-7-00BFA6?style=flat-square)](#the-seven-skills)
+[![Domain extensions](https://img.shields.io/badge/domain_extensions-28-102A36?style=flat-square)](#bring-the-right-expertise)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square)](#quick-start)
+[![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
+[![X — @bryann2k_dev](https://img.shields.io/badge/%40bryann2k__dev-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/bryann2k_dev)
 
-**Seven core skills. Optional domain extensions. One shared contract.**
+**Explore in natural language. Agree on a spec. Build with evidence.**
 
-Stipulate Skills uses **Stip** as its short name and `stip-*` for its commands. It is designed for GPT-6 Astra in Codex. The Python runtime runs locally without third-party Python dependencies, telemetry, or API calls. Using your coding agent still requires its normal access and setup; installing Stip does not install or configure a model.
+Seven core skills, optional domain extensions, and a shared contract that stays with your project.
+Designed for **GPT-6 Astra in Codex** using the Agent Skills format.
 
-[Quick start](#quick-start) · [How it works](#how-it-works) · [First feature](#walk-through-your-first-feature) · [Extensions](#add-domain-extensions) · [Troubleshooting](#troubleshooting)
+[Get started](#quick-start) · [See the workflow](#how-it-works) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
 
-## What Stip gives you
+</div>
 
-Keep the conversation flexible while making decisions durable. Describe what you want, refine it through prompts, review the resulting Markdown specification, and let the agent implement the approved version. The workflow then checks the result, updates the documentation, and archives the accepted behavior with a local commit.
+---
 
-Use Stip for a new project or an existing repository. Bootstrap inspects the existing foundations and preserves useful conventions. Domain extensions contribute only where relevant: cloud infrastructure does not need a design-system process.
+## Why Stip?
+
+A conversation can move quickly. The decisions it produces should remain clear when implementation starts, requirements change, or a new session picks up the work.
+
+**Stipulate Skills**, or **Stip**, connects that conversation to a durable development workflow:
+
+- **Prompt freely.** Explore an idea, ask questions, and revise the direction in plain language.
+- **Make the agreement explicit.** Review the specification before the agent builds.
+- **Check the actual result.** Tie acceptance criteria to current, inspectable evidence.
+- **Keep what you learned.** Update documentation and archive the accepted behavior with a local commit.
+
+Start a new project or adopt an existing repository. Bootstrap preserves useful conventions and maps what already exists. Extensions add relevant expertise without loading every domain into every change.
 
 ## Quick start
 
-### 1. Check the prerequisites
+You need **Python 3.10+**, **Git**, and a coding-agent environment with skill support. Commands below use a macOS/Linux shell.
 
-Use a local coding-agent environment with skill support, **Python 3.10+**, and **Git**. The commands below use a macOS/Linux shell. Stip does not install your application's dependencies.
+> **Workflow branch:** this rebuild currently lives on `codex/spec-workflow-core`. `main` still contains the legacy collection. Use the branch in the clone command below.
 
-```sh
-python3 --version
-git --version
-```
+### 1. Install the core
 
-### 2. Get this version of Stip
-
-The rebuilt workflow is currently on `codex/spec-workflow-core`; `main` still contains the legacy collection. Clone the workflow branch explicitly:
+Run in a terminal:
 
 ```sh
 git clone --branch codex/spec-workflow-core https://github.com/BRYANN2K/stipulate-skills.git
 cd stipulate-skills
-```
-
-This checkout supplies the installer and extension catalog. Your application lives in its own repository.
-
-### 3. Install the seven core skills
-
-For your user account, run these commands from the **Stipulate Skills checkout**:
-
-```sh
-python3 scripts/validate_skills.py
 python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
 python3 scripts/install.py --destination "$HOME/.agents/skills"
 ```
 
-The dry run previews the destination and package list. The install copies exactly seven `stip-*` packages, preserves unrelated skills, and refuses to overwrite foreign or locally modified copies. Each installed skill includes its own runtime.
+This installs exactly seven skills for your user account. Unrelated skills are preserved; modified or foreign installations are not overwritten. Check your client's skill catalog and open a new conversation if needed.
 
-For an installation limited to one project, use its physical path instead:
+Prefer a project-local install? Use `/absolute/path/to/your-project/.agents/skills` as the destination. [Installation options and troubleshooting →](docs/getting-started.md)
 
-```sh
-python3 scripts/install.py --destination "/absolute/path/to/your-project/.agents/skills" --dry-run
-python3 scripts/install.py --destination "/absolute/path/to/your-project/.agents/skills"
-```
+### 2. Open your project in Codex
 
-Replace the example path before running it. Choose the user-level or project-level destination; you do not need both. Check your client's skill catalog after installation. If the skills are missing, open a new conversation and confirm the client supports the chosen discovery path. Client setup can vary; see the [official skills documentation](https://learn.chatgpt.com/docs/build-skills).
-
-### 4. Open your application project and bootstrap it
-
-Open the **target project** in Codex. In the chat composer, send:
+Open the repository you want to work on, then send this in the chat composer:
 
 ```text
-$stip-bootstrap Adopt this repository. Preserve its conventions, map its purpose
-and existing foundations, and identify the relevant domain extensions.
+$stip-bootstrap Adopt this repository. Preserve its conventions, map the project,
+and identify the relevant domain extensions.
 ```
 
-For a new project, explain the intent in the same message. If it is not yet a Git repository, initialize Git there first:
+For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it does not install domain extensions or choose your stack.
 
-```sh
-git init
+### 3. Explore your first change
+
+```text
+$stip-explore Let's add a sign-in flow. Reuse the existing foundations and help
+me define the scope, user journey, and acceptance criteria.
 ```
 
-Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. It does not choose a stack, install extensions, or create a sample feature automatically.
+The `$stip-*` examples are **chat prompts**, not terminal commands. The agent uses the bundled Python runtime for lifecycle operations.
 
-**You are ready to explore a feature.** The `$stip-*` examples are prompts for the agent, not shell commands. You do not need to run the Python lifecycle commands manually for everyday use.
+[Walk through a complete feature, from idea to archive →](docs/getting-started.md#walk-through-your-first-feature)
 
 ## How it works
 
-```mermaid
-flowchart LR
-    B[Bootstrap once] --> E[Explore]
-    E --> V[Validate]
-    V --> R{User review}
-    R -->|Revise| V
-    R -->|Approve| A[Apply]
-    A --> C[Check]
-    C -->|Fix within scope| A
-    C -->|Pass| D[Docs]
-    D --> X[Archive + local commit]
-    X --> E
-```
+<img src="assets/workflow.svg" alt="Bootstrap once, then explore with relevant extensions, validate with user approval, apply, check, document, and archive with a local commit." width="100%">
 
-| Skill | What happens | Your role |
+**You own the agreement; the agent carries out the approved work.** During validation, read the Markdown spec, edit it directly or ask for revisions, and explicitly approve its current version. Implementation follows that contract.
+
+A failed check returns to implementation. New requirements return to validation. After a successful check, documentation and archive close the change. Start the next feature at explore; bootstrap is not a repeated feature audit.
+
+## The seven skills
+
+| Skill | What it does | What you get |
 | --- | --- | --- |
-| `$stip-bootstrap` | Maps the project and prepares `AGENTS.md` and `.workflow/`. | Explain the project intent and correct wrong assumptions. |
-| `$stip-explore` | Explores the idea and brings in relevant available extensions. | Discuss outcomes, constraints, and tradeoffs. |
-| `$stip-validate` | Turns the discussion into a specification with acceptance criteria. | Read, revise, and explicitly approve the current version. |
-| `$stip-apply` | Implements and tests within the approved contract. | Clarify material questions if needed. |
-| `$stip-check` | Compares every criterion with current evidence. | Review failures, missing evidence, and limitations. |
-| `$stip-docs` | Updates documentation affected by the checked change. | Identify intended readers or missing explanations. |
-| `$stip-archive` | Promotes the accepted spec, archives the change, and creates a scoped local commit. | Review the delivered result. Push/deploy remain separate actions. |
+| [stip-bootstrap](skills/stip-bootstrap/SKILL.md) | Adopts a new or existing project. | Project map, configuration, and workflow guidance. |
+| [stip-explore](skills/stip-explore/SKILL.md) | Explores intent with relevant available extensions. | A bounded idea and recorded decisions. |
+| [stip-validate](skills/stip-validate/SKILL.md) | Turns the discussion into a contract for user review. | Specification and acceptance criteria. |
+| [stip-apply](skills/stip-apply/SKILL.md) | Builds and corrects within the approved scope. | Implementation and relevant tests. |
+| [stip-check](skills/stip-check/SKILL.md) | Reconciles every criterion with current evidence. | Passed, failed, or unverified results. |
+| [stip-docs](skills/stip-docs/SKILL.md) | Updates documentation affected by the change. | Documentation grounded in the implementation. |
+| [stip-archive](skills/stip-archive/SKILL.md) | Promotes the accepted spec and closes the change. | Archived records and a scoped local commit. |
 
-Bootstrap is project setup, not a task to repeat for each feature. Subsequent work starts with explore. Fixes within the agreed scope return to apply/check; new requirements return to validation and approval. Editing approved contract files also requires renewed approval.
+## Bring the right expertise
 
-## Walk through your first feature
+**28 optional extensions. Seven entry points stay seven.** Extensions contribute domain questions, requirements, and verification guidance to the same workflow. They are local reference packages, not extra top-level skills or executable plugins.
 
-This example adds a sign-in flow to an existing application. Adjust it to your project. If you want domain guidance, install the relevant extensions using the next section before exploration.
+| Domain | Available extensions |
+| --- | --- |
+| Product and experience | `product-strategy`, `user-research`, `storytelling`, `ux-design`, `visual-design`, `design-system`, `content-design`, `accessibility` |
+| Application engineering | `frontend-engineering`, `backend-engineering`, `api-integrations`, `database-engineering`, `mobile-engineering`, `desktop-engineering`, `cli-tooling` |
+| Infrastructure and operations | `cloud-engineering`, `devops-delivery`, `sre-operations`, `release-management` |
+| Data, AI, and assurance | `data-engineering`, `ai-engineering`, `analytics-experimentation`, `quality-engineering`, `security-engineering`, `privacy-engineering` |
+| Reach and support | `build-in-public`, `seo-discoverability`, `customer-support` |
 
-**Explore the idea:**
-
-```text
-$stip-explore Let's add a sign-in flow. Reuse the existing authentication system.
-Discuss the user journey, error states, and what belongs in the first version.
-Use the relevant installed extensions. Name this change add-login.
-```
-
-**Turn the discussion into a contract:**
-
-```text
-$stip-validate Prepare the add-login specification and show me the files to review.
-Do not start implementation yet.
-```
-
-Read `.workflow/changes/add-login/proposal.md` and `spec.md`, plus `tasks.md` if useful. You can edit the files yourself or ask for revisions:
-
-```text
-Keep password reset outside this change. Include keyboard navigation and a clear
-error when credentials are invalid. Update the spec so I can review it again.
-```
-
-**After reviewing the current version, approve and build:**
-
-```text
-I approve the current add-login specification. $stip-apply Implement it.
-```
-
-**Check and close:**
-
-```text
-$stip-check Verify add-login against every acceptance criterion.
-```
-
-After check passes:
-
-```text
-$stip-docs Update the documentation affected by add-login.
-```
-
-After documentation is complete:
-
-```text
-$stip-archive Archive add-login and create its scoped local commit.
-```
-
-The result is implemented code, evidence, updated documentation, an accepted specification, and an archived change. A failed or unverified criterion blocks completion. Archive does not push the commit or deploy the application.
-
-## Add domain extensions
-
-Extensions are local domain guidance, **not additional top-level skills or executable plugins**. The repository includes 28 optional packages. Installing the core and running bootstrap do not install them.
-
-There are three distinct steps: **install into the project → make available through configuration → select for a particular change during explore**. The extension installer handles the first two; the agent selects only relevant packages during exploration.
-
-From the **Stipulate Skills checkout**, after bootstrapping your target project:
+Install only what your bootstrapped project needs, from the Stipulate Skills checkout:
 
 ```sh
-python3 scripts/validate_extensions.py
 python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
   --extension frontend-engineering --extension accessibility --dry-run
 python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
   --extension frontend-engineering --extension accessibility
-python3 scripts/workflow.py --root "/absolute/path/to/your-project" extensions
 ```
 
-These commands copy the selected packages into `.workflow/extensions/` and update `.workflow/config.json`. They do not select extensions for an active change.
+Installation makes these extensions available. **Selection happens during `stip-explore` for each change.** An infrastructure-only change does not need design; existing domain work can be reused instead of repeated. Build-in-public guidance does not authorize posting on your behalf.
 
-Then, in the target project's chat:
+[Extension setup, selection, and updates →](docs/extensions.md)
 
-```text
-$stip-explore Explore add-login using the installed frontend-engineering and
-accessibility extensions. Reuse the existing UI and record relevant requirements
-in the shared specification.
-```
-
-| Work you are doing | Example extension IDs |
-| --- | --- |
-| User interface | `frontend-engineering`, `ux-design`, `accessibility`, `design-system` |
-| APIs and storage | `backend-engineering`, `api-integrations`, `database-engineering` |
-| Cloud and delivery | `cloud-engineering`, `devops-delivery`, `sre-operations` |
-| Product discovery | `product-strategy`, `user-research`, `storytelling` |
-| Communication | `content-design`, `build-in-public` |
-
-These are examples, not mandatory bundles. A selected extension contributes questions and requirements to the same change contract, then guidance for implementation, checking, and documentation. A build-in-public extension does not grant permission to publish.
-
-See the [full catalog](extensions/catalog.json) and [extension installation, selection, and update guide](docs/extensions.md).
-
-## What lives in your project
+## Decisions live with your project
 
 ```text
-AGENTS.md                    # Project instructions + bounded workflow guidance
+AGENTS.md                    # Project instructions and workflow guidance
 .workflow/
   project.md                 # Intent, project map, commands, known gaps
-  config.json                # Available extensions and workflow settings
+  config.json                # Available extensions and settings
   specs/                     # Currently accepted behavior
   extensions/                # Optional installed domain packages
   changes/
     add-login/
-      proposal.md            # Why the change exists and decisions made
+      proposal.md            # Context and decisions
       spec.md                # Desired behavior and acceptance criteria
       tasks.md               # Optional implementation breakdown
-      evidence.md            # Verification and delivery evidence
-      state.json             # Lifecycle state and approved version digest
-  archive/                   # Closed changes and their records
+      evidence.md            # Verification evidence
+      state.json             # Lifecycle state and approved version
+  archive/                   # Closed changes
 ```
 
-Bootstrap creates the initial structure; `add-login` only appears when you explore that actual change. `extensions/` is added when you install domain packages. Existing useful instructions and files are preserved. The agent assesses the project; the script does not infer its maturity from file names.
+The example change appears only when you explore it. Bootstrap preserves existing useful files and adds a bounded guidance block to `AGENTS.md`; it does not fabricate a sample feature.
 
-Accepted specifications describe current accepted behavior. A change specification describes the complete next version of its target. Keep these records with the project so decisions remain available across conversations.
+## What the workflow enforces
 
-## Updates and removal
+- **Approval belongs to a version.** Changes to the bound contract or selected extension guidance invalidate it.
+- **Completion needs evidence.** Missing or failed criteria block progression; check is tied to the source snapshot.
+- **Commits stay scoped.** Archive rejects stale evidence and conflicting Git state rather than absorbing unrelated work.
+- **Publishing is separate.** Archive creates a local commit. It does not push or deploy.
 
-From a clean Stipulate Skills checkout on the workflow branch, fetch updates and rerun the installer for the destination you originally chose:
+The runtime is local and offline, with no third-party Python dependencies or telemetry. Your coding agent still requires its normal setup. Recorded evidence is an attestation, not proof that its author was truthful; passing the workflow does not certify a product as production-ready.
 
-```sh
-git pull --ff-only
-python3 scripts/validate_skills.py
-python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
-python3 scripts/install.py --destination "$HOME/.agents/skills"
-```
+[Detailed guarantees, limits, and migration →](docs/getting-started.md#guarantees-and-limits)
 
-The core installer replaces only owned, unchanged installations. Customized files must be preserved and reconciled first. Updating core skills does not replace an existing `AGENTS.md` workflow block or installed domain extensions. Follow the [extension update guidance](docs/extensions.md#manual-configuration-and-updates) for domain packages.
+## Documentation
 
-To remove the owned, unchanged core copies:
-
-```sh
-python3 scripts/install.py --destination "$HOME/.agents/skills" --uninstall --dry-run
-python3 scripts/install.py --destination "$HOME/.agents/skills" --uninstall
-```
-
-Use your project-level destination instead if that is where you installed. Uninstalling core skills leaves your project's `.workflow/` records and `AGENTS.md` intact.
-
-## Troubleshooting
-
-| Symptom | What to check |
+| Start here | For |
 | --- | --- |
-| No `stip-*` skills appear | Verify the install destination, then refresh the client's catalog or open a new conversation. |
-| `scripts/install.py` is missing | Confirm you cloned `codex/spec-workflow-core` and are running commands from the Stipulate Skills checkout. |
-| `Changed or foreign installation` | Preserve the local files and compare them with the package. The installer deliberately refuses an unsafe overwrite. |
-| `Use a physical destination path` | Use an absolute path with no symlink components. |
-| An extension is unavailable | Bootstrap first, install its exact catalog ID into that project, and inspect the runtime `extensions` output. |
-| Approval is stale | Review changes to the proposal, spec, tasks, or selected extension guidance, then validate and approve again. |
-| Check cannot pass | Resolve failed criteria and missing evidence; rerun check against the current source snapshot. |
-| Archive refuses to commit | Read its error: staged files, changed HEAD, stale evidence, or pre-existing dirty files in the selected scope can block it. Preserve unrelated work. |
+| [Installation and first-feature guide](docs/getting-started.md) | Setup, prompt examples, updates, removal, and troubleshooting. |
+| [Workflow reference](docs/workflow.md) | Lifecycle commands, contracts, state, and evidence. |
+| [Domain extensions](docs/extensions.md) | Package installation, selection, and contribution rules. |
+| [Contributing](CONTRIBUTING.md) | Engine changes and validation commands. |
+| [Security](SECURITY.md) | Boundaries and security reporting. |
 
-For contributors and deeper verification, run:
+## License
 
-```sh
-python3 scripts/validate_skills.py
-python3 scripts/validate_extensions.py
-python3 -m unittest discover -s tests -v
-```
-
-These repository tests are separate from the tests your application's acceptance criteria require. See [CONTRIBUTING.md](CONTRIBUTING.md) for engine changes.
-
-## Guarantees and limits
-
-- Bootstrap preserves existing files and adds one bounded workflow block to AGENTS.md if absent. The agent performs the domain assessment; the script does not certify project maturity. An existing workflow block is not automatically replaced.
-- Approval binds proposal, specification, optional tasks, and selected extension references. Any byte change invalidates approval, including editorial changes in this version.
-- Check requires every acceptance criterion and a current snapshot of non-ignored Git working-tree files, including contents, symlinks, and executable bits. Ignored files and `.workflow/` are outside the code snapshot. External results require identifiable evidence in the report.
-- Evidence consists of inspectable attestations. The script cannot establish whether a human or agent reported truthfully. Local state is neither an authenticated signature system nor a barrier against a malicious operator with write access.
-- Archive rejects stale source evidence, a nonempty index, selected files already dirty at start, a changed HEAD, and concurrent changes to the target specification. It does not absorb unrelated work or push commits.
-- Snapshot schema v1 does not support submodules. Use the physical repository root. CI targets Linux and macOS; local delivery checks do not establish that remote CI has passed.
-
-Tests cover the engine, installation, and synthetic lifecycle runs for all 28 extensions. Evaluating Astra's behavior on real projects is a separate activity. Passing core tests does not certify a product as production-ready.
-
-[Core contract and commands](docs/workflow.md) · [Extensions](docs/extensions.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
-
-The previous collection of 33 skills remains in Git history and migration backups. Its skill directories are not retained in this version's discovery paths.
-
-## Migration to Stip
-
-The seven public skill names now use `stip-` instead of `spec-`. Install the new packages, then remove only unchanged legacy packages using the previous installer. Preserve customized installations for reconciliation. `.workflow/`, runtime subcommands, approval records, and archive formats are unchanged. Bootstrap preserves existing AGENTS.md workflow blocks: update their skill references explicitly when adopting Stip. Internal `spec-workflow` block markers and ownership identifiers remain stable for compatibility.
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).

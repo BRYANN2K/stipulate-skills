@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="450" viewBox="0 0 1120 450" role="img" aria-labelledby="title desc">
+<title id="title">The Stip workflow</title><desc id="desc">Bootstrap, explore with relevant extensions, validate and get user approval, apply, check, docs, archive with a local commit. A new change returns to explore.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6" fill="none" stroke="#00d7bb"/></marker></defs>
+<rect width="1120" height="450" rx="20" fill="#09151f"/>
+<g stroke="#00d7bb" stroke-width="2" fill="none" marker-end="url(#arrow)"><path d="M254 97H312"/><path d="M508 97H566"/><path d="M762 97H820"/><path d="M918 133V310"/><path d="M820 347H762"/><path d="M566 347H508"/></g>
+<path d="M410 133V176M270 176H552M270 176V192M410 176V192M552 176V192" stroke="#24807b" fill="none" stroke-width="2"/>
+<g font-family="Arial,sans-serif" text-anchor="middle">
+<g fill="#122a36" stroke="#3f696f"><rect x="58" y="60" width="196" height="74" rx="13"/><rect x="312" y="60" width="196" height="74" rx="13"/><rect x="566" y="60" width="196" height="74" rx="13"/><rect x="820" y="60" width="196" height="74" rx="13"/><rect x="820" y="310" width="196" height="74" rx="13"/><rect x="566" y="310" width="196" height="74" rx="13"/><rect x="312" y="310" width="196" height="74" rx="13"/></g>
+<g fill="#eff5f7" font-size="21" font-weight="700"><text x="156" y="104">stip-bootstrap</text><text x="410" y="104">stip-explore</text><text x="664" y="104">stip-validate</text><text x="918" y="104">stip-apply</text><text x="918" y="354">stip-check</text><text x="664" y="354">stip-docs</text><text x="410" y="354">stip-archive</text></g>
+<g fill="#0b3537" stroke="#22847b"><rect x="211" y="193" width="118" height="37" rx="12"/><rect x="350" y="193" width="120" height="37" rx="12"/><rect x="490" y="193" width="124" height="37" rx="12"/></g>
+<g fill="#00d7bb" font-size="14"><text x="270" y="217">Frontend</text><text x="410" y="217">Cloud</text><text x="552" y="217">Other domains</text></g>
+<g fill="#a7bec7" font-size="15"><text x="156" y="40">SET UP ONCE</text><text x="410" y="263">Select only what the change needs</text><text x="664" y="160">User approval required</text><text x="410" y="411">Accepted spec + local commit</text></g>
+</g>
+</svg>
