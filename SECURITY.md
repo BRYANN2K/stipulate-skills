@@ -1,26 +1,11 @@
-# Security policy
+# Périmètre et sécurité
 
-## Operational boundary
+Le moteur est local et hors ligne. Il ne lance ni shell de production, ni déploiement, ni appel réseau. Git commit utilise les hooks du dépôt : leur comportement dépend de l’environnement du projet.
 
-These skills provide reusable workflows, not autonomous authorization. Operational skills default to read-only discovery and analysis.
+L’accord utilisateur est enregistré par l’opérateur. Le noyau ne fournit pas d’authentification, de signature ni de protection contre un utilisateur qui falsifie ses propres fichiers. Les rapports d’acceptation doivent venir d’observations réelles. Les empreintes identifient le travail local, pas la vérité des résultats ni l’état d’un service externe.
 
-The following actions require explicit, scoped user authorization at execution time:
+Les chemins workflow refusent les remontées et les liens symboliques. L’archive refuse les changements source antérieurs à start sur les fichiers concernés, les index déjà remplis, les preuves périmées et les cibles modifiées concurremment. Un verrou local prévient les écritures concurrentes par le CLI. Il ne verrouille pas les éditeurs ou toutes les opérations Git externes.
 
-- Terraform/OpenTofu `apply`, `destroy`, import, state mutation, or backend migration;
-- Kubernetes create, apply, patch, delete, rollout, scale, drain, or exec actions;
-- cloud IAM, networking, data, billing, or control-plane changes;
-- CI/CD reruns, releases, deployments, promotions, or secret changes;
-- GitOps reconciliation, suspension, resume, rollback, or source mutation;
-- chaos experiments or any deliberate fault injection.
+Ne pas écrire de credentials, payloads clients ou logs privés dans proposal, spec, evidence ou les résumés de documentation. Les noms et empreintes des fichiers suivis/non ignorés figurent dans state.json ; examiner ce qui sera commité. Ne pas placer une information privée dans Git en supposant que l’archive la protège.
 
-Authorization to review a plan is not authorization to execute it.
-
-## Secrets
-
-Skills must never print, store, commit, or transmit secret values. Mask tokens, private keys, credentials, cookies, kubeconfig data, Terraform state values, and Kubernetes Secret contents. Prefer metadata and key names when diagnosis does not require values.
-
-Private journals created by a skill remain sensitive local data. A `.gitignore` rule only reduces accidental commits; it is not encryption or access control. A journaling workflow must verify that its file is ignored and untracked, minimize retained data, and refuse secrets, customer data, sensitive personal information, confidential infrastructure details, and unresolved exploit details.
-
-## Reporting a vulnerability
-
-Do not open a public issue for a vulnerability that could lead an agent to expose secrets or perform an unsafe mutation. Contact the repository owner privately through GitHub instead. Include the affected skill, trigger, unsafe behavior, and a minimal reproduction without real credentials.
+La publication, le push et les opérations métier distantes demandent le périmètre et les autorisations correspondants. Aucun skill ne peut élargir les permissions de l’environnement.

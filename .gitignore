@@ -1,5 +1,4 @@
 __pycache__/
 *.py[cod]
-.DS_Store
-.idea/
-.vscode/
+.workflow/.lock
+.workflow/.workflow-write-*

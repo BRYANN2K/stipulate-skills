@@ -1,34 +1,16 @@
-name: Validate skills
-
-on:
-  pull_request:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-
+name: Core validation
+on: [push, pull_request]
 jobs:
-  validate:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ['3.10', '3.12', '3.14']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Validate skill structure and links
-        run: python3 scripts/validate_skills.py
-      - name: Test deterministic skill scripts
-        run: python3 scripts/run_skill_tests.py
-      - name: Install official Agent Skills reference validator
-        run: >-
-          python3 -m pip install
-          "git+https://github.com/agentskills/agentskills.git@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref"
-      - name: Validate against the Agent Skills specification
-        shell: bash
-        run: |
-          status=0
-          while IFS= read -r -d '' skill_file; do
-            skills-ref validate "$(dirname "$skill_file")" || status=1
-          done < <(find . -mindepth 3 -maxdepth 3 -name SKILL.md -not -path './.git/*' -print0)
-          exit "$status"
+          python-version: ${{ matrix.python }}
+      - run: python scripts/validate_skills.py
+      - run: python -m unittest discover -s tests -v
