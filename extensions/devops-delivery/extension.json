@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "devops-delivery",
-  "description": "Rendre le chemin de construction et livraison reproductible, observable et récupérable.",
+  "description": "Make the build and delivery path reproducible, observable, and recoverable.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

@@ -1,10 +1,10 @@
-# data-engineering — provenance
+# data-engineering — sources
 
-Synthèse éditoriale issue de la recherche relue du 7 septembre 2026. Les procédures des phases sont notre traduction dans le contrat v1, pas une certification des organismes cités. Vérifier la version et l’applicabilité d’une norme ou documentation évolutive avant d’en tirer une exigence actuelle.
+Editorial synthesis based on research reviewed on September 7, 2026. The phase procedures are our adaptation to the v1 contract, not certification by the cited organizations. Verify the version and applicability of evolving standards or documentation before deriving a current requirement.
 
-- [Airflow Best Practices](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html) — Apache Airflow 3.3.1, tâches rerunables, partitions, stockage inter-workers, secrets et code de DAG.
-- [File Format](https://parquet.apache.org/docs/file-format/) — Apache Parquet, magic, chunks de colonnes, métadonnées et lecture en deux temps.
-- [File Format Versions](https://parquet.apache.org/docs/file-format/versions/) — Apache Parquet, compatibilité et fonctions susceptibles d’être incompatibles entre lecteurs.
-- [Object Model](https://openlineage.io/docs/spec/object-model/) — OpenLineage, jobs, runs, datasets, événements design/runtime et facettes de qualité.
+- [Airflow Best Practices](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html) — Apache Airflow 3.3.1 as reviewed; rerunnable tasks, partitions, storage between workers, secrets, and DAG code.
+- [File Format](https://parquet.apache.org/docs/file-format/) — Apache Parquet; magic bytes, column chunks, metadata, and two-stage reading.
+- [File Format Versions](https://parquet.apache.org/docs/file-format/versions/) — Apache Parquet; compatibility and potentially reader-incompatible features.
+- [Object Model](https://openlineage.io/docs/spec/object-model/) — OpenLineage; jobs, runs, datasets, design/runtime events, and quality facets.
 
-Toutes les pages ont été consultées le 2026-09-07. Les statuts, étapes et critères sont la synthèse locale du contrat du cœur.
+All pages were consulted on 2026-09-07. Statuses, steps, and criteria are a local synthesis of the core contract.

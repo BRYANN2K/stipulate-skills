@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "ai-engineering",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Ajouter un assistant qui extrait des données et propose un appel d’outil contrôlé.",
+      "prompt": "add an assistant that extracts data and proposes a controlled tool call.",
       "expected": "select",
-      "reason": "Borner et évaluer une capacité de modèle avec ses outils, erreurs, coûts et recours humains."
+      "reason": "Scope and evaluate a model capability, including its tools, errors, costs, and human fallback."
     },
     {
       "id": "irrelevant",
-      "prompt": "Ajouter une règle déterministe sans modèle ni comportement probabiliste.",
+      "prompt": "add a deterministic rule without a model or probabilistic behavior.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Ajouter un assistant qui extrait des données et propose un appel d’outil contrôlé. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "add an assistant that extracts data and proposes a controlled tool call. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le dataset existe et l’eval s’exécute, mais le seuil de qualité de la classe critique est manqué.",
+      "prompt": "The dataset exists and evaluation runs, but the critical class misses its quality threshold.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

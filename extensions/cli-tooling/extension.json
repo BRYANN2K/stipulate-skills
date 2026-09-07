@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "cli-tooling",
-  "description": "Construire une interface en ligne de commande stable pour humains et automatisations.",
+  "description": "Build a stable command-line interface for people and automation.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

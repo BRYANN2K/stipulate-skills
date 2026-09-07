@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "user-research",
-  "description": "Réduire une inconnue sur les personnes, leurs tâches et leur contexte par une observation proportionnée.",
+  "description": "Reduce uncertainty about people, their tasks, and their context through proportionate observation.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

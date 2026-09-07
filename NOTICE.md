@@ -2,7 +2,7 @@
 
 Copyright BRYANN2K. Apache-2.0, see LICENSE.
 
-This version replaces the prior collection with an original spec workflow implementation.
+This version replaces the prior collection with Stipulate Skills (Stip), an original specification-driven workflow implementation.
 Its design is informed by the user's lifecycle and extension requirements, the Agent Skills
 format, OpenAI's GPT-6 Astra guidance, and the concept of durable change specifications.
 No OpenSpec or Spec Kit implementation code is bundled. Prior third-party notices remain

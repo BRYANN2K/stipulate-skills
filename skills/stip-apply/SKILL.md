@@ -1,5 +1,5 @@
 ---
-name: spec-apply
+name: stip-apply
 description: Implement an approved workflow change and continue through relevant tests and corrections within its contract.
 license: Apache-2.0
 metadata:
@@ -7,17 +7,17 @@ metadata:
   author: BRYANN2K
 ---
 
-# spec-apply
+# stip-apply
 
 Read the current proposal and spec; use status to verify the approval. Run `start <id>` before source changes. It binds a baseline, detects preexisting work and refuses an unapproved or changed contract.
 
 Build the requested outcome in the existing stack. Read only relevant selected extension apply references, if present. Preserve existing decisions and unrelated edits. Run the affected checks, correct failures caused by this change and inspect the result as required by the contract. Do not stop automatically after the first draft.
 
-A material question blocks only dependent work. If the user changes the contract, return to spec-validate and obtain agreement before implementing the changed scope. Do not loosen criteria to fit an implementation. Re-running start after a failed check preserves the original baseline and invalidates old evidence.
+A material question blocks only dependent work. If the user changes the contract, return to stip-validate and obtain agreement before implementing the changed scope. Do not loosen criteria to fit an implementation. Re-running start after a failed check preserves the original baseline and invalidates old evidence.
 
 Do not deploy, push, publish or install unrelated dependencies merely because the feature is approved. Follow actual user authorization and environment permissions.
 
-When the implementation is ready for reconciliation, invoke spec-check. The build itself is not evidence that all acceptance criteria passed. State which checks ran and where their outputs can be inspected.
+When the implementation is ready for reconciliation, invoke stip-check. The build itself is not evidence that all acceptance criteria passed. State which checks ran and where their outputs can be inspected.
 
 ## Runtime
 

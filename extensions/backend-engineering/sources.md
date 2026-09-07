@@ -1,10 +1,10 @@
-# backend-engineering — provenance
+# backend-engineering — sources
 
-Synthèse éditoriale issue de la recherche relue du 7 septembre 2026. Les procédures des phases sont notre traduction dans le contrat v1, pas une certification des organismes cités. Vérifier la version et l’applicabilité d’une norme ou documentation évolutive avant d’en tirer une exigence actuelle.
+Editorial synthesis based on research reviewed on September 7, 2026. The phase procedures are our adaptation to the v1 contract, not certification by the cited organizations. Verify the version and applicability of evolving standards or documentation before deriving a current requirement.
 
-- [The Twelve-Factor App](https://www.12factor.net/) — Adam Wiggins et contributeurs, configuration, services support, processus, logs, portabilité et parité.
-- [OWASP Application Security Verification Standard](https://owasp.org/www-project-application-security-verification-standard/) — OWASP, exigences vérifiables de développement sécurisé et contrôles techniques.
-- [OpenTelemetry documentation](https://opentelemetry.io/docs/) — OpenTelemetry, traces, métriques, logs, Collector et neutralité fournisseur.
-- [Service Level Objectives](https://sre.google/sre-book/service-level-objectives/) — Google SRE, SLI/SLO/SLA et indicateurs centrés sur l’utilisateur.
+- [The Twelve-Factor App](https://www.12factor.net/) — Adam Wiggins and contributors; configuration, backing services, processes, logs, portability, and parity.
+- [OWASP Application Security Verification Standard](https://owasp.org/www-project-application-security-verification-standard/) — OWASP; verifiable secure development requirements and technical controls.
+- [OpenTelemetry documentation](https://opentelemetry.io/docs/) — OpenTelemetry; traces, metrics, logs, Collector, and vendor neutrality.
+- [Service Level Objectives](https://sre.google/sre-book/service-level-objectives/) — Google SRE; SLI/SLO/SLA and user-centered indicators.
 
-Toutes les pages ont été consultées le 2026-09-07. L’intégration au Spec Workflow, les statuts et les critères sont une synthèse locale, pas une extension normative des sources.
+All pages were consulted on 2026-09-07. Stip integration, statuses, and criteria are a local synthesis, not a normative extension of the sources.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "backend-engineering",
-  "description": "Garantir un comportement serveur cohérent en succès, erreur, concurrence et récupération.",
+  "description": "Ensure consistent server behavior across success, failure, concurrency, and recovery.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

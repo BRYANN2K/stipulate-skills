@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "visual-design",
-  "description": "Définir hiérarchie, lisibilité, couleurs, typographie, espaces et états visuels adaptés.",
+  "description": "Define appropriate hierarchy, readability, colors, typography, spacing, and visual states.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "release-management",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Préparer une nouvelle version distribuable avec migration et notes de compatibilité.",
+      "prompt": "prepare a distributable release with migration and compatibility notes.",
       "expected": "select",
-      "reason": "Préparer une version identifiable avec compatibilité, artefacts, notes et récupération."
+      "reason": "Prepare an identifiable release with compatibility, artifacts, release notes, and recovery."
     },
     {
       "id": "irrelevant",
-      "prompt": "Explorer un prototype sans version ou distribution prévue.",
+      "prompt": "explore a prototype without planned versioning or distribution.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Préparer une nouvelle version distribuable avec migration et notes de compatibilité. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "prepare a distributable release with migration and compatibility notes. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "L’archive est créée, mais l’artefact ne s’installe pas sur une plateforme annoncée comme supportée.",
+      "prompt": "The archive is created, but the artifact does not install on a platform claimed as supported.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

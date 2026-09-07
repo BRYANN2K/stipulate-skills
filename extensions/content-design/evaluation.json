@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "content-design",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Réécrire les erreurs et instructions d’un formulaire pour rendre la récupération compréhensible.",
+      "prompt": "rewrite form errors and instructions so recovery is understandable.",
       "expected": "select",
-      "reason": "Aider une personne à comprendre et accomplir sa tâche par un contenu clair dans le bon contexte."
+      "reason": "Help people understand and complete their task through clear content in the right context."
     },
     {
       "id": "irrelevant",
-      "prompt": "Modifier une configuration interne sans texte destiné à un lecteur affecté.",
+      "prompt": "change internal configuration without affecting reader-facing text.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Réécrire les erreurs et instructions d’un formulaire pour rendre la récupération compréhensible. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "rewrite form errors and instructions so recovery is understandable. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le texte respecte le guide de style, mais le lecteur ne comprend toujours pas comment corriger son erreur.",
+      "prompt": "The text follows the style guide, but readers still do not understand how to correct their error.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

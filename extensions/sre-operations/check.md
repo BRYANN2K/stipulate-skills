@@ -1,19 +1,19 @@
-# sre-operations — vérifier
+# sre-operations — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- Le SLI retenu est calculé sur une source, population et fenêtre définies et correspond à un comportement utilisateur observable.
-- Le service atteint la cible SLO sur la fenêtre prévue dans un environnement ou jeu de données identifié ; les périodes exclues sont justifiées.
-- Une alerte se déclenche sur une dégradation simulée ou réelle et indique une action de runbook ; les alertes purement décoratives ne passent pas.
-- Une panne ou restauration représentative produit un résultat comparé au RTO/RPO ou à la cible retenue.
-- Les mesures après livraison ont un propriétaire et une échéance ; leur absence ne peut pas être masquée par la clôture locale de `archive`.
+- The selected SLI is calculated from a defined source, population, and window and corresponds to observable user behavior.
+- The service meets the SLO target over the specified window in an identified environment or dataset; excluded periods are justified.
+- An alert fires on simulated or actual degradation and identifies a runbook action; decorative alerts do not pass.
+- A representative failure or restoration produces a result compared with the RTO/RPO or selected target.
+- Post-delivery measurements have an owner and deadline; their absence cannot be hidden by local `archive` closure.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Le dashboard existe, mais une panne représentative ne déclenche aucune alerte actionnable.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The dashboard exists, but a representative failure triggers no actionable alert.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

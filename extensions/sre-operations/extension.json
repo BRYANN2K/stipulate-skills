@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "sre-operations",
-  "description": "Relier fiabilité perçue, indicateurs, objectifs, alertes et réponse aux dégradations.",
+  "description": "Connect user-perceived reliability, indicators, objectives, alerts, and responses to degradation.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

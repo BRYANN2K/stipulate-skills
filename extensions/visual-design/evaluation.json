@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "visual-design",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Corriger une hiérarchie illisible et les états visuels d’un tableau sur petit écran.",
+      "prompt": "fix unreadable hierarchy and table states on small screens.",
       "expected": "select",
-      "reason": "Définir hiérarchie, lisibilité, couleurs, typographie, espaces et états visuels adaptés."
+      "reason": "Define appropriate hierarchy, readability, colors, typography, spacing, and visual states."
     },
     {
       "id": "irrelevant",
-      "prompt": "Changer un worker serveur sans surface visuelle affectée.",
+      "prompt": "change a server worker without affecting visual surfaces.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Corriger une hiérarchie illisible et les états visuels d’un tableau sur petit écran. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "fix unreadable hierarchy and table states on small screens. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Une maquette attractive est livrée, mais les textes réels débordent et un état repose uniquement sur la couleur.",
+      "prompt": "An attractive mockup is delivered, but real text overflows and a state relies on color alone.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

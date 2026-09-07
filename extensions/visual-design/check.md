@@ -1,20 +1,20 @@
-# visual-design — vérifier
+# visual-design — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- un lecteur identifie le titre, l’action principale et l’état système sur les tailles annoncées ; l’observation est réalisée sur un rendu, pas seulement dans un fichier source.
-- texte, contrôles et informations essentielles respectent les seuils de contraste annoncés, avec résultat daté de l’outil ou de la revue manuelle.
-- le sens d’un état reste compréhensible sans couleur seule et les états focus, erreur, succès et désactivé sont observables au clavier ou au pointeur selon le contexte.
-- la surface reste lisible avec le contenu le plus long et le zoom ou la taille de texte supportés ; les captures multi-contexte sont archivées.
+- A reader identifies the title, primary action, and system state at declared sizes; observation uses rendered output, not source files alone.
+- Text, controls, and essential information meet declared contrast thresholds, with dated tool or manual-review results.
+- State meaning remains understandable without color alone; focus, error, success, and disabled states are observable by keyboard or pointer as appropriate.
+- The surface remains readable with the longest content and supported zoom/text sizes; screenshots across contexts are retained.
 
-Ces identifiants sont locaux à la fiche. Lors de `spec-validate`, l’agent doit les remapper explicitement en `AC-n` uniques dans `spec.md`; le moteur ne le fait pas automatiquement. Un score ou une maquette non rendue ne valide pas un critère.
+Candidate IDs belong to this reference. During `stip-validate`, explicitly map selected candidates to unique `AC-n` IDs in `spec.md`; the engine does not do this automatically. Scores or unrendered mockups do not validate criteria.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Une maquette attractive est livrée, mais les textes réels débordent et un état repose uniquement sur la couleur.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **An attractive mockup is delivered, but real text overflows and a state relies on color alone.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

@@ -1,5 +1,5 @@
 ---
-name: spec-archive
+name: stip-archive
 description: Close a documented workflow change, promote its accepted specification and create a scoped local Git commit.
 license: Apache-2.0
 metadata:
@@ -7,7 +7,7 @@ metadata:
   author: BRYANN2K
 ---
 
-# spec-archive
+# stip-archive
 
 Archive only after current approval, successful acceptance checks and documentation completion. Read status and inspect the intended Git changes. The user invoking this skill requests a local archive commit; it does not authorize a push or deployment.
 

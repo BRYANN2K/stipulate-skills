@@ -3,142 +3,142 @@
   "extensions": [
     {
       "id": "accessibility",
-      "description": "Rendre les tâches et contenus perceptibles, opérables, compréhensibles et robustes pour les publics concernés.",
+      "description": "Make tasks and content perceivable, operable, understandable, and robust for the intended audiences.",
       "path": "accessibility"
     },
     {
       "id": "ai-engineering",
-      "description": "Borner et évaluer une capacité de modèle avec ses outils, erreurs, coûts et recours humains.",
+      "description": "Scope and evaluate a model capability, including its tools, errors, costs, and human fallback.",
       "path": "ai-engineering"
     },
     {
       "id": "analytics-experimentation",
-      "description": "Relier hypothèse, instrumentation et méthode d’analyse à une décision mesurable.",
+      "description": "Connect a hypothesis, instrumentation, and analysis method to a measurable decision.",
       "path": "analytics-experimentation"
     },
     {
       "id": "api-integrations",
-      "description": "Définir et vérifier une frontière API, ses identités, erreurs, répétitions et versions.",
+      "description": "Define and verify an API boundary, including identities, errors, retries, and versions.",
       "path": "api-integrations"
     },
     {
       "id": "backend-engineering",
-      "description": "Garantir un comportement serveur cohérent en succès, erreur, concurrence et récupération.",
+      "description": "Ensure consistent server behavior across success, failure, concurrency, and recovery.",
       "path": "backend-engineering"
     },
     {
       "id": "build-in-public",
-      "description": "Préparer un partage public utile des progrès, preuves, apprentissages et limites du projet.",
+      "description": "Prepare useful public updates about project progress, evidence, lessons, and limitations.",
       "path": "build-in-public"
     },
     {
       "id": "cli-tooling",
-      "description": "Construire une interface en ligne de commande stable pour humains et automatisations.",
+      "description": "Build a stable command-line interface for people and automation.",
       "path": "cli-tooling"
     },
     {
       "id": "cloud-engineering",
-      "description": "Concevoir des ressources cloud reproductibles avec leurs accès, récupération, santé et coût.",
+      "description": "Design reproducible cloud resources with access controls, recovery, health, and cost considerations.",
       "path": "cloud-engineering"
     },
     {
       "id": "content-design",
-      "description": "Aider une personne à comprendre et accomplir sa tâche par un contenu clair dans le bon contexte.",
+      "description": "Help people understand and complete their task through clear content in the right context.",
       "path": "content-design"
     },
     {
       "id": "customer-support",
-      "description": "Préparer diagnostic, aide et escalade pour les problèmes réellement rencontrés par les utilisateurs.",
+      "description": "Prepare diagnosis, assistance, and escalation for problems users actually encounter.",
       "path": "customer-support"
     },
     {
       "id": "data-engineering",
-      "description": "Rendre un flux de données traçable, rejouable et vérifiable de la source au consommateur.",
+      "description": "Make data flows traceable, replayable, and verifiable from source to consumer.",
       "path": "data-engineering"
     },
     {
       "id": "database-engineering",
-      "description": "Préserver invariants, compatibilité, performance et récupération lors d’une évolution de données persistées.",
+      "description": "Preserve invariants, compatibility, performance, and recovery when changing persisted data.",
       "path": "database-engineering"
     },
     {
       "id": "design-system",
-      "description": "Faire évoluer des primitives et composants partagés avec leurs usages, contrats et migrations.",
+      "description": "Evolve shared primitives and components with their usage guidance, contracts, and migrations.",
       "path": "design-system"
     },
     {
       "id": "desktop-engineering",
-      "description": "Vérifier une application de bureau dans ses fenêtres, processus, fichiers, permissions et packaging.",
+      "description": "Verify a desktop application across windows, processes, files, permissions, and packaging.",
       "path": "desktop-engineering"
     },
     {
       "id": "devops-delivery",
-      "description": "Rendre le chemin de construction et livraison reproductible, observable et récupérable.",
+      "description": "Make the build and delivery path reproducible, observable, and recoverable.",
       "path": "devops-delivery"
     },
     {
       "id": "frontend-engineering",
-      "description": "Construire le comportement web rendu, ses états, données, accessibilité et performances.",
+      "description": "Build rendered web behavior, including states, data, accessibility, and performance.",
       "path": "frontend-engineering"
     },
     {
       "id": "mobile-engineering",
-      "description": "Construire et vérifier une expérience mobile avec son cycle de vie, réseau, permissions et distribution.",
+      "description": "Build and verify a mobile experience across its lifecycle, network, permissions, and distribution.",
       "path": "mobile-engineering"
     },
     {
       "id": "privacy-engineering",
-      "description": "Borner les données personnelles par finalité, minimisation, accès, conservation et droits.",
+      "description": "Bound personal data processing through purpose, minimization, access, retention, and rights.",
       "path": "privacy-engineering"
     },
     {
       "id": "product-strategy",
-      "description": "Relier problème, public, valeur, alternatives et arbitrages à une décision produit.",
+      "description": "Connect the problem, audience, value, alternatives, and tradeoffs to a product decision.",
       "path": "product-strategy"
     },
     {
       "id": "quality-engineering",
-      "description": "Choisir des vérifications qui réduisent les risques réels et relier leurs résultats aux critères.",
+      "description": "Choose checks that reduce actual risks and link their results to acceptance criteria.",
       "path": "quality-engineering"
     },
     {
       "id": "release-management",
-      "description": "Préparer une version identifiable avec compatibilité, artefacts, notes et récupération.",
+      "description": "Prepare an identifiable release with compatibility, artifacts, release notes, and recovery.",
       "path": "release-management"
     },
     {
       "id": "security-engineering",
-      "description": "Réduire les risques d’abus sur les actifs et frontières de confiance touchés par le changement.",
+      "description": "Reduce abuse risks affecting assets and trust boundaries touched by the change.",
       "path": "security-engineering"
     },
     {
       "id": "seo-discoverability",
-      "description": "Rendre des contenus publics découvrables et indexables selon leur intention et leurs contraintes.",
+      "description": "Make public content discoverable and indexable according to its purpose and constraints.",
       "path": "seo-discoverability"
     },
     {
       "id": "sre-operations",
-      "description": "Relier fiabilité perçue, indicateurs, objectifs, alertes et réponse aux dégradations.",
+      "description": "Connect user-perceived reliability, indicators, objectives, alerts, and responses to degradation.",
       "path": "sre-operations"
     },
     {
       "id": "storytelling",
-      "description": "Relier intention, promesse prouvable, messages et narration cohérente entre les surfaces du produit.",
+      "description": "Connect intent, a supportable promise, messaging, and consistent narrative across product surfaces.",
       "path": "storytelling"
     },
     {
       "id": "user-research",
-      "description": "Réduire une inconnue sur les personnes, leurs tâches et leur contexte par une observation proportionnée.",
+      "description": "Reduce uncertainty about people, their tasks, and their context through proportionate observation.",
       "path": "user-research"
     },
     {
       "id": "ux-design",
-      "description": "Concevoir parcours, interactions, états et récupération pour une tâche utilisateur.",
+      "description": "Design journeys, interactions, states, and recovery for a user task.",
       "path": "ux-design"
     },
     {
       "id": "visual-design",
-      "description": "Définir hiérarchie, lisibilité, couleurs, typographie, espaces et états visuels adaptés.",
+      "description": "Define appropriate hierarchy, readability, colors, typography, spacing, and visual states.",
       "path": "visual-design"
     }
   ]

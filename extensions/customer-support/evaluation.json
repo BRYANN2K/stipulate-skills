@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "customer-support",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Préparer une procédure pour diagnostiquer une synchronisation bloquée et récupérer les données.",
+      "prompt": "prepare a procedure to diagnose stalled synchronization and recover data.",
       "expected": "select",
-      "reason": "Préparer diagnostic, aide et escalade pour les problèmes réellement rencontrés par les utilisateurs."
+      "reason": "Prepare diagnosis, assistance, and escalation for problems users actually encounter."
     },
     {
       "id": "irrelevant",
-      "prompt": "Refactoriser une fonction interne sans incident, aide ou comportement utilisateur affecté.",
+      "prompt": "refactor an internal function without affecting incidents, help, or user behavior.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Préparer une procédure pour diagnostiquer une synchronisation bloquée et récupérer les données. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "prepare a procedure to diagnose stalled synchronization and recover data. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "La FAQ décrit le symptôme, mais ses étapes ne permettent ni récupération ni escalade sur le cas reproduit.",
+      "prompt": "The FAQ describes the symptom, but its steps enable neither recovery nor escalation for the reproduced case.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

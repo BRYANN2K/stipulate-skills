@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "api-integrations",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Intégrer un webhook avec signature, doublons, délai et réponse partielle.",
+      "prompt": "integrate a webhook with signatures, duplicates, delays, and partial responses.",
       "expected": "select",
-      "reason": "Définir et vérifier une frontière API, ses identités, erreurs, répétitions et versions."
+      "reason": "Define and verify an API boundary, including identities, errors, retries, and versions."
     },
     {
       "id": "irrelevant",
-      "prompt": "Modifier une fonction purement locale sans frontière API.",
+      "prompt": "modify a purely local function without an API boundary.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Intégrer un webhook avec signature, doublons, délai et réponse partielle. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "integrate a webhook with signatures, duplicates, delays, and partial responses. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le mock réussit, mais aucun test ne vérifie qu’un webhook répété ne duplique pas l’effet.",
+      "prompt": "The mock passes, but no test verifies that a repeated webhook does not duplicate the effect.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

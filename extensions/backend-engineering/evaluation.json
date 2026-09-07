@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "backend-engineering",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Ajouter un worker qui applique une règle métier sans double effet après retry.",
+      "prompt": "add a worker that applies a business rule without duplicate effects after a retry.",
       "expected": "select",
-      "reason": "Garantir un comportement serveur cohérent en succès, erreur, concurrence et récupération."
+      "reason": "Ensure consistent server behavior across success, failure, concurrency, and recovery."
     },
     {
       "id": "irrelevant",
-      "prompt": "Changer uniquement la typographie d’un écran sans effet de service.",
+      "prompt": "change only a screen's typography with no service impact.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Ajouter un worker qui applique une règle métier sans double effet après retry. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "add a worker that applies a business rule without duplicate effects after a retry. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le chemin nominal réussit, mais un retry crédite deux fois le même compte dans la fixture.",
+      "prompt": "The happy path succeeds, but a retry credits the same account twice in the fixture.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

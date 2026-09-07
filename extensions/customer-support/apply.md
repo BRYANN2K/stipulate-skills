@@ -1,15 +1,15 @@
-# customer-support — réaliser
+# customer-support — apply
 
-Lire le contrat approuvé et les seules références sélectionnées. Préserver les travaux utilisateurs, conventions et autorisations déjà établies ; ne pas élargir le périmètre.
+Read the approved contract and only the selected references. Preserve existing user work, conventions, and authorizations; do not expand scope.
 
-## Procédure métier
+## Domain procedure
 
-Partir des symptômes, demandes et procédures existantes. Définir diagnostic minimal sans secret, actions récupérables et limites d’autonomie. Rédiger aide et réponses pour les lecteurs concernés ; tester le runbook avec une fixture représentative et vérifier l’escalade. Relier les causes récurrentes au backlog. Ne pas contacter les utilisateurs, promettre un délai ou ouvrir une permanence sans autorisation.
+Start from existing symptoms, requests, and procedures. Define minimal diagnosis without secrets, recoverable actions, and autonomy boundaries. Write help and responses for the intended readers; test the runbook on a representative fixture and verify escalation. Connect recurring causes to the backlog. Do not contact users, promise deadlines, or establish support coverage without authorization.
 
-Découper cette procédure selon les risques du changement ; les étapes peuvent se chevaucher ou être non applicables avec raison. Partir des éléments réutilisables identifiés pendant explore. Vérifier progressivement le comportement attendu et corriger dans le contrat ; utiliser [check.md](check.md) pour les observations métier.
+Break down this procedure according to the change's risks; steps may overlap or be not-applicable with justification. Start from reusable foundations identified during explore. Verify expected behavior incrementally and correct within the contract; use [check.md](check.md) for domain observations.
 
-## Résultat attendu
+## Expected outcome
 
-Fournir le résultat concret et inspectable, ses décisions et des preuves reliées aux vrais identifiants `AC-n`. Noter commandes, environnement, données ou participants réellement utilisés et ce qui reste simulé. Si le travail révèle une exigence nouvelle, revenir à la révision et à l’accord du contrat ; ne pas déplacer un seuil pour faire passer le résultat.
+Deliver a concrete, inspectable result, its decisions, and evidence linked to actual `AC-n` IDs. Record the commands, environment, data, or participants actually used and what remains simulated. If the work reveals a new requirement, return to contract revision and approval; do not move a threshold to make a result pass.
 
-Cette extension ne donne pas d’approbation humaine, n’exécute aucun hook et n’autorise ni publication, ni contact externe, ni déploiement implicite. Exécuter les actions déjà autorisées dans leur périmètre ; demander seulement l’autorisation réellement manquante pour une action qui l’exige.
+This extension does not grant human approval, execute hooks, or implicitly authorize publication, external contact, or deployment. Carry out previously authorized actions within their scope; request only authorization that is actually missing for an action that requires it.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "database-engineering",
-  "description": "Préserver invariants, compatibilité, performance et récupération lors d’une évolution de données persistées.",
+  "description": "Preserve invariants, compatibility, performance, and recovery when changing persisted data.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

@@ -1,20 +1,20 @@
-# desktop-engineering — vérifier
+# desktop-engineering — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- la spec liste les plateformes, fenêtres/webviews, permissions et canaux IPC concernés ; toute capacité non prouvée est `incomplet` ou exclue avant approbation.
-- un parcours installé vérifie lancement, action native, refus de permission et fermeture/reprise ; `unverified` ou `failed` ne passe pas par une justification.
-- les webviews et opérations natives appliquent le moindre privilège prévu, et l’audit de configuration ou test IPC donne une observation datée.
-- l’artefact packagé testé est identifié par version/hash et la procédure de support, retrait de capability ou rollback est retrouvable.
+- The specification lists affected platforms, windows/webviews, permissions, and IPC channels; unproven capabilities remain `incomplete` or are excluded before approval.
+- An installed journey verifies launch, a native action, permission denial, and closure/resumption; justification cannot make `unverified` or `failed` pass.
+- Webviews and native operations enforce the intended least privilege, with a dated configuration audit or IPC-test observation.
+- The tested packaged artifact is identified by version/hash, with a discoverable support, capability-removal, or rollback procedure.
 
-Lors de `validate`, l’agent traduit les `AC-DESK-*` retenus en `AC-n` uniques dans la spec composée ; le moteur n’effectue pas ce remappage.
+During `validate`, the agent maps selected `AC-DESK-*` candidates to unique `AC-n` IDs in the combined specification; the engine does not perform this mapping.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Le binaire compile, mais le parcours réel échoue encore et laisse un brouillon non récupérable.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The binary compiles, but the real journey still fails and leaves an unrecoverable draft.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

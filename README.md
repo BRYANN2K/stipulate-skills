@@ -1,43 +1,54 @@
-# Spec Workflow
+# Stipulate Skills
 
-Sept skills pour reprendre un projet ou développer une idée avec un contrat durable, une revue utilisateur et des preuves liées au résultat. Le noyau vise GPT-6 Astra dans Codex et utilise le format Agent Skills. Il reste local : aucune API payante, télémétrie, dépendance Python tierce ou action de publication.
+[![X — @bryann2k_dev](https://img.shields.io/badge/%40bryann2k__dev-000000?style=flat&logo=x&logoColor=white)](https://x.com/bryann2k_dev)
+
+**From intent to evidence.**
+
+The spec-driven workflow for AI-assisted development. Explore in natural language, agree on a specification, and build against verifiable outcomes.
+
+**Seven core skills. Optional domain extensions. One shared contract.**
+
+Stipulate Skills uses **Stip** as its short name and `stip-*` for its commands.
+
+Stip provides seven skills for adopting an existing project or developing an idea through a durable contract, user review, and evidence tied to the delivered result. The core targets GPT-6 Astra in Codex and uses the Agent Skills format. Its runtime is local and offline: no paid API calls, telemetry, third-party Python dependencies, or publication actions.
 
 ## Installation
 
-Python 3.10+ et Git sont nécessaires. Depuis ce dépôt :
+Python 3.10+ and Git are required. From this repository:
 
 ```sh
 python3 scripts/validate_skills.py
+python3 scripts/validate_extensions.py
 python3 -m unittest discover -s tests -v
 python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
 python3 scripts/install.py --destination "$HOME/.agents/skills"
 ```
 
-Pour une installation limitée à un projet, fournir son dossier `.agents/skills` comme destination. L’installeur conserve les autres skills, refuse les collisions et les copies modifiées. Chaque skill inclut son runtime : aucune dépendance au chemin du dépôt source. Ouvrir une nouvelle conversation après installation pour vérifier le catalogue du client.
+For a project-scoped installation, use that project's `.agents/skills` directory as the destination. The installer preserves unrelated skills and rejects collisions or modified installed copies. Each skill includes its runtime and does not depend on the source repository path. Check the client's skill catalog after installation; open a new conversation if the catalog has not refreshed.
 
-Désinstallation des seules copies détenues par ce projet :
+Uninstall only the copies owned by this project:
 
 ```sh
 python3 scripts/install.py --destination "$HOME/.agents/skills" --uninstall
 ```
 
-## Utilisation dans Codex
+## Using Stipulate Skills in Codex
 
-| Commande | Résultat |
+| Skill | Outcome |
 |---|---|
-| `$spec-bootstrap` | Préparer `.workflow`, adapter AGENTS.md et établir une carte factuelle du projet |
-| `$spec-explore` | Explorer l’idée avec les extensions pertinentes, si elles sont disponibles |
-| `$spec-validate` | Préparer la spec, la faire relire et enregistrer l’accord explicite |
-| `$spec-apply` | Construire, vérifier et corriger dans le périmètre approuvé |
-| `$spec-check` | Réconcilier les critères avec des preuves actuelles |
-| `$spec-docs` | Créer ou mettre à jour la documentation affectée |
-| `$spec-archive` | Promouvoir la spec, archiver le changement et créer un commit local ciblé |
+| `$stip-bootstrap` | Prepare `.workflow/`, add workflow guidance to AGENTS.md, and establish an evidence-based project map |
+| `$stip-explore` | Explore an idea with relevant extensions when available |
+| `$stip-validate` | Prepare the specification, present it for review, and record explicit approval |
+| `$stip-apply` | Implement, verify, and correct within the approved scope |
+| `$stip-check` | Reconcile acceptance criteria with current evidence |
+| `$stip-docs` | Create or update affected documentation |
+| `$stip-archive` | Promote the specification, archive the change, and create a scoped local commit |
 
-Exemple de conversation : « $spec-bootstrap, reprends ce dépôt et préserve ses conventions. » Puis : « $spec-explore, ajoutons l’annulation des traitements. » Après revue de la spec : « J’approuve cette version ; $spec-apply. » Les corrections reviennent vers apply/check. Une nouvelle exigence revient vers validate. Docs et archive clôturent le changement.
+Example conversation: "$stip-bootstrap, adopt this repository and preserve its conventions." Then: "$stip-explore, let's add job cancellation." After reviewing the specification: "I approve this version; $stip-apply." Corrections return to apply/check. A new requirement returns to validate. Docs and archive close the change.
 
-Les extensions interviennent dans **explore** pour poser les questions métier et contribuer aux critères. Les phases suivantes consomment ces décisions. Le bootstrap reconnaît les métiers applicables et les fondations existantes, sans lancer tous leurs processus. Le catalogue fournit 28 extensions locales facultatives, séparées des sept skills core. Leur installation ciblée et leur sélection sont décrites dans [Extensions](docs/extensions.md). Aucun métier n’est activé par défaut.
+Extensions contribute domain questions and acceptance criteria during **explore**. Later phases use those decisions. Bootstrap identifies applicable domains and existing foundations without starting every domain process. The catalog contains 28 optional local extensions, separate from the seven core skills. See [Extensions](docs/extensions.md) for selective installation and use. No domain is enabled by default.
 
-## Structure d’un projet
+## Project structure
 
 ```text
 AGENTS.md
@@ -46,28 +57,32 @@ AGENTS.md
   config.json
   specs/
   changes/
-    ajout-connexion/
+    add-login/
       proposal.md
       spec.md
-      tasks.md       # seulement si utile
+      tasks.md       # only when useful
       evidence.md
       state.json
   archive/
 ```
 
-Bootstrap crée les dossiers vides ; il ne crée pas de fausse fonctionnalité `ajout-connexion`. Explore crée le premier dossier réel. Project.md distingue faits, déductions et manques. Les specs courantes décrivent le comportement accepté ; chaque spec de changement représente la version complète souhaitée de sa cible.
+Bootstrap creates the empty directories; it does not create a fictitious `add-login` feature. Explore creates the first real change directory. `project.md` distinguishes observations, inferences, and gaps. Accepted specifications describe current accepted behavior; each change specification describes the complete desired version of its target.
 
-## Garanties et limites
+## Guarantees and limits
 
-- Bootstrap préserve les fichiers et ajoute une seule section bornée à AGENTS.md. L’analyse métier est réalisée par l’agent ; le script ne déclare pas le projet mature.
-- L’approbation lie proposal, spec, tasks et les références sélectionnées. Toute modification d’octets invalide l’accord, même éditoriale dans cette première version.
-- Check exige tous les critères et une empreinte actuelle des fichiers Git, incluant le contenu, les liens et les bits exécutables. Les fichiers ignorés et `.workflow` ne font pas partie du sujet de code. Les résultats externes nécessitent une preuve identifiée dans le rapport.
-- Les preuves sont des attestations inspectables ; le script ne peut pas garantir qu’un humain ou un agent a dit vrai. Les états locaux ne constituent pas un système de signature ou une barrière contre un opérateur malveillant ayant accès en écriture.
-- Archive refuse les sources périmées, un index déjà rempli, les fichiers sélectionnés déjà modifiés au début, un HEAD déplacé et les mises à jour concurrentes de la spec cible. Il n’absorbe pas les autres travaux et n’effectue aucun push.
-- Les sous-modules ne sont pas pris en charge dans l’empreinte v1. Utiliser la racine physique du dépôt. Linux et macOS sont les cibles du CI ; seul l’environnement local indiqué dans le rapport de livraison est vérifié lors de cette livraison.
+- Bootstrap preserves existing files and adds one bounded workflow block to AGENTS.md if absent. The agent performs the domain assessment; the script does not certify project maturity. An existing workflow block is not automatically replaced.
+- Approval binds proposal, specification, optional tasks, and selected extension references. Any byte change invalidates approval, including editorial changes in this version.
+- Check requires every acceptance criterion and a current snapshot of non-ignored Git working-tree files, including contents, symlinks, and executable bits. Ignored files and `.workflow/` are outside the code snapshot. External results require identifiable evidence in the report.
+- Evidence consists of inspectable attestations. The script cannot establish whether a human or agent reported truthfully. Local state is neither an authenticated signature system nor a barrier against a malicious operator with write access.
+- Archive rejects stale source evidence, a nonempty index, selected files already dirty at start, a changed HEAD, and concurrent changes to the target specification. It does not absorb unrelated work or push commits.
+- Snapshot schema v1 does not support submodules. Use the physical repository root. CI targets Linux and macOS; local delivery checks do not establish that remote CI has passed.
 
-Les tests couvrent le moteur, l’installation et les cycles synthétiques des 28 extensions. Une évaluation comportementale d’Astra sur des projets réels reste distincte : ce noyau ne certifie pas à lui seul qu’un produit est prêt pour la production.
+Tests cover the engine, installation, and synthetic lifecycle runs for all 28 extensions. Evaluating Astra's behavior on real projects is a separate activity. Passing core tests does not certify a product as production-ready.
 
-[Contrat et commandes](docs/workflow.md) · [Extensions](docs/extensions.md) · [Développement](CONTRIBUTING.md) · [Sécurité](SECURITY.md)
+[Core contract and commands](docs/workflow.md) · [Extensions](docs/extensions.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
-La version précédente de 33 skills reste dans l’historique Git et la sauvegarde de migration. Aucun ancien dossier SKILL.md n’est conservé sous un chemin de découverte de cette version.
+The previous collection of 33 skills remains in Git history and migration backups. Its skill directories are not retained in this version's discovery paths.
+
+## Migration to Stip
+
+The seven public skill names now use `stip-` instead of `spec-`. Install the new packages, then remove only unchanged legacy packages using the previous installer. Preserve customized installations for reconciliation. `.workflow/`, runtime subcommands, approval records, and archive formats are unchanged. Bootstrap preserves existing AGENTS.md workflow blocks: update their skill references explicitly when adopting Stip. Internal `spec-workflow` block markers and ownership identifiers remain stable for compatibility.

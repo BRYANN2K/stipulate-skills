@@ -1,20 +1,20 @@
-# storytelling — vérifier
+# storytelling — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- le contrat contient une intention, une audience, une action attendue et une promesse dont chaque élément factuel pointe vers une preuve ou une limite ; une promesse sans preuve reste non vérifiée.
-- la hiérarchie distingue message central, messages de soutien, preuve et caveats ; un lecteur du segment ciblé peut reformuler le problème, la valeur et la prochaine action sans aide du rédacteur.
-- la landing ou la surface d’entrée et l’onboarding concernés portent une version cohérente de la promesse et permettent de relier cette promesse à une action réelle du produit ; une simple présence de texte ne suffit pas.
-- après modification du produit, de la donnée ou du périmètre, le propriétaire réévalue les messages, date la version et retire ou corrige toute affirmation devenue inexacte.
+- The contract contains intent, audience, expected action, and a promise whose factual elements point to evidence or limitations; unsupported promises remain unverified.
+- The hierarchy distinguishes central message, supporting messages, evidence, and caveats; a target-segment reader can paraphrase the problem, value, and next action without writer assistance.
+- Affected landing/entry surfaces and onboarding carry a consistent promise connected to an actual product action; text existence alone is insufficient.
+- After product, data, or scope changes, the owner reassesses messages, dates the version, and removes or corrects inaccurate claims.
 
-Ces identifiants sont locaux à la fiche. Lors de `spec-validate`, l’agent doit les remapper explicitement en `AC-n` uniques dans `spec.md` ; le moteur ne le fait pas automatiquement. Un critère non prouvé reste non vérifié et ne passe pas `check` tant qu’une preuve n’est pas produite ou que le contrat approuvé n’est pas révisé.
+Candidate IDs belong to this reference. During `stip-validate`, explicitly map them to unique `AC-n` IDs in `spec.md`; the engine does not do this automatically. Unproven criteria remain unverified and cannot pass check without evidence or an approved contract revision.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **La narration est cohérente entre pages, mais promet une capacité absente du produit livré.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The narrative is consistent across pages but promises a capability absent from the delivered product.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

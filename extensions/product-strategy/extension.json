@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "product-strategy",
-  "description": "Relier problème, public, valeur, alternatives et arbitrages à une décision produit.",
+  "description": "Connect the problem, audience, value, alternatives, and tradeoffs to a product decision.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

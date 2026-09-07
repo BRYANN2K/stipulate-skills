@@ -1,19 +1,19 @@
-# privacy-engineering — vérifier
+# privacy-engineering — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- Le système ne collecte et ne conserve que les champs nécessaires au but déclaré ; un test sur le payload et le stockage confirme l’absence de champs superflus.
-- Les réglages initiaux n’exposent pas la donnée au-delà de la finalité et des destinataires prévus ; le scénario « nouveau compte » est vérifié.
-- Un utilisateur ou opérateur autorisé peut exercer le comportement prévu (accès, correction ou suppression) et une vérification indépendante confirme l’effet sur les copies concernées.
-- Les logs, traces, exports et environnements de test ne contiennent pas de données personnelles non nécessaires ; les exceptions sont justifiées et contrôlées.
-- La notice ou documentation de traitement reflète le flux réellement exécuté, avec propriétaire, durée et fournisseur identifiés ; une page présente n’est pas la preuve d’une information exacte.
+- The system collects and retains only fields necessary for the stated purpose; payload and storage tests confirm no unnecessary fields.
+- Initial settings do not expose data beyond intended purposes and recipients; the new-account scenario is verified.
+- An authorized user or operator can exercise the specified behavior—access, correction, or deletion—and independent verification confirms the effect on affected copies.
+- Logs, traces, exports, and test environments contain no unnecessary personal data; exceptions are justified and controlled.
+- Processing notices or documentation reflect actual flows, with identified owners, retention periods, and providers; a page's existence does not establish accuracy.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **La ligne principale est supprimée, mais une copie contenant les données personnelles reste accessible dans les logs.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The primary row is deleted, but a copy containing personal data remains accessible in logs.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

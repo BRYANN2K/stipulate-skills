@@ -1,8 +1,8 @@
-# cloud-engineering — provenance
+# cloud-engineering — sources
 
-Synthèse éditoriale issue de la recherche relue du 7 septembre 2026. Les procédures des phases sont notre traduction dans le contrat v1, pas une certification des organismes cités. Vérifier la version et l’applicabilité d’une norme ou documentation évolutive avant d’en tirer une exigence actuelle.
+Editorial synthesis based on research reviewed on September 7, 2026. The phase procedures are our adaptation to the v1 contract, not certification by the cited organizations. Verify the version and applicability of evolving standards or documentation before deriving a current requirement.
 
-- [AWS Well-Architected Framework — Definitions](https://docs.aws.amazon.com/wellarchitected/latest/framework/definitions.html), AWS, six piliers et questions d’évaluation d’architectures ; consultée le 2026-09-07.
-- [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/), Microsoft, piliers, décisions et outils de revue ; consultée le 2026-09-07.
-- [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework?authuser=0&hl=en), Google Cloud, piliers cloud et perspectives transversales ; consultée le 2026-09-07.
-- [CNCF Cloud Native Definition v1.1](https://github.com/cncf/toc/blob/main/DEFINITION.md), CNCF TOC, définition des pratiques cloud native programmables et répétables ; consultée le 2026-09-07.
+- [AWS Well-Architected Framework — Definitions](https://docs.aws.amazon.com/wellarchitected/latest/framework/definitions.html), AWS; six pillars and architectural assessment questions; consulted 2026-09-07.
+- [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/), Microsoft; pillars, decisions, and review tools; consulted 2026-09-07.
+- [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework?authuser=0&hl=en), Google Cloud; cloud pillars and cross-cutting perspectives; consulted 2026-09-07.
+- [CNCF Cloud Native Definition v1.1](https://github.com/cncf/toc/blob/main/DEFINITION.md), CNCF TOC; programmable, repeatable cloud-native practices; consulted 2026-09-07.

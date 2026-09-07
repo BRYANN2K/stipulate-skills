@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "seo-discoverability",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Publier une page de documentation publique qui doit être trouvée via recherche organique.",
+      "prompt": "publish a public documentation page intended for organic search discovery.",
       "expected": "select",
-      "reason": "Rendre des contenus publics découvrables et indexables selon leur intention et leurs contraintes."
+      "reason": "Make public content discoverable and indexable according to its purpose and constraints."
     },
     {
       "id": "irrelevant",
-      "prompt": "Modifier un dashboard privé non destiné à l’indexation.",
+      "prompt": "modify a private dashboard not intended for indexing.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Publier une page de documentation publique qui doit être trouvée via recherche organique. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "publish a public documentation page intended for organic search discovery. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Les métadonnées existent, mais la page publique reste bloquée par robots ou noindex.",
+      "prompt": "Metadata exists, but the public page remains blocked by robots or noindex.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

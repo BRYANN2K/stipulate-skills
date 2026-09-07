@@ -1,19 +1,19 @@
-# release-management — vérifier
+# release-management — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- Le numéro choisi correspond à l’évolution vérifiée de l’API publique et la justification est lisible par un consommateur.
-- Les notes décrivent les changements ajoutés, modifiés, supprimés, corrigés ou de sécurité et indiquent la migration lorsque nécessaire.
-- L’artefact téléchargé ou testé est identique au digest attendu et relié au commit/build ; une simple présence dans une release ne suffit pas.
-- Une vérification d’immuabilité ou de signature réussit pour le canal retenu, ou l’absence est déclarée comme risque et empêche toute revendication supérieure.
-- Une rupture est refusée par le test de compatibilité ou accompagnée d’une version/migration explicitement révisée et réapprouvée.
+- The chosen version matches the verified public API change, with a rationale consumers can understand.
+- Notes describe added, changed, removed, fixed, or security-related behavior and migration where needed.
+- The downloaded or tested artifact matches the expected digest and is linked to its commit/build; being listed in a release is insufficient.
+- An immutability or signature check passes for the chosen channel, or its absence is recorded as a risk and prevents stronger claims.
+- A breaking change is rejected by the compatibility test or accompanied by an explicitly revised and reapproved version/migration.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **L’archive est créée, mais l’artefact ne s’installe pas sur une plateforme annoncée comme supportée.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The archive is created, but the artifact does not install on a platform claimed as supported.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

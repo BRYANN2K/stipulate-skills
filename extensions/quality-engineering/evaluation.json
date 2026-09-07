@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "quality-engineering",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Définir une stratégie de test pour une migration comportant plusieurs modes de panne.",
+      "prompt": "define a test strategy for a migration with multiple failure modes.",
       "expected": "select",
-      "reason": "Choisir des vérifications qui réduisent les risques réels et relier leurs résultats aux critères."
+      "reason": "Choose checks that reduce actual risks and link their results to acceptance criteria."
     },
     {
       "id": "irrelevant",
-      "prompt": "Ajouter une vérification miroir pour une modification textuelle triviale déjà inspectée sans risque distinct.",
+      "prompt": "add an implementation-mirroring check for an already inspected trivial text edit without a distinct risk.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Définir une stratégie de test pour une migration comportant plusieurs modes de panne. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "define a test strategy for a migration with multiple failure modes. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Tous les tests exécutés passent, mais le seul test du risque critique a été désactivé.",
+      "prompt": "All executed tests pass, but the only test covering the critical risk was disabled.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

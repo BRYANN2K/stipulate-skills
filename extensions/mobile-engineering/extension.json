@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "mobile-engineering",
-  "description": "Construire et vérifier une expérience mobile avec son cycle de vie, réseau, permissions et distribution.",
+  "description": "Build and verify a mobile experience across its lifecycle, network, permissions, and distribution.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

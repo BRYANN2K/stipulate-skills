@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "ai-engineering",
-  "description": "Borner et évaluer une capacité de modèle avec ses outils, erreurs, coûts et recours humains.",
+  "description": "Scope and evaluate a model capability, including its tools, errors, costs, and human fallback.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

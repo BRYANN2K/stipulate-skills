@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "seo-discoverability",
-  "description": "Rendre des contenus publics découvrables et indexables selon leur intention et leurs contraintes.",
+  "description": "Make public content discoverable and indexable according to its purpose and constraints.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

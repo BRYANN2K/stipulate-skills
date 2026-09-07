@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 source=(ROOT/'scripts/workflow.py').read_bytes()
 check='--check' in sys.argv
 failed=[]
-for p in sorted((ROOT/'skills').glob('spec-*/SKILL.md')):
+for p in sorted((ROOT/'skills').glob('stip-*/SKILL.md')):
     target=p.parent/'scripts/workflow.py'
     if check:
         if not target.exists() or target.read_bytes()!=source:failed.append(str(target))

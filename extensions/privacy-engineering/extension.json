@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "privacy-engineering",
-  "description": "Borner les données personnelles par finalité, minimisation, accès, conservation et droits.",
+  "description": "Bound personal data processing through purpose, minimization, access, retention, and rights.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

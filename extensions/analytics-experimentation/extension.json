@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "analytics-experimentation",
-  "description": "Relier hypothèse, instrumentation et méthode d’analyse à une décision mesurable.",
+  "description": "Connect a hypothesis, instrumentation, and analysis method to a measurable decision.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

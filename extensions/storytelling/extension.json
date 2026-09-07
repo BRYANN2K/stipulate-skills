@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "storytelling",
-  "description": "Relier intention, promesse prouvable, messages et narration cohérente entre les surfaces du produit.",
+  "description": "Connect intent, a supportable promise, messaging, and consistent narrative across product surfaces.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

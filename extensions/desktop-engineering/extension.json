@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "desktop-engineering",
-  "description": "Vérifier une application de bureau dans ses fenêtres, processus, fichiers, permissions et packaging.",
+  "description": "Verify a desktop application across windows, processes, files, permissions, and packaging.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

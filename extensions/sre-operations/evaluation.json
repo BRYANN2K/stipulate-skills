@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "sre-operations",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Définir et tester une alerte actionnable pour un service dont le taux d’erreur augmente.",
+      "prompt": "define and test an actionable alert for a service with a rising error rate.",
       "expected": "select",
-      "reason": "Relier fiabilité perçue, indicateurs, objectifs, alertes et réponse aux dégradations."
+      "reason": "Connect user-perceived reliability, indicators, objectives, alerts, and responses to degradation."
     },
     {
       "id": "irrelevant",
-      "prompt": "Modifier un document sans service, signal ou procédure opérationnelle affectés.",
+      "prompt": "edit a document without affecting a service, signal, or operational procedure.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Définir et tester une alerte actionnable pour un service dont le taux d’erreur augmente. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "define and test an actionable alert for a service with a rising error rate. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le dashboard existe, mais une panne représentative ne déclenche aucune alerte actionnable.",
+      "prompt": "The dashboard exists, but a representative failure triggers no actionable alert.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

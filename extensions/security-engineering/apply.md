@@ -1,15 +1,15 @@
-# security-engineering — réaliser
+# security-engineering — apply
 
-Lire le contrat approuvé et les seules références sélectionnées. Préserver les travaux utilisateurs, conventions et autorisations déjà établies ; ne pas élargir le périmètre.
+Read the approved contract and only the selected references. Preserve existing user work, conventions, and authorizations; do not expand scope.
 
-## Procédure métier
+## Domain procedure
 
-Identifier actifs, acteurs, frontières et abus réalistes dans le périmètre. Tracer les contrôles réellement exécutés ; implémenter validation, autorisation, gestion de secrets et protections proportionnées. Tester chemins autorisés et refusés, erreurs et régressions sur des fixtures autorisées. Relier chaque finding à une preuve et au contrôle corrigé. Ne pas étendre un audit ni lancer des tests externes intrusifs sans autorisation.
+Identify in-scope assets, actors, boundaries, and realistic abuse. Trace controls actually executed; implement proportionate validation, authorization, secret handling, and protections. Test allowed and denied paths, errors, and regressions on authorized fixtures. Link every finding to evidence and the corrected control. Do not expand an audit or run intrusive external tests without authorization.
 
-Découper cette procédure selon les risques du changement ; les étapes peuvent se chevaucher ou être non applicables avec raison. Partir des éléments réutilisables identifiés pendant explore. Vérifier progressivement le comportement attendu et corriger dans le contrat ; utiliser [check.md](check.md) pour les observations métier.
+Break down this procedure according to the change's risks; steps may overlap or be not-applicable with justification. Start from reusable foundations identified during explore. Verify expected behavior incrementally and correct within the contract; use [check.md](check.md) for domain observations.
 
-## Résultat attendu
+## Expected outcome
 
-Fournir le résultat concret et inspectable, ses décisions et des preuves reliées aux vrais identifiants `AC-n`. Noter commandes, environnement, données ou participants réellement utilisés et ce qui reste simulé. Si le travail révèle une exigence nouvelle, revenir à la révision et à l’accord du contrat ; ne pas déplacer un seuil pour faire passer le résultat.
+Deliver a concrete, inspectable result, its decisions, and evidence linked to actual `AC-n` IDs. Record the commands, environment, data, or participants actually used and what remains simulated. If the work reveals a new requirement, return to contract revision and approval; do not move a threshold to make a result pass.
 
-Cette extension ne donne pas d’approbation humaine, n’exécute aucun hook et n’autorise ni publication, ni contact externe, ni déploiement implicite. Exécuter les actions déjà autorisées dans leur périmètre ; demander seulement l’autorisation réellement manquante pour une action qui l’exige.
+This extension does not grant human approval, execute hooks, or implicitly authorize publication, external contact, or deployment. Carry out previously authorized actions within their scope; request only authorization that is actually missing for an action that requires it.

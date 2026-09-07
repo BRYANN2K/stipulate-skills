@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "accessibility",
-  "description": "Rendre les tâches et contenus perceptibles, opérables, compréhensibles et robustes pour les publics concernés.",
+  "description": "Make tasks and content perceivable, operable, understandable, and robust for the intended audiences.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

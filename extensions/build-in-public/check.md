@@ -1,21 +1,21 @@
-# build-in-public — vérifier
+# build-in-public — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- chaque artefact public porte audience, objectif, statut, version ou date, propriétaire, périmètre et limites ; un lien public sans métadonnées ne suffit pas.
-- un contrôle de partage vérifie que les secrets, données personnelles, informations confidentielles et détails de sécurité présents sont autorisés, minimisés et traités selon le périmètre, et conserve le résultat avec la version publiée.
-- roadmap et prévisions distinguent exploration, design, preview, livré et retiré, et indiquent explicitement qu’une intention ou date indicative n’est pas une garantie lorsqu’elle peut être interprétée comme telle.
-- le canal de feedback, le propriétaire du triage et le statut de chaque retour critique sont accessibles ; une demande publique n’est pas considérée comme décision produit sans preuve et décision enregistrées.
-- toute modification de produit, de preuve ou de risque déclenche une mise à jour, correction ou retraite datée, avec lien vers l’ancienne version lorsque c’est sûr et pertinent, ou justification de retrait si la confidentialité l’interdit.
+- Every public artifact identifies audience, objective, status, version/date, owner, scope, and limits; a public link without metadata is insufficient.
+- A sharing check verifies authorization, minimization, and handling of secrets, personal data, confidential information, and security details according to scope, retaining results with the published version.
+- Roadmaps and forecasts distinguish exploration, design, preview, delivered, and withdrawn states, explicitly explaining that intentions or indicative dates are not guarantees where they may be mistaken for them.
+- Feedback channels, triage owners, and critical-feedback statuses are accessible; public requests are not product decisions without recorded evidence and decisions.
+- Product, evidence, or risk changes trigger dated updates, corrections, or retirement, linking prior versions when safe and relevant or explaining withdrawal when confidentiality prevents it.
 
-Ces identifiants sont locaux à la fiche. Lors de `spec-validate`, l’agent doit les remapper explicitement en `AC-n` uniques dans `spec.md` ; le moteur ne le fait pas automatiquement. Un critère non vérifié ne passe pas `check` tant qu’une preuve n’est pas produite ou que le contrat approuvé n’est pas révisé.
+Candidate IDs belong to this reference. During `stip-validate`, explicitly map them to unique `AC-n` IDs in `spec.md`; the engine does not do this automatically. Unverified criteria cannot pass check without evidence or an approved contract revision.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Le brouillon est relu, mais contient un secret ou présente un prototype comme disponible ; il ne peut pas être déclaré prêt.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The draft was reviewed but contains a secret or presents a prototype as available; it cannot be declared ready.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

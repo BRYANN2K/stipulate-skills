@@ -1,11 +1,11 @@
-# api-integrations — provenance
+# api-integrations — sources
 
-Synthèse éditoriale issue de la recherche relue du 7 septembre 2026. Les procédures des phases sont notre traduction dans le contrat v1, pas une certification des organismes cités. Vérifier la version et l’applicabilité d’une norme ou documentation évolutive avant d’en tirer une exigence actuelle.
+Editorial synthesis based on research reviewed on September 7, 2026. The phase procedures are our adaptation to the v1 contract, not certification by the cited organizations. Verify the version and applicability of evolving standards or documentation before deriving a current requirement.
 
-- [OpenAPI Specification](https://spec.openapis.org/oas/latest.html) — OpenAPI Initiative, description indépendante des interfaces HTTP pour humains et outils.
-- [HTTP Semantics, RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html) — IETF/RFC Editor, méthodes, statuts, en-têtes, représentation et sémantique requête/réponse.
-- [The OAuth 2.0 Authorization Framework, RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749.html) — IETF, rôles, autorisation et access tokens.
-- [OAuth 2.0 Security Best Current Practice, RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html) — IETF, modèle de menace actualisé, recommandations de sécurité et dépréciation de modes moins sûrs.
-- [Idempotent requests](https://docs.stripe.com/api/idempotent_requests?lang=curl) — Stripe, clés d’idempotence et répétition sûre des requêtes prises en charge.
+- [OpenAPI Specification](https://spec.openapis.org/oas/latest.html) — OpenAPI Initiative; language-independent HTTP interface descriptions for people and tools.
+- [HTTP Semantics, RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html) — IETF/RFC Editor; methods, statuses, headers, representations, and request/response semantics.
+- [The OAuth 2.0 Authorization Framework, RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749.html) — IETF; roles, authorization, and access tokens.
+- [OAuth 2.0 Security Best Current Practice, RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html) — IETF; updated threat model, security recommendations, and deprecation of less secure modes.
+- [Idempotent requests](https://docs.stripe.com/api/idempotent_requests?lang=curl) — Stripe; idempotency keys and safe repetition of supported requests.
 
-Toutes les pages ont été consultées le 2026-09-07. Les seuils, statuts et étapes sont la synthèse d’intégration proposée ici ; aucune source ne promet la fiabilité d’un fournisseur particulier.
+All pages were consulted on 2026-09-07. Thresholds, statuses, and steps are the integration synthesis proposed here; no source guarantees a particular provider's reliability.

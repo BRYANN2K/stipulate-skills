@@ -1,9 +1,9 @@
-# quality-engineering — documenter
+# quality-engineering — docs
 
-Cette référence contribue à **spec-docs** ; elle ne remplace pas la documentation du cœur ni ne crée une phase indépendante.
+This reference contributes to **stip-docs**; it neither replaces core documentation nor creates an independent phase.
 
-Pour développeurs et QA : matrice risques/critères/tests, fixtures, commandes, résultats, limites, défauts et maintenance.
+For developers and QA: risk/criterion/test matrix, fixtures, commands, results, limits, defects, and maintenance.
 
-Rechercher et mettre à jour les documents déjà utilisés par ces lecteurs avant d’en créer de nouveaux. Documenter le comportement livré, les décisions qui aident à l’utiliser ou le maintenir, les exemples réellement vérifiés et les limites des preuves. Relier les critères et résultats utiles sans recopier tout le dossier de recherche.
+Find and update documents these readers already use before creating new ones. Document delivered behavior, decisions that help readers use or maintain it, examples actually verified, and evidence limitations. Link useful criteria and results without copying the entire research folder.
 
-Vérifier les exemples et liens modifiés, protéger les secrets et données personnelles, puis communiquer au cœur les chemins modifiés et leur raison. Si aucun document n’est affecté, expliquer pourquoi dans le résumé docs. Une information manquante nécessaire au lecteur reste un écart ; une échéance d’exploitation future reste un suivi distinct et autorisé. Archive clôt le changement local et ne publie pas ces documents.
+Verify changed examples and links, protect secrets and personal data, and report changed paths and their purpose to the core. If no documentation is affected, explain why in the docs summary. Missing information needed by a reader remains a gap; a future operational milestone remains a separate, authorized follow-up. Archive closes the local change and does not publish these documents.

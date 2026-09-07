@@ -1,15 +1,15 @@
-# cloud-engineering — réaliser
+# cloud-engineering — apply
 
-Lire le contrat approuvé et les seules références sélectionnées. Préserver les travaux utilisateurs, conventions et autorisations déjà établies ; ne pas élargir le périmètre.
+Read the approved contract and only the selected references. Preserve existing user work, conventions, and authorizations; do not expand scope.
 
-## Procédure métier
+## Domain procedure
 
-Comparer inventaire actif et IaC ; établir fournisseur, régions, IAM, quotas et dépendances. Préparer le plan de modification, configuration reproductible et retour. Vérifier accès minimaux, santé et récupération dans l’environnement autorisé, puis comparer coût et objectifs convenus. Consigner la dérive ; un plan réussi ne prouve pas le déploiement. Un changement cloud seul n’active aucun métier UX/design.
+Compare active inventory with IaC; identify the provider, regions, IAM, quotas, and dependencies. Prepare the change plan, reproducible configuration, and rollback. Verify least-privilege access, health, and recovery in the authorized environment, then compare costs with agreed objectives. Record drift; a successful plan does not prove deployment. A cloud-only change does not activate UX/design domains.
 
-Découper cette procédure selon les risques du changement ; les étapes peuvent se chevaucher ou être non applicables avec raison. Partir des éléments réutilisables identifiés pendant explore. Vérifier progressivement le comportement attendu et corriger dans le contrat ; utiliser [check.md](check.md) pour les observations métier.
+Break down this procedure according to the change's risks; steps may overlap or be not-applicable with justification. Start from reusable foundations identified during explore. Verify expected behavior incrementally and correct within the contract; use [check.md](check.md) for domain observations.
 
-## Résultat attendu
+## Expected outcome
 
-Fournir le résultat concret et inspectable, ses décisions et des preuves reliées aux vrais identifiants `AC-n`. Noter commandes, environnement, données ou participants réellement utilisés et ce qui reste simulé. Si le travail révèle une exigence nouvelle, revenir à la révision et à l’accord du contrat ; ne pas déplacer un seuil pour faire passer le résultat.
+Deliver a concrete, inspectable result, its decisions, and evidence linked to actual `AC-n` IDs. Record the commands, environment, data, or participants actually used and what remains simulated. If the work reveals a new requirement, return to contract revision and approval; do not move a threshold to make a result pass.
 
-Cette extension ne donne pas d’approbation humaine, n’exécute aucun hook et n’autorise ni publication, ni contact externe, ni déploiement implicite. Exécuter les actions déjà autorisées dans leur périmètre ; demander seulement l’autorisation réellement manquante pour une action qui l’exige.
+This extension does not grant human approval, execute hooks, or implicitly authorize publication, external contact, or deployment. Carry out previously authorized actions within their scope; request only authorization that is actually missing for an action that requires it.

@@ -1,11 +1,11 @@
-# Périmètre et sécurité
+# Scope and security
 
-Le moteur est local et hors ligne. Il ne lance ni shell de production, ni déploiement, ni appel réseau. Git commit utilise les hooks du dépôt : leur comportement dépend de l’environnement du projet.
+The engine runs locally and offline. It does not invoke a production shell, deploy services, or make network calls. Git commits use repository hooks, whose behavior depends on the project's environment.
 
-L’accord utilisateur est enregistré par l’opérateur. Le noyau ne fournit pas d’authentification, de signature ni de protection contre un utilisateur qui falsifie ses propres fichiers. Les rapports d’acceptation doivent venir d’observations réelles. Les empreintes identifient le travail local, pas la vérité des résultats ni l’état d’un service externe.
+The operator records user approval. The core does not provide authentication, signatures, or protection against a user falsifying their own files. Acceptance reports must reflect real observations. Digests identify local work; they do not establish the truth of results or the state of an external service.
 
-Les chemins workflow refusent les remontées et les liens symboliques. L’archive refuse les changements source antérieurs à start sur les fichiers concernés, les index déjà remplis, les preuves périmées et les cibles modifiées concurremment. Un verrou local prévient les écritures concurrentes par le CLI. Il ne verrouille pas les éditeurs ou toutes les opérations Git externes.
+Workflow paths reject traversal and symlinks. Archive rejects preexisting source changes on affected files, a nonempty index, stale evidence, and concurrently modified targets. A local lock prevents concurrent writes through the CLI. It does not lock editors or every external Git operation.
 
-Ne pas écrire de credentials, payloads clients ou logs privés dans proposal, spec, evidence ou les résumés de documentation. Les noms et empreintes des fichiers suivis/non ignorés figurent dans state.json ; examiner ce qui sera commité. Ne pas placer une information privée dans Git en supposant que l’archive la protège.
+Do not put credentials, customer payloads, or private logs in proposals, specifications, evidence, or documentation summaries. `state.json` includes names and digests of tracked or non-ignored files; inspect what will be committed. Do not put private information in Git on the assumption that archiving protects it.
 
-La publication, le push et les opérations métier distantes demandent le périmètre et les autorisations correspondants. Aucun skill ne peut élargir les permissions de l’environnement.
+Publication, pushing commits, and remote domain operations require the corresponding scope and authorization. No skill can expand environment permissions.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "security-engineering",
-  "description": "Réduire les risques d’abus sur les actifs et frontières de confiance touchés par le changement.",
+  "description": "Reduce abuse risks affecting assets and trust boundaries touched by the change.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

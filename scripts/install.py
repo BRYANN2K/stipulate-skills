@@ -27,7 +27,7 @@ def main():
     args=parser.parse_args()
     dest=Path(args.destination).expanduser().absolute()
     if dest.resolve()!=dest:raise ValueError('Use a physical destination path.')
-    sources=sorted((ROOT/'skills').glob('spec-*'))
+    sources=sorted((ROOT/'skills').glob('stip-*'))
     if len(sources)!=7:raise ValueError('Expected exactly seven core packages.')
     for source in sources:
         target=dest/source.name

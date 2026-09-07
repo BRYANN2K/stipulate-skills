@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "api-integrations",
-  "description": "Définir et vérifier une frontière API, ses identités, erreurs, répétitions et versions.",
+  "description": "Define and verify an API boundary, including identities, errors, retries, and versions.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

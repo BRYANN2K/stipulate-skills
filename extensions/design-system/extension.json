@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "design-system",
-  "description": "Faire évoluer des primitives et composants partagés avec leurs usages, contrats et migrations.",
+  "description": "Evolve shared primitives and components with their usage guidance, contracts, and migrations.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

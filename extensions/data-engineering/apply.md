@@ -1,15 +1,15 @@
-# data-engineering — réaliser
+# data-engineering — apply
 
-Lire le contrat approuvé et les seules références sélectionnées. Préserver les travaux utilisateurs, conventions et autorisations déjà établies ; ne pas élargir le périmètre.
+Read the approved contract and only the selected references. Preserve existing user work, conventions, and authorizations; do not expand scope.
 
-## Procédure métier
+## Domain procedure
 
-Tracer sources, transformations, consommateurs, schémas et ownership. Définir fraîcheur, qualité et comportement des données tardives ou invalides. Implémenter checkpoints, déduplication, quarantaine et backfill selon le besoin. Tester reprise après interruption, rejeu et compatibilité de schéma ; comparer comptes et invariants de bout en bout. Protéger les données et distinguer qualité d’un échantillon et qualité du flux réel.
+Trace sources, transformations, consumers, schemas, and ownership. Define freshness, quality, and behavior for late or invalid data. Implement checkpoints, deduplication, quarantine, and backfill as needed. Test recovery after interruption, replay, and schema compatibility; compare counts and invariants end to end. Protect data and distinguish sample quality from actual stream quality.
 
-Découper cette procédure selon les risques du changement ; les étapes peuvent se chevaucher ou être non applicables avec raison. Partir des éléments réutilisables identifiés pendant explore. Vérifier progressivement le comportement attendu et corriger dans le contrat ; utiliser [check.md](check.md) pour les observations métier.
+Break down this procedure according to the change's risks; steps may overlap or be not-applicable with justification. Start from reusable foundations identified during explore. Verify expected behavior incrementally and correct within the contract; use [check.md](check.md) for domain observations.
 
-## Résultat attendu
+## Expected outcome
 
-Fournir le résultat concret et inspectable, ses décisions et des preuves reliées aux vrais identifiants `AC-n`. Noter commandes, environnement, données ou participants réellement utilisés et ce qui reste simulé. Si le travail révèle une exigence nouvelle, revenir à la révision et à l’accord du contrat ; ne pas déplacer un seuil pour faire passer le résultat.
+Deliver a concrete, inspectable result, its decisions, and evidence linked to actual `AC-n` IDs. Record the commands, environment, data, or participants actually used and what remains simulated. If the work reveals a new requirement, return to contract revision and approval; do not move a threshold to make a result pass.
 
-Cette extension ne donne pas d’approbation humaine, n’exécute aucun hook et n’autorise ni publication, ni contact externe, ni déploiement implicite. Exécuter les actions déjà autorisées dans leur périmètre ; demander seulement l’autorisation réellement manquante pour une action qui l’exige.
+This extension does not grant human approval, execute hooks, or implicitly authorize publication, external contact, or deployment. Carry out previously authorized actions within their scope; request only authorization that is actually missing for an action that requires it.

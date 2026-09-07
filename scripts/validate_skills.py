@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import sys
 ROOT=Path(__file__).resolve().parents[1]
-EXPECTED={'spec-bootstrap','spec-explore','spec-validate','spec-apply','spec-check','spec-docs','spec-archive'}
+EXPECTED={'stip-bootstrap','stip-explore','stip-validate','stip-apply','stip-check','stip-docs','stip-archive'}
 def main():
     records=json.loads((ROOT/'skill-registry.json').read_text())['skills']
     names=[r['name'] for r in records]

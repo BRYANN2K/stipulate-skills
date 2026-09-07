@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "mobile-engineering",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Ajouter une synchronisation mobile après suspension et retour du réseau.",
+      "prompt": "add mobile synchronization after suspension and network recovery.",
       "expected": "select",
-      "reason": "Construire et vérifier une expérience mobile avec son cycle de vie, réseau, permissions et distribution."
+      "reason": "Build and verify a mobile experience across its lifecycle, network, permissions, and distribution."
     },
     {
       "id": "irrelevant",
-      "prompt": "Corriger une page web sans comportement mobile natif ni package mobile affecté.",
+      "prompt": "fix a web page without affecting native mobile behavior or a mobile package.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Ajouter une synchronisation mobile après suspension et retour du réseau. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "add mobile synchronization after suspension and network recovery. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le simulateur affiche l’écran, mais le retour après suspension perd une opération en cours.",
+      "prompt": "The simulator shows the screen, but resuming after suspension loses an operation in progress.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

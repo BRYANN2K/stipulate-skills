@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "storytelling",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Aligner la promesse d’une landing, l’onboarding et la démonstration sur les capacités livrées.",
+      "prompt": "align landing-page, onboarding, and demo promises with delivered capabilities.",
       "expected": "select",
-      "reason": "Relier intention, promesse prouvable, messages et narration cohérente entre les surfaces du produit."
+      "reason": "Connect intent, a supportable promise, messaging, and consistent narrative across product surfaces."
     },
     {
       "id": "irrelevant",
-      "prompt": "Corriger un calcul interne sans changer le positionnement ni les messages du produit.",
+      "prompt": "fix an internal calculation without changing product positioning or messages.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Aligner la promesse d’une landing, l’onboarding et la démonstration sur les capacités livrées. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "align landing-page, onboarding, and demo promises with delivered capabilities. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "La narration est cohérente entre pages, mais promet une capacité absente du produit livré.",
+      "prompt": "The narrative is consistent across pages but promises a capability absent from the delivered product.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

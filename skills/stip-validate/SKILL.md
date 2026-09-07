@@ -1,5 +1,5 @@
 ---
-name: spec-validate
+name: stip-validate
 description: Turn an explored change into a reviewable specification and record explicit user approval of its current version.
 license: Apache-2.0
 metadata:
@@ -7,7 +7,7 @@ metadata:
   author: BRYANN2K
 ---
 
-# spec-validate
+# stip-validate
 
 Read the change proposal, relevant current specs and selected extension contributions. Produce a concise desired contract in spec.md, including scope, observable behavior, acceptance criteria and material unresolved decisions. Use `- AC-1: ...` lines with unique stable identifiers. For an existing target, this is its complete next specification, not a delta that drops old requirements.
 
@@ -17,7 +17,7 @@ Run `validate <id>` and present the files to the user. Validation checks structu
 
 Only after that agreement run `approve <id> --by user --ack-user-approval`. This flag is an audit attestation, not user authentication. Never invoke it to bypass the user's review. Proposal, spec, optional tasks, target and selected extension guidance are bound to approval. Core v1 treats any byte change to these documents as stale, including wording corrections; reapproval is conservative and explicit.
 
-Stop after a reviewable draft unless approval/apply was actually requested. The next operation is spec-apply.
+Stop after a reviewable draft unless approval/apply was actually requested. The next operation is stip-apply.
 
 ## Runtime
 

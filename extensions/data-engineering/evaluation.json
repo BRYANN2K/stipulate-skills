@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "data-engineering",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Ajouter une ingestion incrémentale qui gère doublons, retard et évolution de schéma.",
+      "prompt": "add incremental ingestion that handles duplicates, late data, and schema evolution.",
       "expected": "select",
-      "reason": "Rendre un flux de données traçable, rejouable et vérifiable de la source au consommateur."
+      "reason": "Make data flows traceable, replayable, and verifiable from source to consumer."
     },
     {
       "id": "irrelevant",
-      "prompt": "Changer une interface sans flux ou transformation de données affectés.",
+      "prompt": "change an interface without affecting data flows or transformations.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Ajouter une ingestion incrémentale qui gère doublons, retard et évolution de schéma. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "add incremental ingestion that handles duplicates, late data, and schema evolution. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le pipeline termine sans erreur, mais des lignes disparaissent lors d’un rejeu.",
+      "prompt": "The pipeline finishes without errors, but rows disappear during replay.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

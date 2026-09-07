@@ -1,106 +1,103 @@
-# Contrat du noyau v1
+# Stip core contract — schema v1
 
-Le numéro 2.0.0 est la version du dépôt ; `schema_version: 1` est celle des fichiers workflow. Python 3.10+ suffit. Tous les chemins CLI désignent le projet cible, jamais le dossier d’installation du skill par défaut.
+`2.0.0` is the repository package version; `schema_version: 1` is the workflow file schema. Python 3.10+ is sufficient for the runtime. CLI project paths refer to the target project, never implicitly to the skill's installation directory.
 
-## États et transitions
+## States and transitions
 
 ```text
 exploring → draft → approved → applying → checked → documented → archived
-                        ↑         ↑          │
-                        │         └── correction autorisée
-                 nouveau contrat
 ```
 
-Validate vérifie la forme et expose l’empreinte du contrat. Approve enregistre l’accord utilisateur ; l’opérateur qui utilise le CLI est responsable de sa véracité. Start refuse un contrat différent. Un check échoué reste applying. Docs et archive exigent les étapes précédentes. Start peut reprendre après checked/documented et invalide leurs preuves tout en conservant le premier état de référence.
+Validate checks structure and exposes the contract digest. Approve records user approval; the CLI operator is responsible for reporting it truthfully. Start rejects a changed contract. A failed check leaves the change in applying. Docs and archive require the preceding stages. Start can resume from checked or documented, invalidating their evidence while preserving the original baseline. A new contract requires validation and renewed user approval; an authorized correction can return to implementation and checking.
 
-Le champ `phase` seul n’est jamais une preuve d’approbation actuelle : utiliser `status`, qui recalcule `approval_current`.
+The `phase` field alone never proves that approval is current. Use `status`, which recalculates `approval_current`.
 
-## Exemple CLI de bout en bout
+## End-to-end CLI example
 
-Depuis le dépôt d’outils, remplacer `/physical/path/to/project` par la racine Git réelle. Initialiser Git séparément si nécessaire. Les appels sont montrés séparément pour matérialiser les interventions humaines et les observations, pas comme un script qui s’auto-approuve.
+From the tools repository, replace `/physical/path/to/project` with the actual physical Git root. Initialize Git separately if necessary. Calls are separated to show human review and real observations; this is not a script that approves itself.
 
 ```sh
 python3 scripts/workflow.py --root /physical/path/to/project bootstrap
-python3 scripts/workflow.py --root /physical/path/to/project explore ajout-annulation --title "Annuler un traitement"
+python3 scripts/workflow.py --root /physical/path/to/project explore add-cancellation --title "Cancel a job"
 ```
 
-Renseigner project.md et proposal.md. Compléter spec.md avec des critères tels que :
+Populate `project.md` and `proposal.md`. Complete `spec.md` with criteria such as:
 
 ```markdown
-# Annuler un traitement
+# Cancel a job
 
 ## Intent
-Permettre l’annulation des traitements encore en attente.
+Allow cancellation of jobs that are still pending.
 
 ## Acceptance criteria
-- AC-1: L’annulation d’un traitement en attente produit un état annulé observable.
-- AC-2: Une tentative non autorisée est rejetée côté serveur.
+- AC-1: Cancelling a pending job produces an observable cancelled state.
+- AC-2: An unauthorized attempt is rejected by the server.
 ```
 
-Pour faire évoluer une spec existante : `explore ajuster-annulation --target ajout-annulation`. Le contenu de la cible est repris comme départ, et sa version est protégée contre les écrasements concurrents lors de l’archive.
+To evolve an existing specification, use `explore adjust-cancellation --target add-cancellation`. The target's content becomes the starting point, and archive protects its version against concurrent overwrites.
 
 ```sh
-python3 scripts/workflow.py --root /physical/path/to/project validate ajout-annulation
+python3 scripts/workflow.py --root /physical/path/to/project validate add-cancellation
 ```
 
-Présenter la version à l’utilisateur. **Seulement après son accord :**
+Present the current version to the user. **Only after approval:**
 
 ```sh
-python3 scripts/workflow.py --root /physical/path/to/project approve ajout-annulation --by user --ack-user-approval
-python3 scripts/workflow.py --root /physical/path/to/project start ajout-annulation
+python3 scripts/workflow.py --root /physical/path/to/project approve add-cancellation --by user --ack-user-approval
+python3 scripts/workflow.py --root /physical/path/to/project start add-cancellation
 ```
 
-Construire, exécuter les vérifications pertinentes, corriger, puis demander l’empreinte :
+Implement the change, run relevant checks, correct failures, and request the source snapshot:
 
 ```sh
 python3 scripts/workflow.py --root /physical/path/to/project snapshot
 ```
 
-Créer hors du dépôt un JSON contenant la valeur exacte de `subject_digest` retournée, et les observations réelles :
+Create a JSON report outside the repository using the exact returned `subject_digest` and actual observations:
 
 ```json
 {
-  "subject_digest": "empreinte-retournee-par-snapshot",
+  "subject_digest": "digest-returned-by-snapshot",
   "criteria": [
-    {"id": "AC-1", "status": "passed", "evidence": "Commande, résultat et localisateur réellement observés"},
-    {"id": "AC-2", "status": "unverified", "evidence": "Test serveur non exécuté : environnement indisponible"}
+    {"id": "AC-1", "status": "passed", "evidence": "Actually observed command, result, and evidence location"},
+    {"id": "AC-2", "status": "unverified", "evidence": "Server test not run: environment unavailable"}
   ]
 }
 ```
 
-Cet exemple reste volontairement non concluant : il ne permet pas de passer à docs tant que AC-2 n’est pas réellement vérifié. Le JSON peut aussi être transmis via stdin avec `--results -`. Check sort avec 0 si tous les critères passent, 2 si le rapport décrit un échec ou un manque, et 1 si le rapport ou les préconditions sont invalides. Le JSON expose aussi `all_passed` et `phase`.
+This example intentionally does not pass: it cannot proceed to docs until AC-2 is verified successfully. The report can also be passed through stdin with `--results -`. Check exits with 0 when all criteria pass, 2 when a report records a failure or missing verification, and 1 when the report or preconditions are invalid. Its JSON output also exposes `all_passed` and `phase`.
 
 ```sh
-python3 scripts/workflow.py --root /physical/path/to/project check ajout-annulation --results /tmp/check-results.json
-python3 scripts/workflow.py --root /physical/path/to/project status ajout-annulation
+python3 scripts/workflow.py --root /physical/path/to/project check add-cancellation --results /tmp/check-results.json
+python3 scripts/workflow.py --root /physical/path/to/project status add-cancellation
 ```
 
-Après un check entièrement réussi, mettre à jour et vérifier la documentation, puis déclarer ses chemins :
+After a fully successful check, update and verify affected documentation, then declare its paths:
 
 ```sh
-python3 scripts/workflow.py --root /physical/path/to/project docs ajout-annulation --paths README.md --summary "Exemple d’annulation vérifié contre le comportement observé."
-python3 scripts/workflow.py --root /physical/path/to/project archive ajout-annulation --paths src/jobs.py tests/test_jobs.py README.md --message "Add pending-job cancellation"
+python3 scripts/workflow.py --root /physical/path/to/project docs add-cancellation --paths README.md --summary "Cancellation example checked against observed behavior."
+python3 scripts/workflow.py --root /physical/path/to/project archive add-cancellation --paths src/jobs.py tests/test_jobs.py README.md --message "Add pending-job cancellation"
 ```
 
-Les chemins d’archive doivent correspondre exactement aux différences depuis start, hors `.workflow`. Inclure les suppressions et les anciens/nouveaux chemins lors d’un renommage. Les chemins montrés sont illustratifs. Les fichiers de la spec et de son archive sont ajoutés automatiquement ; AGENTS.md/config/project.md ne sont pas ajoutés implicitement.
+Archive paths must match the differences since start exactly, excluding `.workflow/`. Include deletions and both old and new paths for renames. The paths above are illustrative. The specification and its archive records are added automatically; AGENTS.md, config.json, and project.md are not implicitly included.
 
-## Fichiers
+## Files
 
-- `config.json` : `schema_version`, objet `extensions`, objet `settings`. L’approbation utilisateur ne peut pas être désactivée dans v1.
-- `project.md` : intention, contexte, conventions, preuves de l’existant et questions. Géré par l’agent et le propriétaire du projet.
-- `proposal.md` : problème, périmètre, décisions et questions ouvertes.
-- `spec.md` : contrat complet futur de la cible ; critères `- AC-n: texte` uniques. La revue sémantique doit résoudre les inconnues importantes avant accord.
-- `tasks.md` : facultatif, intégré à l’empreinte d’approbation s’il existe.
-- `evidence.md` : rapport humain issu du check, avec critères et localisateurs.
-- `state.json` : id, cible, extensions, état, accord, baseline, preuves et documentation. Ne pas le modifier pour fabriquer une validation ; utiliser `select <id> --extension <enabled-id>` pour changer les extensions durant une nouvelle exploration, ce qui invalide l’accord précédent.
+- `config.json`: `schema_version`, an `extensions` object, and a `settings` object. User approval cannot be disabled in v1.
+- `project.md`: intent, context, conventions, evidence of existing behavior, and questions. Maintained by the agent and project owner.
+- `proposal.md`: problem, scope, decisions, and open questions.
+- `spec.md`: the complete desired contract for the target, with unique `- AC-n: text` criteria. Semantic review must resolve material unknowns before approval.
+- `tasks.md`: optional; included in the approval digest when present.
+- `evidence.md`: a human-readable check report with criteria and evidence locations.
+- `state.json`: ID, target, extensions, phase, approval, baseline, evidence, and documentation. Do not edit it to fabricate validation. Use `select <id> --extension <enabled-id>` to change extensions during renewed exploration; this invalidates previous approval.
 
-Le contrat approuvé inclut proposal/spec/tasks et les manifestes/références des extensions sélectionnées. Les ressources imbriquées non déclarées dans le manifeste ne sont pas intégralement figées : une extension doit exposer ses références gouvernantes directement. Les exigences qui conditionnent l’acceptation doivent être présentes dans spec.md.
+The approved contract includes proposal/spec/tasks and selected extension manifests and references. Nested resources not declared in the manifest are not fully frozen: an extension must expose its governing references directly. Requirements that determine acceptance must appear in `spec.md`.
 
-## Reprise et incidents locaux
+## Resuming work and local failures
 
-- Un contrat modifié : validate, revue utilisateur, approve, puis start. La baseline source du premier start est conservée.
-- Du code modifié après check : check à nouveau ; docs n’accepte que les changements documentaires déclarés.
-- HEAD déplacé ou fichier préalablement sale devenu concerné : l’archive automatique refuse. Séparer/reconcilier les travaux explicitement, ou créer un nouveau changement sur une base propre et transférer la spec après revue. Aucune commande de contournement silencieux n’est fournie.
-- Commit refusé par un hook : les métadonnées workflow sont restaurées et les chemins de cette transaction sont désindexés si HEAD n’a pas bougé. Les modifications de source produites par un hook sont préservées et doivent être examinées.
-- Un processus tué peut laisser `.workflow/.lock`. Vérifier qu’il n’est plus actif avant de retirer ce verrou. Ne pas supprimer automatiquement un verrou sur le seul critère de son âge.
-- L’écriture de chaque fichier est atomique ; une panne système au milieu de plusieurs opérations Git/fichiers n’est pas une transaction de base de données. Inspecter Git et l’archive avant de reprendre après une telle panne.
+- Changed contract: validate, user review, approve, then start. The source baseline from the first start is preserved.
+- Code changed after check: run check again. Docs accepts only declared documentation changes.
+- HEAD moved or a preexisting dirty file becomes part of the change: automatic archive refuses. Explicitly separate or reconcile the work, or create a new change on a clean baseline and transfer the specification after review. There is no silent bypass command.
+- A hook rejects the commit: workflow metadata is restored and transaction paths are unstaged if HEAD has not moved. Source edits made by a hook are preserved and must be reviewed.
+- A killed process may leave `.workflow/.lock`. Verify that the process is no longer active before removing the lock. Do not automatically remove it based only on age.
+- Individual file writes are atomic. A system failure across multiple Git/file operations is not a database transaction. Inspect Git state and the archive before resuming after such a failure.

@@ -3,32 +3,32 @@
   "version": "2.0.0",
   "skills": [
     {
-      "name": "spec-bootstrap",
-      "path": "skills/spec-bootstrap"
+      "name": "stip-bootstrap",
+      "path": "skills/stip-bootstrap"
     },
     {
-      "name": "spec-explore",
-      "path": "skills/spec-explore"
+      "name": "stip-explore",
+      "path": "skills/stip-explore"
     },
     {
-      "name": "spec-validate",
-      "path": "skills/spec-validate"
+      "name": "stip-validate",
+      "path": "skills/stip-validate"
     },
     {
-      "name": "spec-apply",
-      "path": "skills/spec-apply"
+      "name": "stip-apply",
+      "path": "skills/stip-apply"
     },
     {
-      "name": "spec-check",
-      "path": "skills/spec-check"
+      "name": "stip-check",
+      "path": "skills/stip-check"
     },
     {
-      "name": "spec-docs",
-      "path": "skills/spec-docs"
+      "name": "stip-docs",
+      "path": "skills/stip-docs"
     },
     {
-      "name": "spec-archive",
-      "path": "skills/spec-archive"
+      "name": "stip-archive",
+      "path": "skills/stip-archive"
     }
   ]
 }

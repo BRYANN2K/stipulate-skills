@@ -1,20 +1,20 @@
-# api-integrations — vérifier
+# api-integrations — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- chaque opération consommée ou exposée possède méthode, chemin, schéma, statuts, version et propriétaire retrouvables ; tout champ inféré ou non confirmé est marqué `incomplet` ou `unverified` et ne passe pas le critère tant que le contrat n’est pas corrigé ou révisé/réapprouvé.
-- un scénario de renouvellement/expiration d’autorisation et un scénario d’erreur sont exécutés sans exposer le secret ; une affirmation documentaire seule ne passe pas le critère.
-- les appels récupérables et non récupérables ont une politique de timeout/retry ; une mutation rejouée produit au plus l’effet prévu. Si l’idempotence est non applicable, cette exclusion est décidée dans le périmètre et le contrat avant l’approbation du critère, avec sa raison et une vérification adaptée.
-- le test de contrat ou de compatibilité annoncé est exécuté sur la version cible, et le rapport date les réponses, limites et écarts ; `failed` ou `unverified` impose correction ou révision/réapprobation.
+- Every consumed or exposed operation has an identifiable method, path, schema, statuses, version, and owner. Inferred or unconfirmed fields remain `incomplete` or `unverified` and do not pass until the contract is corrected or revised and reapproved.
+- An authorization renewal/expiration scenario and an error scenario are executed without exposing secrets; documentation alone does not pass the criterion.
+- Recoverable and non-recoverable calls have a timeout/retry policy; replaying a mutation produces at most the intended effect. If idempotency is not applicable, decide and justify that exclusion in the scope and contract before criterion approval, with appropriate verification.
+- The stated contract or compatibility test is run against the target version, with dated responses, limits, and discrepancies. A `failed` or `unverified` result requires correction or revision and renewed approval.
 
-Lors de `validate`, l’agent traduit les `AC-API-*` retenus en `AC-n` uniques dans la spec composée ; le moteur n’effectue pas ce remappage. L’extension ne rend pas `tasks.md` obligatoire.
+During `validate`, the agent maps selected `AC-API-*` candidates to unique `AC-n` IDs in the combined specification; the engine does not perform this mapping. This extension does not make `tasks.md` mandatory.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Le mock réussit, mais aucun test ne vérifie qu’un webhook répété ne duplique pas l’effet.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The mock passes, but no test verifies that a repeated webhook does not duplicate the effect.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation can be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; any contract change requires revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.

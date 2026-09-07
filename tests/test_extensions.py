@@ -136,7 +136,7 @@ class ExtensionTests(unittest.TestCase):
     def test_installed_packages_work_with_standalone_runtime(self):
         self.installer('cloud-engineering')
         runtime=Path(self.temp.name)/'standalone.py'
-        shutil.copy2(ROOT/'skills/spec-explore/scripts/workflow.py',runtime)
+        shutil.copy2(ROOT/'skills/stip-explore/scripts/workflow.py',runtime)
         result=subprocess.run([sys.executable,str(runtime),'--root',str(self.root),'extensions'],
                               cwd=self.temp.name,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)

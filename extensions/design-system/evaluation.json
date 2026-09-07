@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "design-system",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Unifier un composant de formulaire réutilisé dans plusieurs parcours en préservant ses consommateurs.",
+      "prompt": "unify a form component reused across journeys while preserving consumers.",
       "expected": "select",
-      "reason": "Faire évoluer des primitives et composants partagés avec leurs usages, contrats et migrations."
+      "reason": "Evolve shared primitives and components with their usage guidance, contracts, and migrations."
     },
     {
       "id": "irrelevant",
-      "prompt": "Réaliser une esquisse ponctuelle sans besoin démontré de réutilisation.",
+      "prompt": "produce a one-off sketch without demonstrated reuse needs.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Unifier un composant de formulaire réutilisé dans plusieurs parcours en préservant ses consommateurs. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "unify a form component reused across journeys while preserving consumers. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Le composant isolé passe ses tests, mais un consommateur existant casse avec la nouvelle API.",
+      "prompt": "The isolated component passes its tests, but an existing consumer breaks with the new API.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

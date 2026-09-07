@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "product-strategy",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Choisir quel problème résoudre pour le premier MVP et définir sa proposition de valeur.",
+      "prompt": "choose the first MVP's problem and define its value proposition.",
       "expected": "select",
-      "reason": "Relier problème, public, valeur, alternatives et arbitrages à une décision produit."
+      "reason": "Connect the problem, audience, value, alternatives, and tradeoffs to a product decision."
     },
     {
       "id": "irrelevant",
-      "prompt": "Renommer une variable privée sans changer le comportement ni une hypothèse produit.",
+      "prompt": "rename a private variable without changing behavior or a product hypothesis.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Choisir quel problème résoudre pour le premier MVP et définir sa proposition de valeur. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "choose the first MVP's problem and define its value proposition. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Une roadmap et une promesse existent, mais aucune observation ne soutient le besoin ni les critères de décision.",
+      "prompt": "A roadmap and promise exist, but no observation supports the need or decision criteria.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

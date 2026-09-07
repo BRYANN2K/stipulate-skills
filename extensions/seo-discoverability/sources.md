@@ -1,8 +1,8 @@
-# seo-discoverability — provenance
+# seo-discoverability — sources
 
-Synthèse éditoriale issue de la recherche relue du 7 septembre 2026. Les procédures des phases sont notre traduction dans le contrat v1, pas une certification des organismes cités. Vérifier la version et l’applicabilité d’une norme ou documentation évolutive avant d’en tirer une exigence actuelle.
+Editorial synthesis based on research reviewed on September 7, 2026. The phase procedures are our adaptation to the v1 contract, not certification by the cited organizations. Verify the version and applicability of evolving standards or documentation before deriving a current requirement.
 
-- [Google Search Essentials](https://developers.google.com/search/docs/essentials), Google Search Central, exigences techniques, anti-spam et bonnes pratiques ; consultée le 2026-09-07.
-- [Get started with Search: a developer’s guide](https://developers.google.com/search/docs/fundamentals/get-started-developers), Google Search Central, inspection du rendu et aspects techniques ; consultée le 2026-09-07.
-- [Build and submit a sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap?hl=en), Google Search Central, formats, limites et vérification de sitemap ; consultée le 2026-09-07.
-- [Getting started with schema.org](https://schema.org/docs/gs.html), Schema.org, vocabulaire et test des données structurées ; consultée le 2026-09-07.
+- [Google Search Essentials](https://developers.google.com/search/docs/essentials), Google Search Central; technical requirements, spam policies, and best practices; consulted 2026-09-07.
+- [Get started with Search: a developer's guide](https://developers.google.com/search/docs/fundamentals/get-started-developers), Google Search Central; rendering inspection and technical concerns; consulted 2026-09-07.
+- [Build and submit a sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap?hl=en), Google Search Central; formats, limits, and sitemap verification; consulted 2026-09-07.
+- [Getting started with schema.org](https://schema.org/docs/gs.html), Schema.org; vocabulary and structured-data testing; consulted 2026-09-07.

@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "user-research",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Comprendre pourquoi les utilisateurs abandonnent un parcours avant de le modifier.",
+      "prompt": "understand why users abandon a journey before changing it.",
       "expected": "select",
-      "reason": "Réduire une inconnue sur les personnes, leurs tâches et leur contexte par une observation proportionnée."
+      "reason": "Reduce uncertainty about people, their tasks, and their context through proportionate observation."
     },
     {
       "id": "irrelevant",
-      "prompt": "Appliquer une correction déterministe déjà reproduite sans inconnue sur le besoin utilisateur.",
+      "prompt": "apply an already reproduced deterministic fix with no unknown user need.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Comprendre pourquoi les utilisateurs abandonnent un parcours avant de le modifier. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "understand why users abandon a journey before changing it. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Un guide d’entretien est prêt, mais aucune séance n’a été menée ; la compréhension des utilisateurs reste non vérifiée.",
+      "prompt": "An interview guide is ready, but no session has occurred; understanding of users remains unverified.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

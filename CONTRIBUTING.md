@@ -1,15 +1,18 @@
-# Contribuer
+# Contributing
 
-Le noyau porte le cycle de vie ; les métiers restent des extensions. Toute modification doit préserver l’intention utilisateur, la portée des commits et la distinction entre preuve déclarée et preuve réellement observée.
+The core owns the lifecycle; domain practices remain extensions. Changes must preserve user intent, scoped commits, and the distinction between reported evidence and actual observations.
 
-Le moteur canonique est `scripts/workflow.py`. Les copies sous chaque skill permettent une installation indépendante ; ne pas les éditer directement. Après modification :
+The canonical engine is `scripts/workflow.py`. Copies inside each skill support independent installation; do not edit them directly. After changing the engine:
 
 ```sh
 python3 scripts/build_skills.py
 python3 scripts/validate_skills.py
+python3 scripts/validate_extensions.py
 python3 -m unittest discover -s tests -v
 ```
 
-Tester les comportements pertinents, les échecs et la préservation du travail existant. Les descriptions doivent sélectionner une tâche précise. Ne pas tester une formulation exacte sans nécessité de format. Les sept interfaces correspondent au contrat public actuel ; changer cet ensemble est une modification d’API à documenter.
+Test relevant behavior, failure paths, and preservation of existing work. Skill descriptions should select a specific task. Avoid testing exact wording unless a format requirement makes it necessary. The seven `stip-*` skills are the public interface; changes to that set must document compatibility and migration.
 
-Ne pas ajouter un métier au noyau. Fournir des fixtures isolées, sans données privées ni services réels. Toute modification d’un schéma doit expliquer sa compatibilité et sa migration. Préserver les licences des ressources réutilisées.
+Keep repository documentation, skill instructions, extension references, and human-readable JSON descriptions in English. Use **Stip** for the product, `stip-*` for public skills, and `.workflow/` for project state. Preserve internal compatibility identifiers and the technical term "specification" where appropriate. Match documentation examples to actual CLI arguments and distinguish verified behavior from planned work.
+
+Do not add a domain to the core. Provide isolated fixtures without private data or real services. Schema changes must explain compatibility and migration. Preserve licenses for reused resources.

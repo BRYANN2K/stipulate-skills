@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "data-engineering",
-  "description": "Rendre un flux de données traçable, rejouable et vérifiable de la source au consommateur.",
+  "description": "Make data flows traceable, replayable, and verifiable from source to consumer.",
   "explore": "explore.md",
   "apply": "apply.md",
   "check": "check.md",

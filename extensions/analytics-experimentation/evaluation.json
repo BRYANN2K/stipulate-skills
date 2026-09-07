@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "extension": "analytics-experimentation",
-  "purpose": "Cas éditoriaux pour évaluation humaine/agent ; les tests structurels ne prouvent pas ces décisions.",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
   "cases": [
     {
       "id": "relevant",
-      "prompt": "Instrumenter et préparer un test de conversion avec métrique primaire et garde-fous.",
+      "prompt": "instrument and prepare a conversion experiment with a primary metric and guardrails.",
       "expected": "select",
-      "reason": "Relier hypothèse, instrumentation et méthode d’analyse à une décision mesurable."
+      "reason": "Connect a hypothesis, instrumentation, and analysis method to a measurable decision."
     },
     {
       "id": "irrelevant",
-      "prompt": "Corriger une faute de frappe sans question de mesure ou hypothèse produit.",
+      "prompt": "correct a typo without a measurement question or product hypothesis.",
       "expected": "do-not-select",
-      "reason": "Aucune responsabilité de ce métier affectée."
+      "reason": "No responsibility of this domain is affected."
     },
     {
       "id": "existing",
-      "prompt": "Instrumenter et préparer un test de conversion avec métrique primaire et garde-fous. Le projet possède déjà une implémentation et des preuves de cette capacité, mais pas de document dédié.",
+      "prompt": "instrument and prepare a conversion experiment with a primary metric and guardrails. The project already has an implementation and evidence of this capability, but no dedicated document.",
       "expected": "inspect-and-reuse",
-      "reason": "Inspecter les preuves, classer leur couverture, compléter seulement les écarts ; absence de document ne signifie pas absence du métier."
+      "reason": "Inspect evidence, classify coverage, and address only gaps; missing documentation does not mean the domain practice is absent."
     },
     {
       "id": "insufficient",
-      "prompt": "Un dashboard affiche une hausse, mais l’assignation est déséquilibrée et la fenêtre d’analyse n’est pas terminée.",
+      "prompt": "A dashboard shows an increase, but assignment is imbalanced and the analysis window has not ended.",
       "expected": "failed-or-unverified",
-      "reason": "Comparer au résultat du critère approuvé ; ne pas compter une production de fichier comme résultat atteint."
+      "reason": "Compare against the approved criterion outcome; producing a file does not establish that the outcome was achieved."
     }
   ]
 }

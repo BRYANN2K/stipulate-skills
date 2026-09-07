@@ -1,20 +1,20 @@
-# mobile-engineering — vérifier
+# mobile-engineering — check
 
-Les points ci-dessous sont des **candidats**, pas une checklist obligatoire ni des critères déjà approuvés. Pendant explore/validate, l’agent choisit et reformule les candidats utiles en vrais `AC-n` uniques dans `spec.md`. Pendant check, vérifier exclusivement ce contrat ; ne pas ajouter des exigences à la volée.
+The points below are **candidates**, not a mandatory checklist or already approved criteria. During explore/validate, the agent selects and reformulates useful candidates as actual, unique `AC-n` criteria in `spec.md`. During check, verify only that contract; do not add requirements on the fly.
 
-## Propriétés observables à adapter
+## Observable properties to adapt
 
-- la spec nomme plateformes, versions et appareils de preuve, et un parcours reprend après l’interruption prévue avec la donnée attendue.
-- succès, chargement, erreur réseau et permission refusée sont déclenchés dans la build cible ; une absence de test reste `unverified` et ne passe pas par justification.
-- les contrôles de stockage, réseau, authentification et confidentialité pertinents sont associés à une vérification ou exclus avant approbation ; MASVS n’est pas cité comme preuve sans test.
-- la build et les tests annoncés produisent un rapport daté sur les plateformes retenues, avec crash/ANR et procédure de retrait observables.
+- The specification names platforms, versions, and evidence devices; a journey resumes after the defined interruption with expected data.
+- Success, loading, network errors, and permission denial are triggered in the target build; an unrun test remains `unverified` and cannot pass through justification.
+- Relevant storage, network, authentication, and privacy controls have verification or are excluded before approval; citing MASVS without a test is not evidence.
+- Claimed builds and tests produce dated reports on selected platforms, with observable crash/ANR behavior and a withdrawal procedure.
 
-Lors de `validate`, l’agent traduit les `AC-MOB-*` retenus en `AC-n` uniques dans la spec composée ; le moteur n’effectue pas ce remappage.
+During `validate`, the agent maps selected `AC-MOB-*` candidates to unique `AC-n` IDs in the combined specification; the engine does not perform this mapping.
 
-## Réconcilier les preuves
+## Reconcile evidence
 
-Pour chaque `AC-n`, comparer observation et résultat attendu, avec commande ou protocole, environnement/version, données couvertes et limites. Un fichier présent, un test simplement écrit ou un outil qui se termine n’est pas une preuve suffisante du comportement. Distinguer tests simulés, observations réelles et objectifs nécessitant une période d’exploitation.
+For each `AC-n`, compare observations with the expected outcome, recording the command or protocol, environment/version, covered data, and limits. A file's existence, a test merely being written, or a tool finishing is not sufficient evidence of behavior. Distinguish simulated tests, real observations, and objectives requiring an operational observation period.
 
-Contre-exemple à signaler : **Le simulateur affiche l’écran, mais le retour après suspension perd une opération en cours.** Relier cet écart au critère applicable ; corriger ou déclarer `failed` / `unverified`. Une observation d’échec peut être utile sans satisfaire un critère de réussite. Ne pas changer les critères ou seuils pour les faire passer ; tout changement de contrat exige révision et nouvel accord.
+Counterexample to report: **The simulator shows the screen, but resuming after suspension loses an operation in progress.** Link the discrepancy to the applicable criterion; correct it or report `failed` / `unverified`. A failure observation may be useful without satisfying a success criterion. Do not change criteria or thresholds to make them pass; contract changes require revision and renewed approval.
 
-Le cœur exige un rapport avec l’empreinte courante du sujet et chaque identifiant exact. Le moteur vérifie la structure, les statuts et les empreintes ; il ne certifie pas la vérité des observations ni la pertinence du métier. Lire les [cas d’évaluation](evaluation.json) pour exercer le jugement de sélection/reprise sans les présenter comme des tests métier réellement exécutés.
+The core requires a report with the current subject digest and every exact criterion ID. The engine checks structure, statuses, and digests; it does not certify the truth of observations or domain relevance. Read the [evaluation cases](evaluation.json) to exercise selection and adoption judgment without presenting them as domain tests that have actually run.
