@@ -11,7 +11,7 @@ def generated_files():
     for p in sorted((ROOT/'skills').glob('stip-*/SKILL.md')):
         result[p.parent/'scripts/workflow.py'] = ROOT/'scripts/workflow.py'
     bootstrap = ROOT/'skills/stip-bootstrap'
-    for name in ('setup_stip.py', 'install_extensions.py'):
+    for name in ('setup_stip.py', 'install_extensions.py', 'install_opencode_commands.py'):
         result[bootstrap/'scripts'/name] = ROOT/'scripts'/name
     for source in sorted((ROOT/'extensions').rglob('*')):
         if source.is_symlink():

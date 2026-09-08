@@ -16,3 +16,5 @@ Test relevant behavior, failure paths, and preservation of existing work. Skill 
 Keep repository documentation, skill instructions, extension references, and human-readable JSON descriptions in English. Use **Stip** for the product, `stip-*` for public skills, and `.workflow/` for project state. Preserve internal compatibility identifiers and the technical term "specification" where appropriate. Match documentation examples to actual CLI arguments and distinguish verified behavior from planned work.
 
 Do not add a domain to the core. Provide isolated fixtures without private data or real services. Schema changes must explain compatibility and migration. Preserve licenses for reused resources.
+
+The GitHub npx entrypoint is `bin/install.mjs`, declared in `package.json`. It copies packages through skills CLI 1.5.25 and installs explicit OpenCode commands. Test the packed artifact in an isolated project before changing this installation path. No npm lifecycle hook performs installation.

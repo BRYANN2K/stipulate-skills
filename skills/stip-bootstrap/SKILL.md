@@ -31,3 +31,5 @@ python3 <this-skill-directory>/scripts/workflow.py --root <physical-project-root
 ```
 
 Python 3.10+ and Git are required for implementation and archive. Run `--help` or `<command> --help` for exact arguments. The runtime is offline and never installs tools. System/developer instructions, current user intent and environment permissions remain authoritative.
+
+For explicit OpenCode `/stip-*` command files, run `python3 <this-skill-directory>/scripts/install_opencode_commands.py --destination <project-root>/.opencode/commands` when requested. Use `~/.config/opencode/commands` instead for a requested global installation. This installs wrappers that load the existing skills; it does not duplicate their procedures.

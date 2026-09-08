@@ -31,7 +31,7 @@ Existing Claude instructions are preserved. Repeated setup does not duplicate th
 
 Restart Claude Code after first setup so project instructions load at session start. When adopting existing instructions, inspect and reconcile contradictions explicitly. The low-level `workflow.py bootstrap` remains metadata-only; normal skill bootstrap uses `setup_stip.py`.
 
-OpenCode v2 discovers `.agents/skills`, `.claude/skills`, and `.opencode/skills`. No generated command wrappers or `opencode.json` edits are needed for standard skill discovery. Avoid installing differing copies with the same ID because client precedence rules can select a different copy than expected.
+OpenCode v2 discovers `.agents/skills`, `.claude/skills`, and `.opencode/skills`. Standard skill discovery does not require configuration edits. Stip also supplies explicit slash-command wrappers; install them as described below. Avoid installing differing copies with the same ID because client precedence rules can select a different copy than expected.
 
 ## Verification and limits
 
@@ -54,3 +54,40 @@ To validate a client interactively: confirm all seven entries, invoke bootstrap,
 - [OpenCode v2 skills](https://opencode.ai/v2/docs/skills/)
 - [OpenCode v2 instructions](https://opencode.ai/v2/docs/instructions/)
 - [skills CLI](https://github.com/vercel-labs/skills)
+
+## Explicit OpenCode slash commands
+
+Install skills and explicit commands together:
+
+```sh
+npx github:BRYANN2K/stipulate-skills
+# Or user-wide:
+npx github:BRYANN2K/stipulate-skills --global
+```
+
+The launcher defaults to OpenCode and supports `--agent opencode codex claude-code`, `--yes`, and `--dry-run`. It checks command collisions before running the pinned skills CLI (1.5.25), copies skill resources out of npm's cache, then installs the commands. Re-run this launcher for updates; its locally packaged source is not a remote source for `npx skills update`. Global command installation respects `XDG_CONFIG_HOME`.
+
+Run **`/restart`** in an existing OpenCode session after installation. This reload step was confirmed by the user after the commands initially did not appear.
+
+The two installation steps are not a single transaction: if command writing fails after skills installation, the skills remain installed and the command helper can be rerun after resolving the error.
+
+### Manual command-only installation
+
+Stip bundles seven command templates inside `stip-bootstrap/assets/opencode-commands`. Each command asks the agent to load the corresponding skill and forwards `$ARGUMENTS`; procedures, model choice, and approval gates remain in the existing skills.
+
+After installing the skills, run the helper from your installed bootstrap directory. For the global OpenCode installation:
+
+```sh
+python3 "$HOME/.config/opencode/skills/stip-bootstrap/scripts/install_opencode_commands.py" \
+  --destination "$HOME/.config/opencode/commands"
+```
+
+From a repository checkout instead:
+
+```sh
+python3 scripts/install_opencode_commands.py --destination "$HOME/.config/opencode/commands"
+```
+
+For a project-local installation, choose `/absolute/path/to/project/.opencode/commands`. Add `--dry-run` to preview. Identical files are reused; custom files and symlinks are never overwritten. A conflicting file blocks the batch before writes. The skills CLI installs the bundled templates but does not itself copy them into OpenCode's commands directory.
+
+In the OpenCode composer, type `/stip-bootstrap` or `/stip-explore your idea`. All seven names are available. These are prompt commands, not shell executables. Project command definitions can override global ones, so check existing project commands if behavior differs.

@@ -40,24 +40,35 @@ You need **Node.js/npm** for installation, **Python 3.10+** and **Git** for the 
 
 ### 1. Install the complete package
 
-Run from your project directory:
+For **OpenCode**, run from your project directory:
+
+```sh
+npx github:BRYANN2K/stipulate-skills
+```
+
+This installs **all seven skills, all 28 bundled extensions, and the seven `/stip-*` commands** in one run. For installation across projects:
+
+```sh
+npx github:BRYANN2K/stipulate-skills --global
+```
+
+In an already open OpenCode session, run **`/restart`** to reload the commands.
+
+The launcher defaults to OpenCode. To include Codex and Claude Code:
+
+```sh
+npx github:BRYANN2K/stipulate-skills --agent opencode codex claude-code
+```
+
+Use `--dry-run` to preview or `--yes` for unattended installation. This command runs the package directly from GitHub; no separately published npm package is required. It uses the skills CLI to copy the packages and then installs the OpenCode commands. Existing customized command files block installation rather than being overwritten.
+
+For skill-only installation, the standard command remains available:
 
 ```sh
 npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-For all four clients at once:
-
-```sh
-npx skills add BRYANN2K/stipulate-skills --skill '*' \
-  --agent codex claude-code opencode
-```
-
-Grok Build also discovers the shared project installation in `.agents/skills`; the published CLI tested here does not yet accept `--agent grok`. You can specify only the clients you use. See [client setup and verification](docs/clients.md).
-
-One command installs **all seven skills and the complete catalog of 28 domain extensions**. Keep `'*'` quoted so your shell does not expand it. For Codex, Claude Code, and OpenCode, add `--global` for user-wide installation. Grok’s global setup is described in the [client guide](docs/clients.md).
-
-Extensions travel as resources inside `stip-bootstrap`, so your skill list stays at seven. Check Codex's skill catalog and open a new conversation if needed. [Installation options and troubleshooting →](docs/getting-started.md)
+`npx skills add` does not run Stip's command installer. For OpenCode's complete setup, use the Stip launcher above. Extensions travel inside `stip-bootstrap` and are selected per change. [Client setup and verification →](docs/clients.md)
 
 ### 2. Open your project in your coding client
 
@@ -70,7 +81,7 @@ and identify the relevant domain extensions.
 
 For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it makes all 28 extensions available locally without choosing your stack or selecting domains for a change.
 
-In Claude Code, Grok Build, and OpenCode v2, invoke `/stip-bootstrap` instead. Bootstrap also creates or extends `CLAUDE.md` with an import of `AGENTS.md`, so Claude uses the same project guidance.
+In Claude Code, Grok Build, and OpenCode v2, invoke `/stip-bootstrap` instead. For explicit OpenCode command files, follow [slash-command setup](docs/clients.md#explicit-opencode-slash-commands). Bootstrap also creates or extends `CLAUDE.md` with an import of `AGENTS.md`, so Claude uses the same project guidance.
 
 ### 3. Explore your first change
 

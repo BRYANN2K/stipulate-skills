@@ -6,6 +6,10 @@ Use Codex, Claude Code, Grok Build, or OpenCode v2, Node.js/npm for `npx`, Pytho
 
 ### 2. Install the full package
 
+For OpenCode skills **and slash commands together**, run `npx github:BRYANN2K/stipulate-skills` from the project, or append `--global` for user-wide installation. Then use `/restart` in any already open OpenCode session. Re-run this launcher for updates.
+
+The alternative below installs skills only:
+
 From your application project directory:
 
 ```sh

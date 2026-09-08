@@ -1,0 +1,11 @@
+{
+  "name": "stipulate-skills",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Install Stip skills and OpenCode slash commands together",
+  "license": "Apache-2.0",
+  "repository": "github:BRYANN2K/stipulate-skills",
+  "bin": {"stipulate-skills": "bin/install.mjs"},
+  "engines": {"node": ">=18"},
+  "files": ["bin/", "skills/", "scripts/", "LICENSE", "NOTICE.md"]
+}
