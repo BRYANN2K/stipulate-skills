@@ -74,3 +74,42 @@ class CompletePackageTests(unittest.TestCase):
         (self.skills / 'stip-bootstrap/assets/extensions/ux-design/check.md').unlink()
         self.setup_project(ok=False)
         self.assertEqual(list(self.project.iterdir()), [])
+
+    def test_claude_import_preserves_instructions_and_is_idempotent(self):
+        path = self.project / 'CLAUDE.md'
+        original = b'# Team instructions\r\nKeep our commands.\r\n'
+        path.write_bytes(original)
+        self.setup_project()
+        self.assertTrue(path.read_bytes().startswith(original))
+        self.assertIn(b'@AGENTS.md', path.read_bytes())
+        before = path.read_bytes()
+        self.setup_project()
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_existing_import_is_preserved(self):
+        path = self.project / 'CLAUDE.md'
+        original = b'@./AGENTS.md\n\nCustom guidance\n'
+        path.write_bytes(original)
+        self.setup_project()
+        self.assertEqual(path.read_bytes(), original)
+
+    def test_fenced_example_does_not_count_as_import(self):
+        path = self.project / 'CLAUDE.md'
+        path.write_text('Example:\n```md\n@AGENTS.md\n```\n')
+        self.setup_project()
+        self.assertTrue(path.read_text().endswith('```\n\n@AGENTS.md\n'))
+
+    def test_existing_agents_symlink_is_preserved(self):
+        path = self.project / 'CLAUDE.md'
+        path.symlink_to('AGENTS.md')
+        self.setup_project()
+        self.assertTrue(path.is_symlink())
+        self.assertTrue(path.is_file())
+
+    def test_external_claude_symlink_is_rejected_without_overwrite(self):
+        outside = self.base / 'external.md'
+        outside.write_text('Private instructions')
+        (self.project / 'CLAUDE.md').symlink_to(outside)
+        self.setup_project(ok=False)
+        self.assertEqual(outside.read_text(), 'Private instructions')
+        self.assertFalse((self.project / 'AGENTS.md').exists())

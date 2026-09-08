@@ -13,7 +13,7 @@
 **Explore in natural language. Agree on a spec. Build with evidence.**
 
 Seven core skills, optional domain extensions, and a shared contract that stays with your project.
-Designed for **GPT-6 Astra in Codex** using the Agent Skills format.
+Uses the Agent Skills format for **Codex, Claude Code, Grok Build, and OpenCode v2**.
 
 [Get started](#quick-start) · [See the workflow](#how-it-works) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
 
@@ -36,7 +36,7 @@ Start a new project or adopt an existing repository. Bootstrap preserves useful 
 
 ## Quick start
 
-You need **Node.js/npm** for installation, **Python 3.10+** and **Git** for the workflow, and Codex with skill support.
+You need **Node.js/npm** for installation, **Python 3.10+** and **Git** for the workflow, and a supported coding client.
 
 ### 1. Install the complete package
 
@@ -46,13 +46,22 @@ Run from your project directory:
 npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-One command installs **all seven skills and the complete catalog of 28 domain extensions**. Keep `'*'` quoted so your shell does not expand it. Add `--global` to make the skills available across projects instead.
+For all four clients at once:
+
+```sh
+npx skills add BRYANN2K/stipulate-skills --skill '*' \
+  --agent codex claude-code opencode
+```
+
+Grok Build also discovers the shared project installation in `.agents/skills`; the published CLI tested here does not yet accept `--agent grok`. You can specify only the clients you use. See [client setup and verification](docs/clients.md).
+
+One command installs **all seven skills and the complete catalog of 28 domain extensions**. Keep `'*'` quoted so your shell does not expand it. For Codex, Claude Code, and OpenCode, add `--global` for user-wide installation. Grok’s global setup is described in the [client guide](docs/clients.md).
 
 Extensions travel as resources inside `stip-bootstrap`, so your skill list stays at seven. Check Codex's skill catalog and open a new conversation if needed. [Installation options and troubleshooting →](docs/getting-started.md)
 
-### 2. Open your project in Codex
+### 2. Open your project in your coding client
 
-Open the repository you want to work on, then send this in the chat composer:
+Open the repository you want to work on. In Codex, send this in the chat composer:
 
 ```text
 $stip-bootstrap Adopt this repository. Preserve its conventions, map the project,
@@ -61,6 +70,8 @@ and identify the relevant domain extensions.
 
 For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it makes all 28 extensions available locally without choosing your stack or selecting domains for a change.
 
+In Claude Code, Grok Build, and OpenCode v2, invoke `/stip-bootstrap` instead. Bootstrap also creates or extends `CLAUDE.md` with an import of `AGENTS.md`, so Claude uses the same project guidance.
+
 ### 3. Explore your first change
 
 ```text
@@ -68,7 +79,7 @@ $stip-explore Let's add a sign-in flow. Reuse the existing foundations and help
 me define the scope, user journey, and acceptance criteria.
 ```
 
-The `$stip-*` examples are **chat prompts**, not terminal commands. The agent uses the bundled Python runtime for lifecycle operations.
+The `$stip-*` examples are **Codex chat prompts**, not terminal commands. Use `/stip-*` in Claude Code, Grok Build, and OpenCode v2. The agent uses the bundled Python runtime for lifecycle operations.
 
 [Walk through a complete feature, from idea to archive →](docs/getting-started.md#walk-through-your-first-feature)
 

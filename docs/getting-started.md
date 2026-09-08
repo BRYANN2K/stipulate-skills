@@ -2,7 +2,7 @@
 
 ### 1. Check the prerequisites
 
-Use Codex with skill support, Node.js/npm for `npx`, Python 3.10+, and Git. Commands use a macOS/Linux shell. Stip does not install application dependencies.
+Use Codex, Claude Code, Grok Build, or OpenCode v2, Node.js/npm for `npx`, Python 3.10+, and Git. Commands use a macOS/Linux shell. Stip does not install application dependencies.
 
 ### 2. Install the full package
 
@@ -15,6 +15,8 @@ npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 This installs the seven core skills together, including the complete 28-extension catalog bundled inside `stip-bootstrap`. No repository clone or separate extension installation is required. Quote `'*'` to prevent shell expansion.
 
 For user-wide installation, add `--global`. Choose project-local or global installation; you do not need both. Check Codex's skill catalog and start a new conversation if needed. See the [skills CLI documentation](https://github.com/vercel-labs/skills) for supported agents and installer options.
+
+For another client, replace `codex` with `claude-code` or `opencode`; Grok Build discovers the project-local shared installation made with `--agent codex`; multiple IDs can follow `--agent`. All clients receive the same seven packages and bundled extensions. See [client setup](clients.md).
 
 ### 3. Alternative: install without Node.js
 
@@ -31,7 +33,7 @@ Use `"$HOME/.agents/skills"` for user-wide installation. This installer preserve
 
 ### 4. Open your application project and bootstrap it
 
-Open the **target project** in Codex. In the chat composer, send:
+Open the **target project** in your coding client. The prompts below use Codex syntax; use `/stip-*` instead of `$stip-*` in Claude Code, Grok Build, and OpenCode v2. In the chat composer, send:
 
 ```text
 $stip-bootstrap Adopt this repository. Preserve its conventions, map its purpose
@@ -45,6 +47,8 @@ git init
 ```
 
 Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. The bundled setup installs all 28 extensions as available, preserving existing configured packages and disabled entries. It does not choose a stack, select domains for a change, or create a sample feature.
+
+Bootstrap adds an `@AGENTS.md` import to `CLAUDE.md` for Claude Code, preserving existing instructions. Restart Claude Code after first setup to load project instructions at session start.
 
 **You are ready to explore a feature.** The `$stip-*` examples are prompts for the agent, not shell commands. You do not need to run the Python lifecycle commands manually for everyday use.
 
