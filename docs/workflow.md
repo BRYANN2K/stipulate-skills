@@ -17,7 +17,7 @@ The `phase` field alone never proves that approval is current. Use `status`, whi
 From the tools repository, replace `/physical/path/to/project` with the actual physical Git root. Initialize Git separately if necessary. Calls are separated to show human review and real observations; this is not a script that approves itself.
 
 ```sh
-python3 scripts/workflow.py --root /physical/path/to/project bootstrap
+python3 scripts/setup_stip.py --root /physical/path/to/project
 python3 scripts/workflow.py --root /physical/path/to/project explore add-cancellation --title "Cancel a job"
 ```
 
@@ -101,3 +101,5 @@ The approved contract includes proposal/spec/tasks and selected extension manife
 - A hook rejects the commit: workflow metadata is restored and transaction paths are unstaged if HEAD has not moved. Source edits made by a hook are preserved and must be reviewed.
 - A killed process may leave `.workflow/.lock`. Verify that the process is no longer active before removing the lock. Do not automatically remove it based only on age.
 - Individual file writes are atomic. A system failure across multiple Git/file operations is not a database transaction. Inspect Git state and the archive before resuming after such a failure.
+
+Normal `stip-bootstrap` uses `setup_stip.py` to prepare metadata and the complete domain catalog. The low-level `workflow.py bootstrap` remains metadata-only for advanced selective setup and fixtures. Existing configured domain packages are preserved by setup.

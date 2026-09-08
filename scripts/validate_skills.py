@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate packaging, names, portable runtime copies and registry coverage."""
+import build_skills
 import json
 from pathlib import Path
 import re
@@ -7,6 +8,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 EXPECTED={'stip-bootstrap','stip-explore','stip-validate','stip-apply','stip-check','stip-docs','stip-archive'}
 def main():
+    if build_skills.check_generated():raise ValueError('Stale generated files; run scripts/build_skills.py')
     records=json.loads((ROOT/'skill-registry.json').read_text())['skills']
     names=[r['name'] for r in records]
     if len(names)!=len(set(names)) or set(names)!=EXPECTED:raise ValueError('Core command registry mismatch')

@@ -1,10 +1,18 @@
 # Domain extensions — interface v1 and local catalog
 
-The repository ships 28 packages separate from the core. The seven core skills remain the only Codex/Orca skill discovery entries; extensions are neither 28 additional skills nor executable plugins. Bootstrap and the core skill installer do not install domain packages.
+The repository ships 28 domain packages, bundled as resources inside `stip-bootstrap`. The seven core skills remain the only Codex/Orca skill discovery entries; extensions are neither 28 additional skills nor executable plugins. The complete installation includes the catalog; normal `$stip-bootstrap` setup makes every package available in the project without selecting it for a change.
 
 Bootstrap maps existing foundations. **Selection for a change happens during stip-explore**, based on affected behavior and material unknowns. An available extension is not automatically selected; a cloud-only change does not activate UX/design. Every domain contributes to the same approved contract.
 
-## Install only the packages you need
+## Complete installation
+
+```sh
+npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
+```
+
+Then invoke `$stip-bootstrap` in the target project. Its packaged `scripts/setup_stip.py --root /physical/path/to/project` prepares metadata and installs missing catalog packages. Existing configured packages, disabled entries, and customizations are preserved. All packages are available by default; only relevant references are read during exploration and subsequent phases.
+
+## Advanced: selective installation
 
 From this repository, with Python 3.10+ and Git for the workflow:
 
@@ -20,7 +28,7 @@ python3 scripts/workflow.py --root /physical/path/to/project extensions
 
 Replace example paths with the target project's physical path. The installer requires an explicit package list, copies packages into `.workflow/extensions/<id>`, and adds configuration entries while preserving other keys. It does not modify AGENTS.md, the project map, or active changes. It rejects symlinks, conflicting configuration, and differing local copies; an identical copy is reused. Writes respect the engine lock, all collisions are checked before copying, and a copy failure removes only newly created directories. Dry-run performs no writes.
 
-Installed packages are self-contained: their four phase references, sources, and editorial cases are local. The engine does not require the source repository path. After installation, use a runtime from any of the seven installed skills or from this repository. The extension installer requires the source repository and catalog; it is not copied into the core skills.
+Installed packages are self-contained: their four phase references, sources, and editorial cases are local. The engine does not require the source repository path. After installation, use a runtime from any of the seven installed skills or from this repository. The installer and catalog also ship inside `stip-bootstrap`; its `scripts/install_extensions.py` works without the source checkout. The low-level `workflow.py bootstrap` command intentionally creates metadata only, for selective setup and fixtures.
 
 ## Select extensions for a change
 

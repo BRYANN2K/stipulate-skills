@@ -36,24 +36,19 @@ Start a new project or adopt an existing repository. Bootstrap preserves useful 
 
 ## Quick start
 
-You need **Python 3.10+**, **Git**, and a coding-agent environment with skill support. Commands below use a macOS/Linux shell.
+You need **Node.js/npm** for installation, **Python 3.10+** and **Git** for the workflow, and Codex with skill support.
 
-> **Current workflow:** `main` contains Stipulate Skills. The previous skill collection remains available in Git history.
+### 1. Install the complete package
 
-### 1. Install the core
-
-Run in a terminal:
+Run from your project directory:
 
 ```sh
-git clone https://github.com/BRYANN2K/stipulate-skills.git
-cd stipulate-skills
-python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
-python3 scripts/install.py --destination "$HOME/.agents/skills"
+npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-This installs exactly seven skills for your user account. Unrelated skills are preserved; modified or foreign installations are not overwritten. Check your client's skill catalog and open a new conversation if needed.
+One command installs **all seven skills and the complete catalog of 28 domain extensions**. Keep `'*'` quoted so your shell does not expand it. Add `--global` to make the skills available across projects instead.
 
-Prefer a project-local install? Use `/absolute/path/to/your-project/.agents/skills` as the destination. [Installation options and troubleshooting →](docs/getting-started.md)
+Extensions travel as resources inside `stip-bootstrap`, so your skill list stays at seven. Check Codex's skill catalog and open a new conversation if needed. [Installation options and troubleshooting →](docs/getting-started.md)
 
 ### 2. Open your project in Codex
 
@@ -64,7 +59,7 @@ $stip-bootstrap Adopt this repository. Preserve its conventions, map the project
 and identify the relevant domain extensions.
 ```
 
-For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it does not install domain extensions or choose your stack.
+For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it makes all 28 extensions available locally without choosing your stack or selecting domains for a change.
 
 ### 3. Explore your first change
 
@@ -109,16 +104,9 @@ A failed check returns to implementation. New requirements return to validation.
 | Data, AI, and assurance | `data-engineering`, `ai-engineering`, `analytics-experimentation`, `quality-engineering`, `security-engineering`, `privacy-engineering` |
 | Reach and support | `build-in-public`, `seo-discoverability`, `customer-support` |
 
-Install only what your bootstrapped project needs, from the Stipulate Skills checkout:
+The complete catalog is included in the installation. `$stip-bootstrap` copies it into `.workflow/extensions/` and registers available domains in the project configuration. Existing configured packages, customizations, and disabled entries are preserved.
 
-```sh
-python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
-  --extension frontend-engineering --extension accessibility --dry-run
-python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
-  --extension frontend-engineering --extension accessibility
-```
-
-Installation makes these extensions available. **Selection happens during `stip-explore` for each change.** An infrastructure-only change does not need design; existing domain work can be reused instead of repeated. Build-in-public guidance does not authorize posting on your behalf.
+**Selection happens during `stip-explore` for each change.** The agent reads only the relevant phase references for selected domains. A cloud-only change does not need design; existing domain work can be reused instead of repeated. Build-in-public guidance does not authorize posting on your behalf.
 
 [Extension setup, selection, and updates →](docs/extensions.md)
 

@@ -2,44 +2,32 @@
 
 ### 1. Check the prerequisites
 
-Use a local coding-agent environment with skill support, **Python 3.10+**, and **Git**. The commands below use a macOS/Linux shell. Stip does not install your application's dependencies.
+Use Codex with skill support, Node.js/npm for `npx`, Python 3.10+, and Git. Commands use a macOS/Linux shell. Stip does not install application dependencies.
+
+### 2. Install the full package
+
+From your application project directory:
 
 ```sh
-python3 --version
-git --version
+npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-### 2. Get this version of Stip
+This installs the seven core skills together, including the complete 28-extension catalog bundled inside `stip-bootstrap`. No repository clone or separate extension installation is required. Quote `'*'` to prevent shell expansion.
 
-The rebuilt workflow is available on `main`. Clone the repository:
+For user-wide installation, add `--global`. Choose project-local or global installation; you do not need both. Check Codex's skill catalog and start a new conversation if needed. See the [skills CLI documentation](https://github.com/vercel-labs/skills) for supported agents and installer options.
+
+### 3. Alternative: install without Node.js
+
+From a clone of this repository, the Python installer copies the same complete packages:
 
 ```sh
 git clone https://github.com/BRYANN2K/stipulate-skills.git
 cd stipulate-skills
-```
-
-This checkout supplies the installer and extension catalog. Your application lives in its own repository.
-
-### 3. Install the seven core skills
-
-For your user account, run these commands from the **Stipulate Skills checkout**:
-
-```sh
-python3 scripts/validate_skills.py
-python3 scripts/install.py --destination "$HOME/.agents/skills" --dry-run
-python3 scripts/install.py --destination "$HOME/.agents/skills"
-```
-
-The dry run previews the destination and package list. The install copies exactly seven `stip-*` packages, preserves unrelated skills, and refuses to overwrite foreign or locally modified copies. Each installed skill includes its own runtime.
-
-For an installation limited to one project, use its physical path instead:
-
-```sh
 python3 scripts/install.py --destination "/absolute/path/to/your-project/.agents/skills" --dry-run
 python3 scripts/install.py --destination "/absolute/path/to/your-project/.agents/skills"
 ```
 
-Replace the example path before running it. Choose the user-level or project-level destination; you do not need both. Check your client's skill catalog after installation. If the skills are missing, open a new conversation and confirm the client supports the chosen discovery path. Client setup can vary; see the [official skills documentation](https://learn.chatgpt.com/docs/build-skills).
+Use `"$HOME/.agents/skills"` for user-wide installation. This installer preserves unrelated skills and rejects foreign or locally modified packages. **Use one installer per destination:** the Python installer does not adopt installations managed by `npx skills`.
 
 ### 4. Open your application project and bootstrap it
 
@@ -56,7 +44,7 @@ For a new project, explain the intent in the same message. If it is not yet a Gi
 git init
 ```
 
-Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. It does not choose a stack, install extensions, or create a sample feature automatically.
+Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. The bundled setup installs all 28 extensions as available, preserving existing configured packages and disabled entries. It does not choose a stack, select domains for a change, or create a sample feature.
 
 **You are ready to explore a feature.** The `$stip-*` examples are prompts for the agent, not shell commands. You do not need to run the Python lifecycle commands manually for everyday use.
 
@@ -90,7 +78,7 @@ Bootstrap is project setup, not a task to repeat for each feature. Subsequent wo
 
 ## Walk through your first feature
 
-This example adds a sign-in flow to an existing application. Adjust it to your project. If you want domain guidance, install the relevant extensions using the next section before exploration.
+This example adds a sign-in flow to an existing application. Adjust it to your project. The catalog is already available after bootstrap; select relevant domains during exploration.
 
 **Explore the idea:**
 
@@ -140,44 +128,19 @@ $stip-archive Archive add-login and create its scoped local commit.
 
 The result is implemented code, evidence, updated documentation, an accepted specification, and an archived change. A failed or unverified criterion blocks completion. Archive does not push the commit or deploy the application.
 
-## Add domain extensions
 
-Extensions are local domain guidance, **not additional top-level skills or executable plugins**. The repository includes 28 optional packages. Installing the core and running bootstrap do not install them.
+## Use the relevant extensions
 
-There are three distinct steps: **install into the project → make available through configuration → select for a particular change during explore**. The extension installer handles the first two; the agent selects only relevant packages during exploration.
-
-From the **Stipulate Skills checkout**, after bootstrapping your target project:
-
-```sh
-python3 scripts/validate_extensions.py
-python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
-  --extension frontend-engineering --extension accessibility --dry-run
-python3 scripts/install_extensions.py --project "/absolute/path/to/your-project" \
-  --extension frontend-engineering --extension accessibility
-python3 scripts/workflow.py --root "/absolute/path/to/your-project" extensions
-```
-
-These commands copy the selected packages into `.workflow/extensions/` and update `.workflow/config.json`. They do not select extensions for an active change.
-
-Then, in the target project's chat:
+Bootstrap makes all 28 domain packages available in the project. There is no additional installation step. During exploration, ask for the domains that fit the work, or let the agent propose a selection:
 
 ```text
-$stip-explore Explore add-login using the installed frontend-engineering and
-accessibility extensions. Reuse the existing UI and record relevant requirements
-in the shared specification.
+$stip-explore Explore add-login using frontend-engineering and accessibility.
+Reuse the existing UI and record relevant requirements in the shared specification.
 ```
 
-| Work you are doing | Example extension IDs |
-| --- | --- |
-| User interface | `frontend-engineering`, `ux-design`, `accessibility`, `design-system` |
-| APIs and storage | `backend-engineering`, `api-integrations`, `database-engineering` |
-| Cloud and delivery | `cloud-engineering`, `devops-delivery`, `sre-operations` |
-| Product discovery | `product-strategy`, `user-research`, `storytelling` |
-| Communication | `content-design`, `build-in-public` |
+Available does not mean selected or loaded. A cloud change can select `cloud-engineering` and `devops-delivery` without loading design guidance. Each selected domain contributes to the same contract, implementation, checks, and documentation. A build-in-public extension does not grant permission to publish.
 
-These are examples, not mandatory bundles. A selected extension contributes questions and requirements to the same change contract, then guidance for implementation, checking, and documentation. A build-in-public extension does not grant permission to publish.
-
-See the [full catalog](../extensions/catalog.json) and [extension installation, selection, and update guide](extensions.md).
+See the [catalog and advanced configuration guide](extensions.md).
 
 ## What lives in your project
 
@@ -198,13 +161,24 @@ AGENTS.md                    # Project instructions + bounded workflow guidance
   archive/                   # Closed changes and their records
 ```
 
-Bootstrap creates the initial structure; `add-login` only appears when you explore that actual change. `extensions/` is added when you install domain packages. Existing useful instructions and files are preserved. The agent assesses the project; the script does not infer its maturity from file names.
+Bootstrap creates the initial structure; `add-login` only appears when you explore that actual change. `extensions/` is populated by the bundled bootstrap setup. Existing useful instructions and files are preserved. The agent assesses the project; the script does not infer its maturity from file names.
 
 Accepted specifications describe current accepted behavior. A change specification describes the complete next version of its target. Keep these records with the project so decisions remain available across conversations.
 
 ## Updates and removal
 
-From a clean Stipulate Skills checkout on `main`, fetch updates and rerun the installer for the destination you originally chose:
+For an installation managed by the skills CLI:
+
+```sh
+npx skills check
+npx skills update
+```
+
+These commands check or update installed skills, including their bundled resources. Run `npx skills remove` and select the Stip skills to uninstall; use `--global` for a global installation. Consult the CLI prompts before confirming changes to other installed skills.
+
+Re-running `$stip-bootstrap` adds missing catalog packages but preserves configured project copies, disabled entries, existing guidance, and active changes. Updating installed skills does not silently replace project extension references; reconcile those explicitly using the [extension update guide](extensions.md#manual-configuration-and-updates).
+
+For the alternative **Python-managed installation**, from a clean Stipulate Skills checkout on `main`, fetch updates and rerun the installer for the destination you originally chose:
 
 ```sh
 git pull --ff-only
@@ -232,7 +206,7 @@ Use your project-level destination instead if that is where you installed. Unins
 | `scripts/install.py` is missing | Confirm you are using the current `main` branch and are running commands from the Stipulate Skills checkout. |
 | `Changed or foreign installation` | Preserve the local files and compare them with the package. The installer deliberately refuses an unsafe overwrite. |
 | `Use a physical destination path` | Use an absolute path with no symlink components. |
-| An extension is unavailable | Bootstrap first, install its exact catalog ID into that project, and inspect the runtime `extensions` output. |
+| An extension is unavailable | Run the current `$stip-bootstrap`, then inspect configuration for a disabled entry or invalid local path. |
 | Approval is stale | Review changes to the proposal, spec, tasks, or selected extension guidance, then validate and approve again. |
 | Check cannot pass | Resolve failed criteria and missing evidence; rerun check against the current source snapshot. |
 | Archive refuses to commit | Read its error: staged files, changed HEAD, stale evidence, or pre-existing dirty files in the selected scope can block it. Preserve unrelated work. |

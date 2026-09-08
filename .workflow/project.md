@@ -13,7 +13,7 @@ Replace the historical catalog with seven independently installable skills that 
 | Core lifecycle | established | `scripts/workflow.py`; seven `stip-*` packages under `skills/` |
 | Local skill installation | established | `scripts/install.py`; `tests/test_install.py` |
 | Contracts and usage | established | `README.md`; `docs/workflow.md`; `.workflow/specs/core.md` |
-| Domain extensions | established structurally; behavioral evaluation incomplete | 28 packages in `extensions/`; selective installer; `tests/test_extensions.py`; no extensions enabled in this repository's config |
+| Domain extensions | established structurally; behavioral evaluation incomplete | 28 packages in `extensions/`, bundled in `stip-bootstrap`; complete setup and selective installer; `tests/test_extensions.py`; no extensions enabled in this repository's config |
 | Graphical interface / design system | not-applicable | This repository provides instructions and a local CLI |
 | Cloud deployment | not-applicable | Local execution without a service or API |
 | Automated verification | established locally | Package validators and 49 passing tests during the Stip rename on macOS; language edits require their own relevant checks |

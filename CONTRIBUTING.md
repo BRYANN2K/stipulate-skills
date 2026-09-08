@@ -2,7 +2,7 @@
 
 The core owns the lifecycle; domain practices remain extensions. Changes must preserve user intent, scoped commits, and the distinction between reported evidence and actual observations.
 
-The canonical engine is `scripts/workflow.py`. Copies inside each skill support independent installation; do not edit them directly. After changing the engine:
+The canonical engine is `scripts/workflow.py`. Copies inside each skill support independent installation; do not edit them directly. The bootstrap helpers are canonical in `scripts/setup_stip.py` and `scripts/install_extensions.py`; the domain catalog is canonical in `extensions/`. Do not edit generated resources in `skills/stip-bootstrap/assets/extensions/`. After changing the engine, helpers, or catalog:
 
 ```sh
 python3 scripts/build_skills.py
