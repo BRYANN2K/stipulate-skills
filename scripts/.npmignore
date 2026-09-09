@@ -1,0 +1,4 @@
+# Generated local artifacts are not part of the distribution.
+__pycache__/
+*.py[cod]
+node_modules/

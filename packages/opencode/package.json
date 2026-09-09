@@ -1,0 +1,43 @@
+{
+  "name": "@stipulate/opencode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Native OpenCode orchestration, settings and workflow sidebar for Stipulate",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tui": "./src/tui.tsx",
+    "./rpc": "./src/rpc.ts"
+  },
+  "files": [
+    "src",
+    "assets",
+    "package.json",
+    "package-lock.json",
+    "index.ts",
+    "tui.tsx",
+    "rpc.ts"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode/plugin": "0.0.0-beta-19296",
+    "zod": "4.1.8"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.5.10",
+    "@opentui/solid": ">=0.5.10",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@opencode/theme": "0.0.0-beta-19296",
+    "@opentui/core": "0.5.10",
+    "@opentui/solid": "0.5.10",
+    "solid-js": "1.9.12",
+    "typescript": "5.8.2",
+    "@types/node": "22.15.30"
+  }
+}

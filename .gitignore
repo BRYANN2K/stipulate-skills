@@ -2,3 +2,7 @@ __pycache__/
 *.py[cod]
 .workflow/.lock
 .workflow/.workflow-write-*
+node_modules/
+.workflow/.runtime/
+.workflow/local.json
+.workflow/.native-agents.lock

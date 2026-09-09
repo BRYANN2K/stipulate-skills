@@ -13,6 +13,7 @@
 **Explore in natural language. Agree on a spec. Build with evidence.**
 
 Seven core skills, optional domain extensions, and a shared contract that stays with your project.
+OpenCode v2 adds native subagent orchestration, a workflow sidebar, and model settings.
 Uses the Agent Skills format for **Codex, Claude Code, Grok Build, and OpenCode v2**.
 
 [Get started](#quick-start) · [See the workflow](#how-it-works) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
@@ -36,23 +37,23 @@ Start a new project or adopt an existing repository. Bootstrap preserves useful 
 
 ## Quick start
 
-You need **Node.js/npm** for installation, **Python 3.10+** and **Git** for the workflow, and a supported coding client.
+You need **Node.js 22.20+/npm**, **Python 3.10+**, **Git**, and a supported coding client. The native OpenCode v2 plugin is developed against **OpenCode 2 beta-19296**. The pinned skills installer also requires Node.js 22.20+, including skill-only installations through this npx entrypoint.
 
 ### 1. Install the complete package
 
-For **OpenCode**, run from your project directory:
+For **OpenCode v2**, run from your project directory:
 
 ```sh
 npx github:BRYANN2K/stipulate-skills
 ```
 
-This installs **all seven skills, all 28 bundled extensions, and the seven `/stip-*` commands** in one run. For installation across projects:
+This installs **all seven skills, all 28 bundled extensions, the seven `/stip-*` commands, and the native OpenCode plugin** in one run. The plugin adds the workflow sidebar, native worker tracking, and `/stip-settings`. For installation across projects:
 
 ```sh
 npx github:BRYANN2K/stipulate-skills --global
 ```
 
-In an already open OpenCode session, run **`/restart`** to reload the commands.
+In an already open OpenCode v2 session, run **`/restart`**. If the sidebar or settings command has not loaded, restart the CLI. Then use **`/stip-settings`** to choose models for worker roles; unset roles inherit the coordinator model.
 
 The launcher defaults to OpenCode. To include Codex and Claude Code:
 
@@ -60,7 +61,7 @@ The launcher defaults to OpenCode. To include Codex and Claude Code:
 npx github:BRYANN2K/stipulate-skills --agent opencode codex claude-code
 ```
 
-Use `--dry-run` to preview or `--yes` for unattended installation. This command runs the package directly from GitHub; no separately published npm package is required. It uses the skills CLI to copy the packages and then installs the OpenCode commands. Existing customized command files block installation rather than being overwritten.
+Use `--dry-run` to preview or `--yes` for unattended installation. This command runs the package directly from GitHub; no separately published npm package is required. It copies the skills, installs the commands, and prepares the plugin with its locked dependencies in a durable project or global directory. Existing customized commands or plugin source block an update. Your OpenCode configuration files are preserved. Use `--no-opencode-plugin` to install only skills and commands. [Installation, updates, and removal →](docs/installation.md)
 
 For skill-only installation, the standard command remains available:
 
@@ -68,7 +69,7 @@ For skill-only installation, the standard command remains available:
 npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-`npx skills add` does not run Stip's command installer. For OpenCode's complete setup, use the Stip launcher above. Extensions travel inside `stip-bootstrap` and are selected per change. [Client setup and verification →](docs/clients.md)
+`npx skills add` does not run Stip's command or native plugin installers. For OpenCode's complete setup, use the Stip launcher above. Extensions travel inside `stip-bootstrap` and are selected per change. [Client setup and verification →](docs/clients.md)
 
 ### 2. Open your project in your coding client
 
@@ -101,6 +102,18 @@ The `$stip-*` examples are **Codex chat prompts**, not terminal commands. Use `/
 **You own the agreement; the agent carries out the approved work.** During validation, read the Markdown spec, edit it directly or ask for revisions, and explicitly approve its current version. Implementation follows that contract.
 
 A failed check returns to implementation. New requirements return to validation. After a successful check, documentation and archive close the change. Start the next feature at explore; bootstrap is not a repeated feature audit.
+
+## Native orchestration in OpenCode v2
+
+Explore with your main agent. During validation, agree on an execution plan alongside the spec. The coordinator can then delegate bounded work to native OpenCode subagents, reconcile their contributions, and continue through check, docs, and archive.
+
+- **Choose models by role.** Backend, frontend, security, documentation, and other roles can have their own model. Effort and Fast choices follow the selected model's available variants.
+- **Follow the work.** The sidebar shows the active change, lifecycle, extensions, and workers. A worker returning does not automatically mark its contribution accepted.
+- **Keep control of the contract.** Execution plans belong to the approved version. Existing v1 changes continue to work; migration to an execution plan requires an explicit step and renewed approval.
+
+The plugin uses OpenCode subagents. Codex and Claude Code use their own native agent files; see [native agent configuration](docs/native-agents.md). There is no runtime selector in OpenCode settings.
+
+[Orchestration contract and compatibility →](docs/orchestration-contract.md)
 
 ## The seven skills
 
@@ -160,7 +173,9 @@ The example change appears only when you explore it. Bootstrap preserves existin
 - **Commits stay scoped.** Archive rejects stale evidence and conflicting Git state rather than absorbing unrelated work.
 - **Publishing is separate.** Archive creates a local commit. It does not push or deploy.
 
-The runtime is local and offline, with no third-party Python dependencies or telemetry. Your coding agent still requires its normal setup. Recorded evidence is an attestation, not proof that its author was truthful; passing the workflow does not certify a product as production-ready.
+The Python workflow runtime is local and offline, with no third-party Python dependencies or telemetry. Installing the optional OpenCode plugin downloads locked JavaScript dependencies; native worker calls use the providers configured in OpenCode. Your coding agent still requires its normal setup. Recorded evidence is an attestation, not proof that its author was truthful; passing the workflow does not certify a product as production-ready.
+
+The native OpenCode integration has been exercised in an isolated terminal project through archive, including native subagents, model/effort settings and visual UI checks. See the [qualification report](docs/verification.md) for evidence and tested boundaries.
 
 [Detailed guarantees, limits, and migration →](docs/getting-started.md#guarantees-and-limits)
 
@@ -168,6 +183,7 @@ The runtime is local and offline, with no third-party Python dependencies or tel
 
 | Start here | For |
 | --- | --- |
+| [Installer reference](docs/installation.md) | Plugin installation, scope, updates, and removal. |
 | [Installation and first-feature guide](docs/getting-started.md) | Setup, prompt examples, updates, removal, and troubleshooting. |
 | [Workflow reference](docs/workflow.md) | Lifecycle commands, contracts, state, and evidence. |
 | [Domain extensions](docs/extensions.md) | Package installation, selection, and contribution rules. |

@@ -15,3 +15,21 @@ jobs:
       - run: python scripts/validate_skills.py
       - run: python scripts/validate_extensions.py
       - run: python -m unittest discover -s tests -v
+  opencode-plugin:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+        working-directory: packages/opencode
+      - run: npm run typecheck
+        working-directory: packages/opencode
+      - run: node --test packages/opencode/tests/*.test.mjs tests/*.mjs

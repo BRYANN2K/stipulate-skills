@@ -15,9 +15,12 @@ Prepare the project once; do not run a full audit before every feature.
 2. Run `python3 <this-skill-directory>/scripts/setup_stip.py --root <physical-project-root>`. This prepares the workflow, appends one bounded block to AGENTS.md, adds an `@AGENTS.md` import to CLAUDE.md while preserving existing instructions, and copies all bundled domain packages into the project as available extensions. It does not initialize Git, choose a stack, certify maturity, or select extensions for any change.
 3. Populate `.workflow/project.md` with intent, map, actual commands and relevant evidence. Classify each relevant area as established, inferred, incomplete, missing or not-applicable. Inspect source as well as docs. An interface may have an undocumented component system; cloud-only work needs no design assessment.
 4. Review existing AGENTS.md rather than replacing it. Resolve contradictions explicitly. Keep existing extension configuration; register custom paths only when the package exists. Availability does not imply selection. All 28 domain packages are bundled in this skill under assets/extensions/. Setup preserves already configured packages, customizations, and disabled entries. Do not read the entire catalog: identify relevant domains from project evidence; stip-explore selects and reads only the references needed for a change.
-5. Report what was created, preserved, inferred and still unknown. Subsequent feature work starts at stip-explore; rerunning bootstrap preserves current changes and project notes.
+5. When adopting native orchestration, read [references/orchestration.md](references/orchestration.md). Identify the current host and preserve its existing model, agent and permission settings. Prepare only that host's worker definitions with the bundled `configure_agents.py`; unassigned roles inherit. OpenCode uses its own workers and plugin settings, while Codex and Claude Code use their respective native files. Do not migrate existing approved changes or start workers during setup.
+6. Report what was created, preserved, inferred and still unknown. Subsequent feature work starts at stip-explore; rerunning bootstrap preserves current changes and project notes.
 
 Do not create an empty example feature. The first real stip-explore creates its own folder. Do not claim a project is production-ready merely because bootstrap succeeded.
+
+Keep project discovery with the main coordinator. Delegate a bounded inventory only if it will resolve a useful question; an installed extension or configured role does not require a worker.
 
 ## Runtime
 

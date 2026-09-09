@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate portable runtimes and the bootstrap skill's complete domain catalog."""
+"""Generate portable skill resources, native-agent helpers and the plugin runtime."""
 from pathlib import Path
 import shutil
 import sys
@@ -10,6 +10,9 @@ def generated_files():
     result = {}
     for p in sorted((ROOT/'skills').glob('stip-*/SKILL.md')):
         result[p.parent/'scripts/workflow.py'] = ROOT/'scripts/workflow.py'
+        result[p.parent/'scripts/configure_agents.py'] = ROOT/'scripts/configure_agents.py'
+        result[p.parent/'references/orchestration.md'] = ROOT/'docs/orchestration.md'
+    result[ROOT/'packages/opencode/assets/workflow.py'] = ROOT/'scripts/workflow.py'
     bootstrap = ROOT/'skills/stip-bootstrap'
     for name in ('setup_stip.py', 'install_extensions.py', 'install_opencode_commands.py'):
         result[bootstrap/'scripts'/name] = ROOT/'scripts'/name
@@ -44,7 +47,7 @@ def main():
     if errors:
         print('Stale generated packages: '+', '.join(errors), file=sys.stderr)
         raise SystemExit(1)
-    print('Seven runtime copies and bundled bootstrap catalog match canonical sources.')
+    print('Portable skill resources, native-agent helpers, plugin runtime and bootstrap catalog match canonical sources.')
 
 
 if __name__ == '__main__':

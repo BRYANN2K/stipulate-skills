@@ -14,6 +14,10 @@ import tempfile
 from datetime import datetime, timezone
 
 VERSION = 1
+CHANGE_VERSIONS = (1, 2)
+PLAN_PHASES = ('apply', 'check', 'docs')
+ACTIVE_JOB_STATUSES = {'starting', 'running', 'waiting', 'unknown', 'correction'}
+JOB_STATUSES = ACTIVE_JOB_STATUSES | {'queued', 'returned', 'failed', 'cancelled'}
 SLUG = re.compile(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
 MARKER = '<!-- spec-workflow:start -->'
 END = '<!-- spec-workflow:end -->'
@@ -241,7 +245,7 @@ def load(root, name):
     config(root)
     p = change_dir(root, name)
     s = read_json(safe(p, 'state.json'))
-    require(s.get('schema_version') == VERSION and s.get('id') == name, 'Invalid change state.')
+    require(s.get('schema_version') in CHANGE_VERSIONS and s.get('id') == name, 'Invalid change state.')
     return p, s
 
 def save(p, s, phase):
@@ -280,8 +284,12 @@ def contract(root, p, s):
         q = safe(p, name)
         if q.exists():
             files[name] = q.read_text()
-    return digest({'files': files, 'target': s['target'],
-                   'extensions': extension_data(root, s['extensions'])})
+    value = {'files': files, 'target': s['target'],
+             'extensions': extension_data(root, s['extensions'])}
+    if s['schema_version'] == 2:
+        value['schema_version'] = 2
+        value['execution_plan'] = validate_task_plan(root, p, s)
+    return digest(value)
 
 def criteria(p):
     text = (p / 'spec.md').read_text()
@@ -292,6 +300,230 @@ def criteria(p):
     require(not re.search(r'\b(TODO|TBD|FIXME)\b|\{\{', text), 'Unresolved template placeholder in spec.')
     require((p / 'proposal.md').read_text().strip(), 'Empty proposal.')
     return ids
+
+def task_path(root, value, writable=False):
+    require(isinstance(value, str) and bool(value) and value == value.strip(), 'Task paths must be nonempty relative paths.')
+    require('\\' not in value and not any(x in value for x in '*?[]\x00\n\r'), 'Task paths must be literal paths, not globs.')
+    path = Path(value)
+    require(path.as_posix() == value and value != '.', 'Task paths must use canonical relative paths.')
+    safe(root, value)
+    require(path.parts[0].casefold() != '.git', 'Tasks cannot access Git internals.')
+    require(not writable or path.parts[0].casefold() != '.workflow', 'Workers cannot own workflow metadata.')
+    return value
+
+def validate_task_plan(root, p, s, data=None):
+    """Validate the semantic task contract; progress and model settings live elsewhere."""
+    if data is None:
+        data = read_json(safe(p, 'execution-plan.json'))
+    require(isinstance(data, dict) and set(data) == {'version', 'tasks'} and type(data.get('version')) is int and data['version'] == 1,
+            'Execution plan expects version=1 and tasks only.')
+    tasks = data['tasks']
+    require(isinstance(tasks, list) and 0 < len(tasks) <= 200, 'Execution plan requires 1 to 200 tasks.')
+    criterion_ids = set(criteria(p))
+    by_id = {}
+    normalized = []
+    fields = {'id', 'role', 'phase', 'criteria', 'depends_on', 'write_paths', 'objective'}
+    optional = {'read_paths', 'expected_output'}
+    for task in tasks:
+        require(isinstance(task, dict) and fields <= task.keys() and task.keys() <= fields | optional,
+                'Task requires id, role, phase, criteria, depends_on, write_paths, objective; only read_paths and expected_output are optional.')
+        identifier, role = task['id'], task['role']
+        require(isinstance(identifier, str) and isinstance(role, str), 'Task id and role must be strings.')
+        slug(identifier); slug(role)
+        require(identifier not in by_id, f'Duplicate task id: {identifier}')
+        require(role != 'discovery', 'Discovery stays with the main coordinator; use research for a bounded helper task.')
+        require(task['phase'] in PLAN_PHASES, f'Invalid task phase for {identifier}: use apply, check or docs.')
+        require(isinstance(task['objective'], str) and bool(task['objective'].strip()), f'Task {identifier} needs an objective.')
+        require(isinstance(task['criteria'], list) and task['criteria'] and all(isinstance(x, str) for x in task['criteria'])
+                and len(set(task['criteria'])) == len(task['criteria']) and set(task['criteria']) <= criterion_ids,
+                f'Task {identifier} must reference existing unique acceptance criteria.')
+        dependencies = task['depends_on']
+        require(isinstance(dependencies, list) and all(isinstance(x, str) for x in dependencies)
+                and len(set(dependencies)) == len(dependencies) and identifier not in dependencies,
+                f'Task {identifier} has invalid dependencies.')
+        for key in ('write_paths', 'read_paths'):
+            paths = task.get(key, [])
+            require(isinstance(paths, list) and all(isinstance(x, str) for x in paths) and len(paths) == len(set(paths)),
+                    f'Task {identifier} needs a unique {key} array.')
+            for path in paths:
+                task_path(root, path, writable=key == 'write_paths')
+        if 'expected_output' in task:
+            require(isinstance(task['expected_output'], str) and bool(task['expected_output'].strip()), 'Expected output must be nonempty text.')
+        normalized_task = dict(task)
+        for key in ('criteria', 'depends_on', 'write_paths'):
+            normalized_task[key] = sorted(task[key])
+        normalized_task['read_paths'] = sorted(task.get('read_paths', []))
+        normalized.append(normalized_task)
+        by_id[identifier] = normalized_task
+    require(set().union(*(set(t['criteria']) for t in tasks)) == criterion_ids, 'Task plan must cover every acceptance criterion.')
+    ancestors = {}
+    visiting = set()
+    def visit(identifier):
+        require(identifier not in visiting, 'Execution plan contains a dependency cycle.')
+        if identifier in ancestors:
+            return ancestors[identifier]
+        visiting.add(identifier)
+        result = set()
+        task = by_id[identifier]
+        for dependency in task['depends_on']:
+            require(dependency in by_id, f'Unknown dependency: {dependency}')
+            require(PLAN_PHASES.index(by_id[dependency]['phase']) <= PLAN_PHASES.index(task['phase']),
+                    f'Task {identifier} depends on a later phase: {dependency}')
+            result.add(dependency)
+            result.update(visit(dependency))
+        visiting.remove(identifier)
+        ancestors[identifier] = result
+        return result
+    for identifier in by_id:
+        visit(identifier)
+    for index, task in enumerate(normalized):
+        for other in normalized[index + 1:]:
+            if task['phase'] != other['phase'] or task['id'] in ancestors[other['id']] or other['id'] in ancestors[task['id']]:
+                continue
+            for left in task['write_paths']:
+                for right in other['write_paths']:
+                    a, b = left.casefold(), right.casefold()
+                    require(not (a == b or a.startswith(b + '/') or b.startswith(a + '/')),
+                            f'Independent tasks {task["id"]} and {other["id"]} have overlapping write ownership: {left}, {right}')
+    return {'version': 1, 'tasks': sorted(normalized, key=lambda t: t['id'])}
+
+def runtime_state(root, p, s, required=False):
+    path = safe(root, f'.workflow/.runtime/{s["id"]}/state.json')
+    if not path.exists():
+        require(not required, 'Orchestration runtime state is missing; reconcile native sessions before finalizing.')
+        return None
+    data = read_json(path)
+    require(isinstance(data, dict) and type(data.get('version')) is int and data.get('version') == 1
+            and data.get('change_id') == s['id'] and isinstance(data.get('jobs'), list), 'Invalid orchestration runtime state.')
+    tasks = {t['id']: t for t in validate_task_plan(root, p, s)['tasks']}
+    seen = set()
+    sessions = {}
+    for job in data['jobs']:
+        require(isinstance(job, dict), 'Invalid worker record.')
+        identifier, attempt = job.get('task_id'), job.get('attempt')
+        require(isinstance(identifier, str) and identifier in tasks and type(attempt) is int and attempt >= 1,
+                'Worker record needs a known task_id and a positive attempt.')
+        require((identifier, attempt) not in seen, 'Duplicate task attempt in orchestration runtime state.')
+        seen.add((identifier, attempt))
+        require(job.get('status') in JOB_STATUSES and job.get('acceptance') in {'pending', 'accepted', 'rejected'},
+                'Invalid worker status or acceptance.')
+        session = job.get('session_id')
+        require(session is None or isinstance(session, str) and bool(session.strip()), 'Invalid native worker session id.')
+        if session:
+            require(session not in sessions or sessions[session] == identifier, 'A native session cannot own unrelated tasks.')
+            sessions[session] = identifier
+        if job['acceptance'] == 'accepted':
+            require(job['status'] == 'returned' and session, 'An accepted contribution requires a returned native session.')
+    return data
+
+def quiescent(root, p, s, phases=()):
+    if s['schema_version'] != 2:
+        return None
+    data = runtime_state(root, p, s, required=True)
+    require(data.get('contract_digest') == contract(root, p, s), 'Worker registry belongs to a different contract; reconcile it before finalizing.')
+    require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in data['jobs']),
+            'Workers are active or their outcome is unknown; reconcile native sessions before finalizing.')
+    latest = {}
+    for job in data['jobs']:
+        if job['attempt'] > latest.get(job['task_id'], {}).get('attempt', 0):
+            latest[job['task_id']] = job
+    for task in validate_task_plan(root, p, s)['tasks']:
+        if task['phase'] in phases:
+            require(latest.get(task['id'], {}).get('acceptance') == 'accepted',
+                    f'Task {task["id"]} has no accepted contribution for its latest attempt.')
+    return data
+
+def execution_summary(root, p, s, registry, subject):
+    """Export a bounded public provenance projection, never the private registry."""
+    def text(value, field, limit=512):
+        require(value is None or isinstance(value, str) and len(value.encode('utf-8')) <= limit
+                and not any(c in value for c in '\x00\n\r'), f'Invalid or oversized execution summary {field}.')
+        return value
+
+    def model(value):
+        if isinstance(value, dict):
+            identifier = text(value.get('id'), 'model id')
+            provider = text(value.get('providerID'), 'model provider')
+            variant = text(value.get('variant'), 'model variant')
+            value = ((provider + '/' if provider else '') + identifier + ('#' + variant if variant else '')) if identifier else None
+        elif not isinstance(value, str):
+            value = None
+        return text(None if value in ('', 'inherit') else value, 'model reference')
+
+    latest = {}
+    for job in registry['jobs']:
+        if job['attempt'] > latest.get(job['task_id'], {}).get('attempt', 0):
+            latest[job['task_id']] = job
+    tasks = []
+    for task in validate_task_plan(root, p, s)['tasks']:
+        job = latest[task['id']]
+        profile = job.get('profile') if isinstance(job.get('profile'), dict) else {}
+        effort = profile.get('effort')
+        tasks.append({'task_id': task['id'], 'role': task['role'], 'phase': task['phase'],
+                      'criteria': task['criteria'], 'attempt': job['attempt'],
+                      'session_id': text(job['session_id'], 'session id'),
+                      'status': job['status'], 'acceptance': job['acceptance'],
+                      'requested_model': model(profile.get('model')),
+                      'actual_model': model(job.get('actual_model')),
+                      'effort': text(None if effort in ('inherit', 'model default') else effort, 'effort', 64),
+                      'fast': profile.get('fast') if type(profile.get('fast')) is bool else None,
+                      'native_outcome': job.get('native_outcome') if job.get('native_outcome') in ('succeeded', 'failed', 'interrupted') else None})
+    summary = {'version': 1, 'change_id': s['id'], 'contract_digest': registry['contract_digest'],
+               'subject_digest': digest(subject), 'archived_at': now(), 'tasks': tasks}
+    require(len((json.dumps(summary, ensure_ascii=False, indent=2) + '\n').encode('utf-8')) <= 256 * 1024,
+            'Execution summary exceeds 256 KiB; reconcile the public provenance before archive.')
+    return summary
+
+def plan(root, args):
+    p, s = load(root, args.id)
+    if not args.file:
+        require(s['schema_version'] == 2, 'This change uses schema v1; enable orchestration with plan --file before approval.')
+        return {'change': s['id'], 'schema_version': 2, 'plan': validate_task_plan(root, p, s)}
+    require(s['schema_version'] == 2 or not (s.get('approval') or 'baseline' in s) or args.migrate,
+            'An approved v1 change needs explicit --migrate; this invalidates its approval.')
+    value = read_json(Path(args.file)) if args.file != '-' else json.load(sys.stdin)
+    validated = validate_task_plan(root, p, s, value)
+    runtime_path = safe(root, f'.workflow/.runtime/{s["id"]}/state.json')
+    if runtime_path.exists():
+        existing = runtime_state(root, p, s)
+        require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in existing['jobs']), 'Stop and reconcile workers before changing their contract.')
+    old_plan = safe(p, 'execution-plan.json')
+    before = old_plan.read_bytes() if old_plan.exists() else None
+    state_before = (p / 'state.json').read_bytes()
+    try:
+        write_json(old_plan, validated)
+        s['schema_version'] = 2
+        for key in ('approval', 'check', 'documentation'):
+            s.pop(key, None)
+        save(p, s, 'draft')
+    except Exception:
+        if before is None:
+            old_plan.unlink(missing_ok=True)
+        else:
+            write(old_plan, before.decode())
+        write(p / 'state.json', state_before.decode())
+        raise
+    return {'change': s['id'], 'schema_version': 2, 'phase': 'draft', 'plan': validated,
+            'note': 'Review and explicitly approve the task contract before apply; any existing source baseline was preserved.'}
+
+def status(root, args):
+    p, s = load(root, args.id)
+    value = contract(root, p, s)
+    result = dict(s) if not args.compact else {
+        key: s[key] for key in ('schema_version', 'id', 'target', 'extensions', 'phase', 'updated_at') if key in s}
+    result['approval_current'] = s.get('approval', {}).get('contract_digest') == value
+    result['contract_digest'] = value
+    if s['schema_version'] == 2:
+        result['plan'] = validate_task_plan(root, p, s)
+        try:
+            runtime = runtime_state(root, p, s)
+            result['runtime'] = None if runtime is None else {
+                'contract_current': runtime.get('contract_digest') == value,
+                'jobs': [{key: j[key] for key in ('task_id', 'session_id', 'status', 'acceptance', 'attempt') if key in j}
+                         for j in runtime['jobs']]}
+        except WorkflowError as exc:
+            result['runtime'] = {'error': str(exc)}
+    return result
 
 def approved(root, p, s):
     require(s.get('approval', {}).get('contract_digest') == contract(root, p, s),
@@ -390,6 +622,7 @@ def check(root, args):
     p, s = load(root, args.id)
     require(s['phase'] in ('applying', 'checked', 'documented'), 'Start apply first.')
     approved(root, p, s)
+    quiescent(root, p, s, ('apply', 'check'))
     ids = criteria(p)
     report = json.load(sys.stdin) if args.results == '-' else read_json(Path(args.results))
     subject = snapshot(root)
@@ -414,6 +647,7 @@ def docs(root, args):
     p, s = load(root, args.id)
     require(s['phase'] == 'checked', 'A successful check is required before documenting completion.')
     approved(root, p, s)
+    quiescent(root, p, s, PLAN_PHASES)
     require(bool(args.summary.strip()), 'Documentation evidence summary is required.')
     current = snapshot(root)
     differences = changed(s['check']['subject'], current)
@@ -429,6 +663,7 @@ def archive(root, args):
     p, s = load(root, args.id)
     require(s['phase'] == 'documented', 'Check and documentation must complete before archive.')
     approved(root, p, s)
+    registry = quiescent(root, p, s, PLAN_PHASES)
     current = snapshot(root)
     require(current == s['documentation']['subject'], 'Working tree changed after verification/documentation.')
     require(head(root) == s['base_head'], 'HEAD changed during this change. Reconcile the baseline explicitly before archive.')
@@ -448,8 +683,13 @@ def archive(root, args):
     # Change metadata can be new or tracked; do not stage unrelated .workflow content.
     tracked_change = bool(git(root, 'ls-files', '--', str(p.relative_to(root))).stdout.strip())
     state_before = (p / 'state.json').read_bytes()
+    summary_path = safe(p, 'execution-summary.json')
+    summary = execution_summary(root, p, s, registry, current) if s['schema_version'] == 2 else None
+    summary_before = summary_path.read_bytes().decode('utf-8') if summary is not None and summary_path.exists() else None
     try:
         save(p, s, 'archived')
+        if summary is not None:
+            write_json(summary_path, summary)
         write(target, (p / 'spec.md').read_text())
         p.rename(dest)
         add_paths = [x for x in commit_paths if x != str(p.relative_to(root)) or tracked_change]
@@ -467,6 +707,11 @@ def archive(root, args):
             if dest.exists():
                 dest.rename(p)
             write(p / 'state.json', state_before.decode())
+            if summary is not None:
+                if summary_before is None:
+                    summary_path.unlink(missing_ok=True)
+                else:
+                    write(summary_path, summary_before)
             if before is None:
                 target.unlink(missing_ok=True)
             else:
@@ -504,8 +749,11 @@ def parser():
     sub = p.add_subparsers(dest='command', required=True)
     sub.add_parser('bootstrap')
     e = sub.add_parser('explore'); e.add_argument('id'); e.add_argument('--title'); e.add_argument('--target'); e.add_argument('--extension', action='append', default=[])
-    for name in ('validate', 'start', 'status'):
+    for name in ('validate', 'start'):
         sub.add_parser(name).add_argument('id')
+    st = sub.add_parser('status'); st.add_argument('id'); st.add_argument('--compact', action='store_true')
+    pl = sub.add_parser('plan'); pl.add_argument('id'); pl.add_argument('--file', help='Execution plan JSON file, or - for stdin; omit to read the current plan')
+    pl.add_argument('--migrate', action='store_true', help='Explicitly migrate an approved v1 change, invalidating approval')
     e = sub.add_parser('select'); e.add_argument('id'); e.add_argument('--extension', action='append', default=[])
     a = sub.add_parser('approve'); a.add_argument('id'); a.add_argument('--by', required=True); a.add_argument('--ack-user-approval', action='store_true')
     c = sub.add_parser('check'); c.add_argument('id'); c.add_argument('--results', required=True)
@@ -523,7 +771,9 @@ def main():
     if args.command == 'snapshot':
         files = snapshot(root); result = {'subject_digest': digest(files), 'files': files}
     elif args.command == 'status':
-        p, s = load(root, args.id); result = {**s, 'approval_current': s.get('approval', {}).get('contract_digest') == contract(root, p, s)}
+        result = status(root, args)
+    elif args.command == 'plan' and not args.file:
+        result = plan(root, args)
     elif args.command == 'extensions':
         result = extension_data(root, [k for k,v in config(root)['extensions'].items() if isinstance(v,dict) and v.get('enabled') is True])
     else:

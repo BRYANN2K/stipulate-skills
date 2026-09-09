@@ -1,27 +1,29 @@
 # Coding clients
 
-Stip uses the same seven Agent Skills packages and Python runtime across clients. Domain extensions remain project-local references selected per change. Python 3.10+ and Git are required. Stip does not set a model, grant tool permissions, or bypass the client's approval controls.
+Stip uses the same seven Agent Skills packages and Python runtime across clients. Domain extensions remain project-local references selected per change. Python 3.10+ and Git are required. Unset worker models inherit the coordinator model. Native model assignments are optional; Stip does not grant tool permissions or bypass the client's approval controls.
 
 ## Project installation
 
 From the target project, install for Codex, Claude Code, and OpenCode together:
 
 ```sh
-npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex claude-code opencode
+npx github:BRYANN2K/stipulate-skills --agent codex claude-code opencode
 ```
 
-This also supports Grok Build: it discovers the shared `.agents/skills` directory. The published skills CLI tested during this integration rejected `--agent grok`, even though the upstream source already lists that adapter. Do not require that flag until the installed CLI supports it.
+The launcher installs the native plugin when OpenCode is selected; use `--no-opencode-plugin` for skills and commands only. [Installer reference](installation.md) covers requirements, scopes, updates, and removal.
+
+The shared Agent Skills format also supports Grok Build: it discovers the shared `.agents/skills` directory. The published skills CLI tested during this integration rejected `--agent grok`, even though the upstream source already lists that adapter. Do not require that flag until the installed CLI supports it.
 
 | Client | Single-client install option | Invocation | Project instructions |
 | --- | --- | --- | --- |
 | Codex | `--agent codex` | `$stip-bootstrap`, `$stip-explore`, etc. | `AGENTS.md` |
 | Claude Code | `--agent claude-code` | `/stip-bootstrap`, `/stip-explore`, etc. | `CLAUDE.md` imports `AGENTS.md` |
 | Grok Build | `--agent codex` (shared project directory) | `/stip-bootstrap`, `/stip-explore`, etc. | `AGENTS.md` |
-| OpenCode v2 | `--agent opencode` | Select `/stip-bootstrap`, `/stip-explore`, etc. in the skill command catalog | `AGENTS.md` |
+| OpenCode v2 | `--agent opencode` | `/stip-bootstrap`, `/stip-explore`, etc.; `/stip-settings` configures the native plugin | `AGENTS.md` |
 
 The shared-directory Grok fallback above is **project-local**. Do not add `--global` to it: a Codex global destination is not a Grok global destination. For a Grok-only global installation, use the repository's Python installer with `--destination "$HOME/.grok/skills"`. For other clients, `--global` selects their respective user-level destinations.
 
-Keep `'*'` quoted. The CLI installs the complete seven packages, including all 28 domain extensions carried by `stip-bootstrap`. It does not create 28 additional slash commands.
+The launcher installs all seven packages, including all 28 domain extensions carried by `stip-bootstrap`. It does not create 28 additional slash commands.
 
 ## Bootstrap and existing projects
 
@@ -31,7 +33,7 @@ Existing Claude instructions are preserved. Repeated setup does not duplicate th
 
 Restart Claude Code after first setup so project instructions load at session start. When adopting existing instructions, inspect and reconcile contradictions explicitly. The low-level `workflow.py bootstrap` remains metadata-only; normal skill bootstrap uses `setup_stip.py`.
 
-OpenCode v2 discovers `.agents/skills`, `.claude/skills`, and `.opencode/skills`. Standard skill discovery does not require configuration edits. Stip also supplies explicit slash-command wrappers; install them as described below. Avoid installing differing copies with the same ID because client precedence rules can select a different copy than expected.
+OpenCode v2 discovers `.agents/skills`, `.claude/skills`, and `.opencode/skills`. Standard skill discovery does not require configuration edits. The launcher also installs explicit slash-command wrappers and a native plugin package discovered under `.opencode/plugins/stipulate/` (or the global OpenCode config directory). Avoid installing differing copies with the same ID because client precedence rules can select a different copy than expected.
 
 ## Verification and limits
 
@@ -42,7 +44,9 @@ Verified locally during this integration:
 - The packaged bootstrap runs from the installed client paths, makes 28 extensions available, and preserves the Claude import on repeat runs.
 - Automated tests cover existing instructions, active imports, fenced examples, symlinks, package preservation, and the shared workflow lifecycle.
 
-Claude Code 2.1.220 is installed locally. OpenCode on this machine is 1.18.13, so this is **not an end-to-end OpenCode v2 runtime certification**. V2 compatibility is based on its official format, discovery, and command documentation. No model-driven lifecycle across all clients has been certified by the packaging tests.
+These historical package checks establish discovery and installation behavior; they do not certify a model-driven lifecycle across every client. The native OpenCode integration targets the v2 `0.0.0-beta-19296` plugin API. Its workflow contract, delegation gates, and compatibility rules are documented in [orchestration](orchestration-contract.md). Codex and Claude Code use [native agent files](native-agents.md) rather than the OpenCode plugin.
+
+For a private one-shot OpenCode CLI sandbox (`opencode2 run --standalone`), use `background: false` on `stip_delegate` so the command waits for the native child before the private backend can stop. Background dispatch in a continuing session still requires an observed completion and coordinator acceptance. See [private CLI runs](installation.md#private-cli-runs).
 
 To validate a client interactively: confirm all seven entries, invoke bootstrap, explore one small change with one relevant domain, review and approve its spec, then apply/check/docs/archive. Confirm the shared files and approval/evidence gates rather than treating successful discovery as proof of correct agent behavior.
 
@@ -65,15 +69,15 @@ npx github:BRYANN2K/stipulate-skills
 npx github:BRYANN2K/stipulate-skills --global
 ```
 
-The launcher defaults to OpenCode and supports `--agent opencode codex claude-code`, `--yes`, and `--dry-run`. It checks command collisions before running the pinned skills CLI (1.5.25), copies skill resources out of npm's cache, then installs the commands. Re-run this launcher for updates; its locally packaged source is not a remote source for `npx skills update`. Global command installation respects `XDG_CONFIG_HOME`.
+The launcher defaults to OpenCode v2 and supports `--agent opencode codex claude-code`, `--yes`, `--dry-run`, and `--no-opencode-plugin`. It checks command and managed plugin collisions before running the pinned skills CLI (1.5.25), copies skill resources out of npm's cache, installs commands, and installs the native plugin unless opted out. Re-run this launcher for updates; its locally packaged source is not a remote source for `npx skills update`. Global command and native plugin installation respect `XDG_CONFIG_HOME`. The plugin includes root entries for local discovery and a `./tui` package export, which OpenCode loads with the server plugin; no configuration file edits are needed.
 
-Run **`/restart`** in an existing OpenCode session after installation. This reload step was confirmed by the user after the commands initially did not appear.
+Run **`/restart`** in an existing OpenCode session after installation. This reload step was confirmed for command discovery. If the sidebar or `/stip-settings` has not loaded, restart the CLI.
 
-The two installation steps are not a single transaction: if command writing fails after skills installation, the skills remain installed and the command helper can be rerun after resolving the error.
+The skills, command, and plugin steps are not one transaction. A later failure may leave skills or commands installed. The plugin is staged with locked dependencies before activation, and a failed dependency installation preserves the active plugin. Resolve the reported problem and rerun the launcher.
 
 ### Manual command-only installation
 
-Stip bundles seven command templates inside `stip-bootstrap/assets/opencode-commands`. Each command asks the agent to load the corresponding skill and forwards `$ARGUMENTS`; procedures, model choice, and approval gates remain in the existing skills.
+Stip bundles seven command templates inside `stip-bootstrap/assets/opencode-commands`. Each command asks the agent to load the corresponding skill and forwards `$ARGUMENTS`; procedures and approval gates remain in the skills and workflow runtime. Optional native orchestration settings determine worker model assignments.
 
 After installing the skills, run the helper from your installed bootstrap directory. For the global OpenCode installation:
 

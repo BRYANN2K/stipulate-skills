@@ -13,9 +13,11 @@ Read the change proposal, relevant current specs and selected extension contribu
 
 Create tasks.md only when decomposition helps. Keep detailed discovery in proposal.md. Do not make a plan or checklist a substitute for a decision.
 
+For native orchestration, read [references/orchestration.md](references/orchestration.md). Prepare a compact `execution-plan.json` with stable task IDs, roles, phases, criteria, dependencies, file ownership and objectives. Use OpenCode's `stip_plan` tool when available, or `plan <id> --file <plan-json>`. This explicitly opts the change into state schema v2 and binds the semantic task graph to approval. A previously approved or started v1 change requires `--migrate` and renewed approval; do not silently convert it. Include a separate verification task/session and relevant documentation work without creating a task for every installed extension.
+
 Run `validate <id>` and present the files to the user. Validation checks structure and invalidates a stale approval; it does not approve meaning. Continue editing through natural-language feedback. An explicit request to apply the presented, unchanged contract can supply approval; silence cannot.
 
-Only after that agreement run `approve <id> --by user --ack-user-approval`. This flag is an audit attestation, not user authentication. Never invoke it to bypass the user's review. Proposal, spec, optional tasks, target and selected extension guidance are bound to approval. Core v1 treats any byte change to these documents as stale, including wording corrections; reapproval is conservative and explicit.
+Only after that agreement run `approve <id> --by user --ack-user-approval`. This flag is an audit attestation, not user authentication. Never invoke it to bypass the user's review. Proposal, spec, optional tasks, target and selected extension guidance are bound to approval. Text changes to these documents invalidate approval, including wording corrections. V2 additionally binds semantic execution-plan changes; model settings and mutable worker progress remain outside the approved files.
 
 Stop after a reviewable draft unless approval/apply was actually requested. The next operation is stip-apply.
 

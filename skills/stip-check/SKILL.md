@@ -11,12 +11,16 @@ metadata:
 
 Read the approved contract and relevant extension check references. This stage evaluates the result; it does not redesign the feature or silently change requirements.
 
+For a schema-v2 change, read [references/orchestration.md](references/orchestration.md). Dispatch the planned check tasks to native sessions distinct from their implementers, using configured verification/security profiles or inherited defaults. Identify a stable integrated candidate and ask for concrete defects and missing observations without prescribing a verdict. The coordinator reconciles their results and accepts contributions only after inspection. All apply/check tasks must be accepted and all workers quiescent before the engine can finalize check.
+
 1. Exercise or inspect the actual behavior required by each criterion. A build proves compilation, not UX, authorization or deployment. Distinguish failures from unavailable checks.
 2. Run `snapshot` after the last relevant source change. Create a results JSON outside the repository, or pass it through stdin: `{"subject_digest":"<snapshot digest>","criteria":[{"id":"AC-1","status":"passed","evidence":"<actual command/result or observation locator>"}]}`.
 3. Run `check <id> --results <file-or-dash>`. Cover each criterion exactly once. Valid statuses are passed, failed, unverified, not-applicable; only all passed advances to checked. A not-applicable requirement needs a contract correction and reapproval rather than silent acceptance.
 4. Report gaps. Corrections go through stip-apply when authorized, then a new check. When all criteria pass, proceed to stip-docs.
 
 The command checks report consistency and working-tree identity. It cannot authenticate evidence or perform semantic verification itself. Never fabricate a report merely to advance state. Do not include credentials or private payloads in evidence.md.
+
+If corrections change the candidate, obtain fresh relevant observations and reconcile the worker records before submitting new evidence. A completed native session, a favorable review or an accepted contribution is not by itself a passed acceptance criterion.
 
 ## Runtime
 

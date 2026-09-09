@@ -1,11 +1,28 @@
 {
   "name": "stipulate-skills",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
-  "description": "Install Stip skills and OpenCode slash commands together",
+  "description": "Install Stip skills, commands and native OpenCode orchestration",
   "license": "Apache-2.0",
   "repository": "github:BRYANN2K/stipulate-skills",
-  "bin": {"stipulate-skills": "bin/install.mjs"},
-  "engines": {"node": ">=18"},
-  "files": ["bin/", "skills/", "scripts/", "LICENSE", "NOTICE.md"]
+  "bin": {
+    "stipulate-skills": "bin/install.mjs"
+  },
+  "engines": {
+    "node": ">=22.20.0"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "scripts/",
+    "LICENSE",
+    "NOTICE.md",
+    "packages/opencode/src/",
+    "packages/opencode/assets/",
+    "packages/opencode/index.ts",
+    "packages/opencode/tui.tsx",
+    "packages/opencode/rpc.ts",
+    "packages/opencode/package.json",
+    "packages/opencode/package-lock.json"
+  ]
 }
