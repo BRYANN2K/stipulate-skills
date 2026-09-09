@@ -1,6 +1,23 @@
 {
   "schema_version": 1,
-  "extensions": {},
+  "extensions": {
+    "cli-tooling": {
+      "enabled": true,
+      "path": ".workflow/extensions/cli-tooling"
+    },
+    "ai-engineering": {
+      "enabled": true,
+      "path": ".workflow/extensions/ai-engineering"
+    },
+    "backend-engineering": {
+      "enabled": true,
+      "path": ".workflow/extensions/backend-engineering"
+    },
+    "security-engineering": {
+      "enabled": true,
+      "path": ".workflow/extensions/security-engineering"
+    }
+  },
   "settings": {
     "require_user_approval": true
   }
