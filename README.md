@@ -16,7 +16,7 @@ Seven core skills, optional domain extensions, and a shared contract that stays 
 OpenCode v2 adds native subagent orchestration, a workflow sidebar, and model settings.
 Uses the Agent Skills format for **Codex, Claude Code, Grok Build, and OpenCode v2**.
 
-[Get started](#quick-start) · [See the workflow](#how-it-works) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
+[Get started](#quick-start) · [See the workflow](#how-it-works) · [OpenCode plugin](#native-orchestration-in-opencode-v2) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
 
 </div>
 
@@ -52,6 +52,8 @@ This installs **all seven skills, all 28 bundled extensions, the seven `/stip-*`
 ```sh
 npx github:BRYANN2K/stipulate-skills --global
 ```
+
+**Using OpenCode through Orca?** Run the global installation command in a shell terminal inside Orca. The installer follows `OPENCODE_CONFIG_DIR`, so the plugin and commands land in the same configuration directory as Orca's OpenCode sessions.
 
 In an already open OpenCode v2 session, run **`/restart`**. If the sidebar or settings command has not loaded, restart the CLI. Then use **`/stip-settings`** to choose models for worker roles; unset roles inherit the coordinator model.
 
@@ -105,15 +107,33 @@ A failed check returns to implementation. New requirements return to validation.
 
 ## Native orchestration in OpenCode v2
 
-Explore with your main agent. During validation, agree on an execution plan alongside the spec. The coordinator can then delegate bounded work to native OpenCode subagents, reconcile their contributions, and continue through check, docs, and archive.
+Explore with your main agent. During validation, agree on an execution plan alongside the spec. The coordinator delegates bounded tasks to native OpenCode subagents, reviews their contributions, and takes the change through check, docs, and archive. An optional research helper can answer a specific question while exploration stays with the main agent.
 
-- **Choose models by role.** Backend, frontend, security, documentation, and other roles can have their own model. Effort and Fast choices follow the selected model's available variants.
-- **Follow the work.** The sidebar shows the active change, lifecycle, extensions, and workers. A worker returning does not automatically mark its contribution accepted.
-- **Keep control of the contract.** Execution plans belong to the approved version. Existing v1 changes continue to work; migration to an execution plan requires an explicit step and renewed approval.
+### See where the work stands
+
+The **STIPULATE** panel sits below the MCP section. It shows the selected change, its seven stages, relevant extensions, and tracked workers. Click a stage to read its associated document. Click the change name to switch between active work and archived changes.
+
+| Workflow sidebar | Change selector |
+| --- | --- |
+| <img src="assets/screenshots/opencode-sidebar.png" alt="Stipulate sidebar showing Bootstrap and Explore complete, Validate awaiting approval, two selected extensions, and no tracked workers yet." width="280"> | <img src="assets/screenshots/opencode-change-picker.png" alt="Change selector listing active documented and draft changes, followed by an archived change." width="440"> |
+
+The selected contract is awaiting approval. Once workers are dispatched, the panel shows their activity and lets you open their native sessions. Returned work stays pending until the coordinator reviews and accepts it; completion alone does not pass the check.
+
+### Give each role the right model
+
+Open **`/stip-settings`** to choose a default worker profile or assign models to backend, frontend, API, security, verification, documentation, and other roles. **Inherit** uses the coordinator's effective model. The picker lists models available through your OpenCode configuration; effort and Fast choices follow the capabilities of the selected model.
+
+| Worker settings | Model selector |
+| --- | --- |
+| <img src="assets/screenshots/opencode-settings.png" alt="Stipulate project settings with inherited specialist profiles, phase overrides, concurrent worker settings, and configuration scope." width="360"> | <img src="assets/screenshots/opencode-model-picker.png" alt="Backend model selector offering inheritance from the coordinator and models from configured OpenCode providers." width="360"> |
+
+Use phase overrides when a role needs different settings during implementation or review. Save shared choices at project scope, or keep personal overrides local. Concurrency limits apply to workers; the coordinator is separate, and shared-checkout writes are serialized. The screenshots show a user's configuration, so the model list and concurrency value can differ from yours.
+
+Execution plans belong to the approved specification version. Existing v1 changes continue to work; adding an execution plan requires explicit migration and renewed approval.
 
 The plugin uses OpenCode subagents. Codex and Claude Code use their own native agent files; see [native agent configuration](docs/native-agents.md). There is no runtime selector in OpenCode settings.
 
-[Orchestration contract and compatibility →](docs/orchestration-contract.md)
+[Panel and settings guide →](docs/opencode-plugin-ui.md) · [Orchestration contract and compatibility →](docs/orchestration-contract.md)
 
 ## The seven skills
 

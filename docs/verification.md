@@ -52,9 +52,11 @@ The native CLI was operated and inspected in Ghostty, with screenshots captured 
 
 The host controls whether the sidebar is visible in narrow terminals and native child views. `/stip-status` provides the keyboard-accessible alternative.
 
+On September 10, the user also confirmed operation inside Orca and supplied the four screenshots used in the README. They show a change awaiting approval, the active/archive selector, specialist settings and the model picker. These captures document the UI in that host; they do not claim a completed delegated implementation there. The installer now respects Orca's `OPENCODE_CONFIG_DIR` override for global plugin and command destinations; 12 installer tests and four launcher tests passed for that follow-up.
+
 ## Automated checks and boundaries
 
-Final local results: **101 Python tests passed, 92 JavaScript tests passed**, TypeScript passed, and all seven skill packages and 28 extension packages validated. Hosted CI was configured for the JavaScript/plugin checks alongside the existing Python matrix; it has not run for this unpushed change.
+The initial native integration qualification passed **101 Python tests and 92 JavaScript tests**, TypeScript, and validation of all seven skill packages and 28 extension packages. The installer follow-up is recorded above. The [GitHub validation workflow](https://github.com/BRYANN2K/stipulate-skills/actions/workflows/validate.yml) runs the Python matrix and JavaScript/plugin checks on subsequent commits; consult that run for the current hosted result.
 
 The Python suite covers legacy lifecycle behavior, v2 plan semantics and migrations, evidence invalidation, native configuration projection, scoped archive behavior and bounded provenance exports. The JavaScript suite covers native-host orchestration through a controlled test host, settings/capability resolution, race and failure cases, installation preservation and npm distribution contents. TypeScript checks the pinned public plugin/TUI/RPC API. Skill and extension validators verify all seven packages and 28 domain packages; editorial extension validation is not a behavioral certification.
 
