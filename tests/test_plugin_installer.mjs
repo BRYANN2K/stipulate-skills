@@ -91,6 +91,24 @@ test('global discovery path respects XDG_CONFIG_HOME', t => {
   assert.equal(existsSync(config), false);
 });
 
+test('global installation follows the OpenCode config override without changing sibling plugins', t => {
+  const { base, source, options } = fixture(t);
+  const config = join(base, 'Orca config');
+  mkdirSync(join(config, 'plugins'), { recursive: true });
+  writeFileSync(join(config, 'plugins/orca.js'), 'existing Orca plugin');
+  const result = installPlugin({ ...options, source, global: true,
+    env: { OPENCODE_CONFIG_DIR: config, XDG_CONFIG_HOME: join(base, 'unused-xdg') } });
+  assert.equal(result.destination, join(config, 'plugins/stipulate'));
+  assert.equal(readFileSync(join(config, 'plugins/orca.js'), 'utf8'), 'existing Orca plugin');
+  assert.equal(existsSync(join(base, 'unused-xdg')), false);
+});
+
+test('project installation stays local when the host overrides global config', t => {
+  const { base, project } = fixture(t);
+  assert.equal(pluginDestination({ cwd: project, env: { OPENCODE_CONFIG_DIR: join(base, 'host-config') } }).destination,
+    join(project, '.opencode/plugins/stipulate'));
+});
+
 test('missing package runtime blocks the entire preview', t => {
   const { source, project, options } = fixture(t);
   rmSync(join(source, 'assets/workflow.py'));

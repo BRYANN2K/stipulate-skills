@@ -71,13 +71,17 @@ function checkExisting(destination) {
   return owner;
 }
 
+export function opencodeConfigDirectory({ cwd = process.cwd(), env = process.env, home = homedir() } = {}) {
+  return resolve(cwd, env.OPENCODE_CONFIG_DIR || join(env.XDG_CONFIG_HOME || join(home, '.config'), 'opencode'));
+}
+
 export function pluginDestination({ global = false, cwd = process.cwd(), env = process.env, home = homedir() } = {}) {
-  const location = global ? resolve(env.XDG_CONFIG_HOME || join(home, '.config')) : resolve(cwd);
+  const location = global ? opencodeConfigDirectory({ cwd, env, home }) : resolve(cwd);
   // Resolve existing system path aliases (such as macOS /var) before checking managed descendants.
   let anchor = location;
   while (!existsSync(anchor)) anchor = dirname(anchor);
   const base = resolve(realpathSync(anchor), relative(anchor, location));
-  return { base, destination: join(base, global ? 'opencode' : '.opencode', 'plugins', 'stipulate') };
+  return { base, destination: global ? join(base, 'plugins', 'stipulate') : join(base, '.opencode', 'plugins', 'stipulate') };
 }
 
 export function preflightPlugin(options = {}) {

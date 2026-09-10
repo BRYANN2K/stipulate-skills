@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { homedir } from 'node:os';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installPlugin, preflightPlugin } from './plugin-install.mjs';
+import { installPlugin, preflightPlugin, opencodeConfigDirectory } from './plugin-install.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -32,7 +31,7 @@ for (let i = 0; i < args.length; i++) {
 if (!agents.length) agents.push('opencode');
 const selected = [...new Set(agents)];
 const commandDir = global
-  ? join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'opencode', 'commands')
+  ? join(opencodeConfigDirectory(), 'commands')
   : join(process.cwd(), '.opencode', 'commands');
 const helper = join(root, 'scripts', 'install_opencode_commands.py');
 function fail(message) { console.error(message); process.exit(1); }

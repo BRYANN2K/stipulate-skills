@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -20,6 +22,20 @@ class LauncherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result=self.run_cli(tmp,'--agent','unknown','--yes')
             self.assertNotEqual(result.returncode,0)
+            self.assertEqual(list(Path(tmp).iterdir()),[])
+
+    def test_global_preview_uses_host_config_for_commands_and_plugin(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config=Path(tmp).resolve()/'Orca config'
+            env={**os.environ,'OPENCODE_CONFIG_DIR':str(config),'XDG_CONFIG_HOME':str(Path(tmp)/'unused-xdg')}
+            result=subprocess.run(['node',str(ROOT/'bin/install.mjs'),'--global','--dry-run'],
+                cwd=tmp,env=env,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            decoder=json.JSONDecoder()
+            _,offset=decoder.raw_decode(result.stdout)
+            report=decoder.decode(result.stdout[offset:].strip())
+            self.assertEqual(report['commands'],str(config/'commands'))
+            self.assertEqual(report['plugin']['destination'],str(config/'plugins/stipulate'))
             self.assertEqual(list(Path(tmp).iterdir()),[])
 
     def test_conflicting_command_blocks_skill_install(self):

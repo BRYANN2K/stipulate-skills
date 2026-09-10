@@ -44,10 +44,12 @@ npx github:BRYANN2K/stipulate-skills#<revision>
 | Resource | Project scope | Global scope |
 | --- | --- | --- |
 | Skills and bundled extensions | Client paths selected by skills CLI | Client user paths selected by skills CLI |
-| OpenCode commands | `.opencode/commands/` | `$XDG_CONFIG_HOME/opencode/commands/` |
-| Native plugin package and dependencies | `.opencode/plugins/stipulate/` | `$XDG_CONFIG_HOME/opencode/plugins/stipulate/` |
+| OpenCode commands | `.opencode/commands/` | `<OpenCode config>/commands/` |
+| Native plugin package and dependencies | `.opencode/plugins/stipulate/` | `<OpenCode config>/plugins/stipulate/` |
 
-If `XDG_CONFIG_HOME` is unset, global commands and the plugin use `~/.config/opencode/`. The plugin is copied out of npm's temporary download directory and includes its own locked dependencies.
+For global commands and the plugin, `OPENCODE_CONFIG_DIR` takes precedence over `$XDG_CONFIG_HOME/opencode/`, with `~/.config/opencode/` as the default. Hosts such as Orca set `OPENCODE_CONFIG_DIR` for their own OpenCode sessions: run the global installer from that host's shell terminal so it targets the same directory. Installing from an ordinary terminal can otherwise leave the host's plugin and commands absent. Project-local installation remains local even when the host sets this variable. Skill locations are selected separately by skills CLI.
+
+The plugin is copied out of npm's temporary download directory and includes its own locked dependencies.
 
 OpenCode v2 discovers immediate package directories under `plugins/`; the package carries root `index.ts`, `tui.tsx`, and `rpc.ts` entrypoints for the local-directory resolver, alongside its npm package exports. These root entries are required by the beta-19296 local-directory resolver; the `src/` files and package exports alone are insufficient. The TUI entrypoint loads the terminal UI. Stip therefore leaves `opencode.json`, `opencode.jsonc`, and `cli.json` unchanged, including comments and other plugins. Existing OpenCode rules that disable plugins still apply.
 
