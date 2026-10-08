@@ -11,13 +11,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import uuid
 from datetime import datetime, timezone
 
 VERSION = 1
 CHANGE_VERSIONS = (1, 2)
 PLAN_PHASES = ('apply', 'check', 'docs')
 ACTIVE_JOB_STATUSES = {'starting', 'running', 'waiting', 'unknown', 'correction'}
-JOB_STATUSES = ACTIVE_JOB_STATUSES | {'queued', 'returned', 'failed', 'cancelled'}
+TERMINAL_JOB_STATUSES = {'returned', 'failed', 'cancelled'}
+JOB_STATUSES = ACTIVE_JOB_STATUSES | TERMINAL_JOB_STATUSES | {'queued'}
+RESULT_LIMIT = 64 * 1024
 SLUG = re.compile(r'^[a-z0-9]+(?:-[a-z0-9]+)*$')
 MARKER = '<!-- spec-workflow:start -->'
 END = '<!-- spec-workflow:end -->'
@@ -141,6 +144,11 @@ Respect higher-priority instructions and the authorizations actually granted.
 
 class WorkflowError(Exception):
     pass
+
+class Conflict(WorkflowError):
+    def __init__(self, message, conflicts):
+        super().__init__(message)
+        self.details = {'conflicts': conflicts}
 
 def require(condition, message):
     if not condition:
@@ -387,22 +395,36 @@ def validate_task_plan(root, p, s, data=None):
                             f'Independent tasks {task["id"]} and {other["id"]} have overlapping write ownership: {left}, {right}')
     return {'version': 1, 'tasks': sorted(normalized, key=lambda t: t['id'])}
 
-def runtime_state(root, p, s, required=False):
+def runtime_state(root, p, s, required=False, orphans=None):
+    """Validate the private registry; with an orphans list, jobs of tasks absent from the plan are collected, not refused."""
     path = safe(root, f'.workflow/.runtime/{s["id"]}/state.json')
     if not path.exists():
         require(not required, 'Orchestration runtime state is missing; reconcile native sessions before finalizing.')
         return None
     data = read_json(path)
     require(isinstance(data, dict) and type(data.get('version')) is int and data.get('version') == 1
-            and data.get('change_id') == s['id'] and isinstance(data.get('jobs'), list), 'Invalid orchestration runtime state.')
-    tasks = {t['id']: t for t in validate_task_plan(root, p, s)['tasks']}
+            and data.get('change_id') == s['id'] and isinstance(data.get('jobs'), list)
+            and isinstance(data.get('retired_jobs', []), list), 'Invalid orchestration runtime state.')
+    for job in data.get('retired_jobs', []):  # Moved aside by rebase: shape only, never gates.
+        require(isinstance(job, dict) and isinstance(job.get('task_id'), str) and type(job.get('attempt')) is int and job['attempt'] >= 1
+                and job.get('status') in JOB_STATUSES - ACTIVE_JOB_STATUSES and job.get('acceptance') in {'pending', 'accepted', 'rejected'},
+                'Invalid retired worker record.')
+    # Only the installed task ids matter here; criterion coverage is checked by the contract, so a spec revision
+    # in progress (spec edited before its replacement plan) cannot lock the registry or block plan --file.
+    installed = read_json(safe(p, 'execution-plan.json'))
+    require(isinstance(installed, dict) and isinstance(installed.get('tasks'), list)
+            and all(isinstance(t, dict) and isinstance(t.get('id'), str) for t in installed['tasks']), 'Invalid installed execution plan.')
+    tasks = {t['id'] for t in installed['tasks']}
     seen = set()
     sessions = {}
     for job in data['jobs']:
         require(isinstance(job, dict), 'Invalid worker record.')
         identifier, attempt = job.get('task_id'), job.get('attempt')
-        require(isinstance(identifier, str) and identifier in tasks and type(attempt) is int and attempt >= 1,
+        require(isinstance(identifier, str) and type(attempt) is int and attempt >= 1,
                 'Worker record needs a known task_id and a positive attempt.')
+        if identifier not in tasks:
+            require(orphans is not None, f'Worker record needs a known task_id and a positive attempt (task {identifier} is not in the plan; run runtime rebase).')
+            orphans.append(identifier)
         require((identifier, attempt) not in seen, 'Duplicate task attempt in orchestration runtime state.')
         seen.add((identifier, attempt))
         require(job.get('status') in JOB_STATUSES and job.get('acceptance') in {'pending', 'accepted', 'rejected'},
@@ -416,6 +438,13 @@ def runtime_state(root, p, s, required=False):
             require(job['status'] == 'returned' and session, 'An accepted contribution requires a returned native session.')
     return data
 
+def latest_attempts(jobs):
+    latest = {}
+    for job in jobs:
+        if job['attempt'] > latest.get(job['task_id'], {}).get('attempt', 0):
+            latest[job['task_id']] = job
+    return latest
+
 def quiescent(root, p, s, phases=()):
     if s['schema_version'] != 2:
         return None
@@ -423,10 +452,10 @@ def quiescent(root, p, s, phases=()):
     require(data.get('contract_digest') == contract(root, p, s), 'Worker registry belongs to a different contract; reconcile it before finalizing.')
     require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in data['jobs']),
             'Workers are active or their outcome is unknown; reconcile native sessions before finalizing.')
-    latest = {}
-    for job in data['jobs']:
-        if job['attempt'] > latest.get(job['task_id'], {}).get('attempt', 0):
-            latest[job['task_id']] = job
+    latest = latest_attempts(data['jobs'])
+    for job in latest.values():
+        require(not (job.get('isolated') is True and job['acceptance'] == 'accepted' and job.get('integrated') is not True),
+                f'Task {job["task_id"]} has an accepted isolated contribution that is not integrated; run runtime integrate first.')
     for task in validate_task_plan(root, p, s)['tasks']:
         if task['phase'] in phases:
             require(latest.get(task['id'], {}).get('acceptance') == 'accepted',
@@ -485,7 +514,7 @@ def plan(root, args):
     validated = validate_task_plan(root, p, s, value)
     runtime_path = safe(root, f'.workflow/.runtime/{s["id"]}/state.json')
     if runtime_path.exists():
-        existing = runtime_state(root, p, s)
+        existing = runtime_state(root, p, s, orphans=[])
         require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in existing['jobs']), 'Stop and reconcile workers before changing their contract.')
     old_plan = safe(p, 'execution-plan.json')
     before = old_plan.read_bytes() if old_plan.exists() else None
@@ -631,22 +660,50 @@ def check(root, args):
     require(isinstance(entries, list), 'Expected criteria array.')
     require(all(isinstance(x, dict) for x in entries), 'Invalid criterion record.')
     require(len(entries) == len(ids) and {x.get('id') for x in entries} == set(ids), 'Report must cover every criterion exactly once.')
-    allowed = {'passed', 'failed', 'unverified', 'not-applicable'}
+    allowed = {'passed', 'failed', 'unverified', 'not-applicable', 'pending-docs'}
     for item in entries:
         require(item.get('status') in allowed and isinstance(item.get('evidence'), str)
                 and bool(item['evidence'].strip()), 'Every result needs a status and inspectable evidence or gap explanation.')
+    pending = sorted(x['id'] for x in entries if x['status'] == 'pending-docs')
+    if pending:
+        docs_only = docs_only_criteria(root, p, s)
+        refused = [x for x in pending if x not in docs_only]
+        require(not refused, 'pending-docs is allowed only for criteria covered exclusively by docs-phase tasks of a v2 execution plan: '
+                + ', '.join(refused))
     s['check'] = {'subject': subject, 'report': report, 'at': now()}
     s.pop('documentation', None)
     passed = all(x['status'] == 'passed' for x in entries)
+    ready = all(x['status'] in ('passed', 'pending-docs') for x in entries)
     write(p / 'evidence.md', '# Evidence\n\nSubject: `' + digest(subject) + '`\n\n' +
           '\n'.join(f"- {x['id']}: {x['status']} — {x['evidence']}" for x in entries) + '\n')
-    save(p, s, 'checked' if passed else 'applying')
-    return {'phase': s['phase'], 'all_passed': passed, 'note': 'Report consistency verified; evidence truth requires actual observations.'}
+    save(p, s, 'checked' if ready else 'applying')
+    result = {'phase': s['phase'], 'all_passed': passed, 'pending_docs': pending,
+              'note': 'Report consistency verified; evidence truth requires actual observations.'}
+    if pending:
+        result['next'] = ('Dispatch the docs-phase tasks, then re-run check with these criteria passed before docs or archive.')
+    return result
+
+def docs_only_criteria(root, p, s):
+    """Criteria whose every covering plan task is a docs-phase task; empty for schema v1."""
+    if s['schema_version'] != 2:
+        return set()
+    phases = {}
+    for task in validate_task_plan(root, p, s)['tasks']:
+        for criterion in task['criteria']:
+            phases.setdefault(criterion, set()).add(task['phase'])
+    return {c for c, found in phases.items() if found == {'docs'}}
+
+def require_no_pending_docs(s, action):
+    pending = sorted(x['id'] for x in s.get('check', {}).get('report', {}).get('criteria', [])
+                     if isinstance(x, dict) and x.get('status') == 'pending-docs')
+    require(not pending, f'Criteria still pending-docs: {", ".join(pending)}. Complete the docs-phase tasks, then re-run '
+            f'check with these criteria recorded passed and their evidence before {action}.')
 
 def docs(root, args):
     p, s = load(root, args.id)
     require(s['phase'] == 'checked', 'A successful check is required before documenting completion.')
     approved(root, p, s)
+    require_no_pending_docs(s, 'docs')
     quiescent(root, p, s, PLAN_PHASES)
     require(bool(args.summary.strip()), 'Documentation evidence summary is required.')
     current = snapshot(root)
@@ -663,6 +720,7 @@ def archive(root, args):
     p, s = load(root, args.id)
     require(s['phase'] == 'documented', 'Check and documentation must complete before archive.')
     approved(root, p, s)
+    require_no_pending_docs(s, 'archive')
     registry = quiescent(root, p, s, PLAN_PHASES)
     current = snapshot(root)
     require(current == s['documentation']['subject'], 'Working tree changed after verification/documentation.')
@@ -725,12 +783,589 @@ def archive(root, args):
     return {'phase': 'archived', 'commit': commit, 'archive': str(dest),
             'note': 'No push or deployment performed. Git history identifies the archive commit.'}
 
+# --- Host-neutral worker runtime: dispatch gates, registry, isolation and integration. ---
+
+def bounded(value, field, limit, required=False):
+    require(value is None and not required or isinstance(value, str) and (bool(value.strip()) or not required)
+            and len(value) <= limit and '\x00' not in value, f'Invalid {field}: expected at most {limit} characters.')
+    return value
+
+def runtime_limits(root, args):
+    orchestration = config(root).get('orchestration') or {}
+    defaults = orchestration.get('defaults') or {} if isinstance(orchestration, dict) else None
+    require(isinstance(defaults, dict), 'Invalid orchestration defaults in .workflow/config.json.')
+    result = {}
+    for key, fallback in (('max_workers', 2), ('max_shared_writers', 1)):
+        value = getattr(args, key, None)
+        value = defaults.get(key, fallback) if value is None else value
+        require(type(value) is int and 1 <= value <= 8, f'{key} must be between 1 and 8.')
+        result[key] = value
+    return result
+
+def registry_file(root, change):
+    return safe(root, f'.workflow/.runtime/{slug(change)}/state.json')
+
+def read_helpers(path):
+    if not path.exists():
+        return {'version': 1, 'jobs': []}
+    data = read_json(path)
+    require(isinstance(data, dict) and data.get('version') == 1 and isinstance(data.get('jobs'), list)
+            and all(isinstance(j, dict) for j in data['jobs']), f'Invalid helper registry: {path}')
+    return data
+
+def all_jobs(root, exclude=None):
+    """(owner, job) for every recorded worker: change registries by change id, helpers as 'helper'."""
+    jobs = []
+    base = safe(root, '.workflow/.runtime')
+    for folder in sorted(base.iterdir()) if base.is_dir() else []:
+        if folder.name == exclude or not SLUG.fullmatch(folder.name) or folder.is_symlink() or not folder.is_dir():
+            continue
+        path = registry_file(root, folder.name)
+        if path.exists():
+            data = read_json(path)
+            require(isinstance(data, dict) and isinstance(data.get('jobs'), list) and all(isinstance(j, dict) for j in data['jobs']),
+                    f'Invalid worker registry: {folder.name}')
+            jobs += [(folder.name, j) for j in data['jobs']]
+    for name in ('helpers.json', 'engine-helpers.json'):
+        jobs += [('helper', j) for j in read_helpers(safe(root, '.workflow/.runtime/' + name))['jobs']]
+    return jobs
+
+def overlaps(left, right):
+    return any(a.casefold() == b.casefold() or a.casefold().startswith(b.casefold() + '/') or b.casefold().startswith(a.casefold() + '/')
+               for a in left for b in right)
+
+def owned(path, write_paths):
+    return any(path == w or path.startswith(w + '/') for w in write_paths)
+
+def done(job):
+    return bool(job) and job['acceptance'] == 'accepted' and (job.get('isolated') is not True or job.get('integrated') is True)
+
+def blocker(task, tasks, latest, phase):
+    if not (phase in ('checked', 'documented') if task['phase'] == 'docs' else phase == 'applying'):
+        return 'Task is not eligible in the current lifecycle phase.'
+    for dependency in task['depends_on']:
+        if not done(latest.get(dependency)):
+            return f'Dependency {dependency} has not been accepted and integrated.'
+    if task['phase'] != 'apply' and not all(done(latest.get(t['id'])) for t in tasks if t['phase'] == 'apply'):
+        return 'Accept and integrate all implementation work before verification or documentation.'
+    if task['phase'] == 'docs' and not all(done(latest.get(t['id'])) for t in tasks if t['phase'] == 'check'):
+        return 'Accept every verification contribution before documentation.'
+    return None
+
+def fingerprint(p):
+    if p.is_symlink():
+        return 'symlink:' + os.readlink(p)
+    if not p.exists():
+        return None
+    if not p.is_file():
+        return 'unsupported'
+    return hashlib.sha256(p.read_bytes()).hexdigest() + ':' + oct(p.stat().st_mode & 0o111)
+
+def listed(root, paths, tracked=True):
+    if not paths:
+        return []
+    output = git(root, '--literal-pathspecs', 'ls-files', '-z', '--others', '--exclude-standard',
+                 *(['--cached'] if tracked else []), '--', *paths).stdout
+    names = {os.fsdecode(x) for x in output.split(b'\0') if x}
+    return sorted(x for x in names if not x.endswith('/') and not x.startswith('.workflow/.runtime/'))
+
+def worktree_path(root, change, job):
+    rel = job.get('worktree')
+    if not isinstance(rel, str):
+        return None
+    require(rel.startswith(f'.workflow/.runtime/{change}/worktrees/') and '..' not in Path(rel).parts, 'Invalid recorded worktree path.')
+    return safe(root, rel)
+
+def remove_worktree(root, change, job):
+    path = worktree_path(root, change, job)
+    if path is None:
+        return
+    if path.exists():
+        if git(root, 'worktree', 'remove', '--force', str(path), check=False).returncode and path.exists():
+            shutil.rmtree(path)
+        git(root, 'worktree', 'prune', check=False)
+    job['worktree_removed'] = True
+
+def create_worktree(root, change, task, attempt):
+    """Snapshot the working tree (tracked edits plus untracked owned/read files) into a detached worktree."""
+    require(head(root), 'Isolation needs an initial commit.')
+    rel = f'.workflow/.runtime/{change}/worktrees/{task["id"]}-{attempt}'
+    path = safe(root, rel)
+    require(not path.exists(), f'Worktree path already exists: {rel}')
+    base_commit = git(root, 'stash', 'create').stdout.decode().strip() or head(root)
+    base = {name: fingerprint(root / name) for name in listed(root, task['write_paths'])}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    git(root, 'worktree', 'add', '--detach', str(path), base_commit)
+    job = {'worktree': rel}
+    try:
+        copied = {}
+        for name in listed(root, task['write_paths'] + task.get('read_paths', []) + [f'.workflow/changes/{change}'], tracked=False):
+            source = safe(root, name)
+            if source.is_file():
+                target = safe(path, name)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+                copied[name] = fingerprint(target)
+    except Exception:
+        remove_worktree(root, change, job)
+        raise
+    return {'worktree': rel, 'base_commit': base_commit, 'base': base, 'copied': copied}
+
+def worktree_exists(root, change, job):
+    path = worktree_path(root, change, job)
+    return path is not None and path.is_dir() and job.get('worktree_removed') is not True
+
+def text_input(value):
+    raw = sys.stdin.buffer.read() if value == '-' else Path(value).read_bytes()
+    return raw.decode('utf-8', errors='replace')
+
+def store_result(root, rel, text):
+    raw = text.encode('utf-8')
+    truncated = len(raw) > RESULT_LIMIT
+    body = raw[:RESULT_LIMIT].decode('utf-8', errors='ignore')
+    if truncated:
+        body += f'\n\n[truncated by Stip: {len(raw) - RESULT_LIMIT} bytes omitted]\n'
+    write(safe(root, rel), body)
+    return {'result_path': rel, 'result_bytes': len(raw), 'result_truncated': truncated}
+
+def load_v2(root, name):
+    p, s = load(root, name)
+    require(s['schema_version'] == 2, 'Install and approve an execution plan before delegation.')
+    return p, s
+
+def task_job(root, args):
+    """Locate the latest attempt of a change task; --attempt must name it."""
+    p, s = load_v2(root, args.id)
+    data = runtime_state(root, p, s)
+    jobs = [j for j in data['jobs'] if j['task_id'] == args.task] if data else []
+    require(jobs, f'No worker record for task {args.task}.')
+    job = max(jobs, key=lambda j: j['attempt'])
+    attempt = getattr(args, 'attempt', None)
+    require(attempt is None or job['attempt'] == attempt, f'Attempt {attempt} is not the latest attempt of {args.task}.')
+    return p, s, data, job
+
+def helper_job(root, args):
+    path = safe(root, '.workflow/.runtime/engine-helpers.json')
+    data = read_helpers(path)
+    job = next((j for j in data['jobs'] if j.get('helper_id') == args.helper), None)
+    require(job is not None, f'Unknown engine-managed helper: {args.helper}')
+    return path, data, job
+
+def target(root, args):
+    """Return (registry path, registry, job, owner) for --task or --helper."""
+    require(bool(args.task) != bool(args.helper), 'Name exactly one of --task or --helper.')
+    if args.helper:
+        path, data, job = helper_job(root, args)
+        return path, data, job, 'helper'
+    require(getattr(args, 'attempt', None) is not None or args.runtime_action == 'cancel', '--attempt is required with --task.')
+    _, s, data, job = task_job(root, args)
+    return registry_file(root, s['id']), data, job, s['id']
+
+def reserve_task(root, args):
+    p, s = load_v2(root, args.id)
+    approved(root, p, s)
+    value = contract(root, p, s)
+    tasks = validate_task_plan(root, p, s)['tasks']
+    task = next((t for t in tasks if t['id'] == args.task), None)
+    require(task is not None, 'Task is not in the approved execution plan.')
+    data = runtime_state(root, p, s) or {'version': 1, 'change_id': s['id'], 'contract_digest': value, 'jobs': []}
+    require(data.get('contract_digest') == value, 'Registry belongs to another contract; reconcile it first.')
+    latest = latest_attempts(data['jobs'])
+    reason = blocker(task, tasks, latest, s['phase'])
+    require(reason is None, reason)
+    previous = latest.get(task['id'])
+    require(not previous or previous['status'] not in ACTIVE_JOB_STATUSES, 'This task already has an active or unknown native run.')
+    require(not previous or previous['status'] != 'returned' or previous['acceptance'] != 'pending' or args.correction,
+            'Review the returned attempt before dispatching another one.')
+    require(not previous or previous['acceptance'] != 'accepted' or args.correction,
+            'Use --correction to resume an accepted task within its approved contract.')
+    require(not args.correction or previous, 'A correction needs a previous attempt of this task.')
+    reuse = bool(args.correction and worktree_exists(root, s['id'], previous))
+    isolate = args.isolate or reuse
+    require(not isolate or task['write_paths'], 'Isolation applies only to tasks with write_paths.')
+    limits = runtime_limits(root, args)
+    active = [j for _, j in all_jobs(root, exclude=s['id']) if j.get('status') in ACTIVE_JOB_STATUSES]
+    active += [j for j in data['jobs'] if j['status'] in ACTIVE_JOB_STATUSES]
+    require(len(active) < limits['max_workers'], f'Worker limit reached ({len(active)}/{limits["max_workers"]} active).')
+    if task['write_paths']:
+        writers = [j for j in active if j.get('write_paths')]
+        require(isolate or not any(j.get('isolated') is not True for j in writers),
+                'Another worker owns the shared checkout writer slot; wait for it or use --isolate.')
+        require(len(writers) < limits['max_shared_writers'],
+                f'Writer limit reached ({len(writers)}/{limits["max_shared_writers"]} active writers).')
+    if args.correction:
+        affected, grew = {task['id']}, True
+        while grew:
+            grew = False
+            for t in tasks:
+                if t['id'] not in affected and set(t['depends_on']) & affected:
+                    affected.add(t['id']); grew = True
+        require(not any(j['task_id'] in affected and j['status'] in ACTIVE_JOB_STATUSES for j in data['jobs']), 'A dependent task is still active.')
+        for j in data['jobs']:
+            if j['task_id'] in affected:
+                j['acceptance'] = 'rejected'
+    profile = None
+    if args.profile_json is not None:
+        profile = json.loads(bounded(args.profile_json, 'profile JSON', 8192, True))
+        require(isinstance(profile, dict), 'Profile must be a JSON object.')
+    attempt = previous['attempt'] + 1 if previous else 1
+    created = None
+    if previous and not reuse:
+        remove_worktree(root, s['id'], previous)  # A fresh attempt never inherits a rejected or failed checkout.
+    if reuse:
+        isolation = {key: previous[key] for key in ('worktree', 'base_commit', 'base', 'copied')}
+    elif isolate:
+        isolation = created = create_worktree(root, s['id'], task, attempt)
+    stamp = now()
+    job = {'run_id': str(uuid.uuid4()), 'task_id': task['id'], 'attempt': attempt, 'role': task['role'], 'phase': task['phase'],
+           'objective': task['objective'], 'write_paths': task['write_paths'], 'read_paths': task['read_paths'],
+           'criteria': task['criteria'], 'depends_on': task['depends_on'], 'status': 'starting', 'acceptance': 'pending', 'launch_confirmed': False,
+           'session_id': previous.get('session_id') if args.correction else None, 'parent_id': args.parent,
+           'host': args.host, 'profile': profile, 'isolated': isolate, 'created_at': stamp, 'updated_at': stamp}
+    if isolate:
+        job.update(isolation, integrated=False)
+    data['jobs'].append(job)
+    try:
+        write_json(registry_file(root, s['id']), data)
+    except Exception:
+        if created:
+            remove_worktree(root, s['id'], created)
+        raise
+    return {'change_id': s['id'], 'job': job, 'cwd': str(root / job['worktree']) if isolate else str(root)}
+
+def reserve_helper(root, args):
+    require(not (args.correction or args.isolate), 'Helpers are read-only single attempts.')
+    role = slug(args.helper)
+    require(role not in ('coordinator', 'discovery'), 'Discovery stays with the main coordinator.')
+    change = None if args.id == '-' else slug(args.id)
+    require(change is None or safe(root, f'.workflow/changes/{change}/state.json').exists(),
+            'Research context must name an existing active change.')
+    bounded(args.question, 'question', 8000)
+    limits = runtime_limits(root, args)
+    active = [j for _, j in all_jobs(root) if j.get('status') in ACTIVE_JOB_STATUSES]
+    require(len(active) < limits['max_workers'], f'Worker limit reached ({len(active)}/{limits["max_workers"]} active).')
+    profile = json.loads(bounded(args.profile_json, 'profile JSON', 8192, True)) if args.profile_json is not None else None
+    require(profile is None or isinstance(profile, dict), 'Profile must be a JSON object.')
+    identifier, stamp = f'helper-{uuid.uuid4()}', now()
+    job = {'kind': 'helper', 'helper_id': identifier, 'run_id': identifier, 'task_id': identifier, 'change_id': change,
+           'role': role, 'phase': args.phase, 'objective': (args.question or '').strip(), 'write_paths': [], 'read_paths': [],
+           'criteria': [], 'parent_id': args.parent, 'session_id': None, 'attempt': 1, 'launch_confirmed': False,
+           'status': 'starting', 'host': args.host, 'profile': profile, 'created_at': stamp, 'updated_at': stamp}
+    path = safe(root, '.workflow/.runtime/engine-helpers.json')
+    data = read_helpers(path)
+    data['jobs'].append(job)
+    write_json(path, data)
+    return {'change_id': change, 'job': job, 'cwd': str(root)}
+
+def runtime_confirm(root, args):
+    session = bounded(args.session, 'session id', 512, True).strip()
+    bounded(args.model, 'model', 512)
+    path, data, job, owner = target(root, args)
+    require(job['status'] in ('starting', 'unknown') and job.get('cancellation') is None,
+            'Only a starting or unresolved launch can be confirmed.')
+    for other_owner, other in all_jobs(root):
+        require(other.get('session_id') != session or (other_owner, other.get('task_id')) == (owner, job['task_id']),
+                'Native session already owns an unrelated task.')
+    job.update(session_id=session, launch_confirmed=True, status='running', confirmed_at=now(), updated_at=now())
+    if args.model:
+        job['actual_model'] = args.model
+    job.pop('error', None)
+    write_json(path, data)
+    return {'change_id': None if owner == 'helper' else owner, 'job': job}
+
+def runtime_settle(root, args):
+    bounded(args.last_tool, 'last tool', 256)
+    bounded(args.error, 'error', 2000)
+    path, data, job, owner = target(root, args)
+    status = args.status
+    require(job['status'] not in TERMINAL_JOB_STATUSES or (status == job['status'] and job.get('acceptance', 'pending') == 'pending'),
+            'A finished attempt cannot change state; reserve a new attempt instead.')
+    require(status not in ('running', 'waiting', 'returned') or job.get('session_id'),
+            'Confirm the native session before recording its activity.')
+    stamp = now()
+    job.update(status=status, updated_at=stamp, last_activity_at=stamp)
+    if status in TERMINAL_JOB_STATUSES:
+        job['finished_at'] = job.get('finished_at') or stamp
+    if status == 'cancelled':
+        job['stop_confirmed'] = True
+    if args.last_tool is not None:
+        job['last_tool'] = args.last_tool
+    if args.error is not None:
+        job['error'] = args.error
+    if args.result_file is not None:
+        rel = (f'.workflow/.runtime/helper-results/{job["helper_id"]}.md' if owner == 'helper'
+               else f'.workflow/.runtime/{owner}/results/{job["task_id"]}-{job["attempt"]}.md')
+        job.update(store_result(root, rel, text_input(args.result_file)))
+    write_json(path, data)
+    return {'change_id': None if owner == 'helper' else owner, 'job': job}
+
+def runtime_review(root, args):
+    require(len(args.reason.strip()) >= 8, 'Record the integration/verification reason (at least 8 characters).')
+    require(not args.discard or args.decision == 'rejected', '--discard applies only to a rejection.')
+    p, s, data, job = task_job(root, args)
+    approved(root, p, s)
+    require(data['contract_digest'] == contract(root, p, s), 'Registry contract mismatch; reconcile it first.')
+    require(job['status'] == 'returned' and job.get('session_id'), 'Only a returned native contribution can be reviewed.')
+    require(job['acceptance'] == 'pending', 'This attempt was already reviewed; reserve a correction to change it.')
+    job['acceptance'] = args.decision
+    job['review'] = {'decision': args.decision, 'reason': args.reason.strip(), 'at': now()}
+    job['updated_at'] = now()
+    if args.discard:
+        remove_worktree(root, s['id'], job)
+    write_json(registry_file(root, s['id']), data)
+    return {'change_id': s['id'], 'job': job}
+
+def runtime_cancel(root, args):
+    bounded(args.reason, 'cancellation reason', 2000)
+    path, data, job, owner = target(root, args)
+    require(job['status'] in ACTIVE_JOB_STATUSES, 'No active attempt to cancel.')
+    stamp = now()
+    job.update(status='cancelled', acceptance='pending', stop_confirmed=False, finished_at=job.get('finished_at') or stamp,
+               cancellation={'reason': (args.reason or '').strip() or None, 'at': stamp}, updated_at=stamp)
+    if owner != 'helper':
+        remove_worktree(root, owner, job)
+    write_json(path, data)
+    return {'change_id': None if owner == 'helper' else owner, 'job': job,
+            'note': 'Recorded only; the host must stop the native session and deny its further tool calls.'}
+
+def worktree_changes(root, change, job):
+    """Paths the worker changed in its worktree relative to the snapshot, with conflicts for anything unsafe."""
+    wt = worktree_path(root, change, job)
+    require(wt is not None and wt.is_dir() and job.get('worktree_removed') is not True, 'The isolated worktree no longer exists.')
+    names = {os.fsdecode(x) for x in git(wt, 'diff', '--no-ext-diff', '--no-renames', '--name-only', '-z', job['base_commit']).stdout.split(b'\0') if x}
+    untracked = {os.fsdecode(x) for x in git(wt, 'ls-files', '-z', '--others', '--exclude-standard').stdout.split(b'\0') if x}
+    copied = job.get('copied') or {}
+    untracked |= set(copied)
+    names |= untracked
+    changes, conflicts, skipped = [], [], []
+    for name in sorted(names):
+        parts = Path(name).parts
+        if name in untracked and name not in copied and (
+                '.pytest_cache' in parts[:-1] or '__pycache__' in parts[:-1] and name.endswith('.pyc')):
+            skipped.append({'path': name, 'reason': 'build artefact'}); continue
+        try:
+            source = safe(wt, name)
+            current = fingerprint(source)
+        except WorkflowError as exc:
+            conflicts.append({'path': name, 'reason': str(exc)}); continue
+        if name in copied and current == copied[name]:
+            continue
+        if Path(name).parts[0].casefold() in ('.git', '.workflow') or not owned(name, job['write_paths']):
+            conflicts.append({'path': name, 'reason': 'Changed outside the task write_paths.', **({'untracked': True} if name in untracked else {})})
+        elif current is not None and (current == 'unsupported' or current.startswith('symlink:')):
+            conflicts.append({'path': name, 'reason': 'Only regular files and deletions can be integrated.'})
+        else:
+            changes.append((name, 'delete' if current is None else 'write'))
+    # Ignored output (caches, builds) is never integrated, but the host is told what stayed behind.
+    ignored = git(wt, '--literal-pathspecs', 'ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--', *job['write_paths']).stdout
+    skipped += [{'path': name, 'reason': 'gitignored'} for name in sorted({os.fsdecode(x) for x in ignored.split(b'\0') if x})]
+    return wt, changes, conflicts, skipped
+
+def apply_changes(root, wt, changes, finish):
+    """Stage every write next to its target, swap all in, run finish(); restore everything on any failure."""
+    staged, journal, created = {}, [], []
+    try:
+        for name, action in changes:
+            path = root / name
+            missing, parent = [], path.parent
+            while not parent.exists():
+                missing.append(parent); parent = parent.parent
+            for folder in reversed(missing):
+                folder.mkdir(); created.append(folder)
+            if action == 'write':
+                fd, tmp = tempfile.mkstemp(dir=path.parent, prefix='.workflow-integrate-'); os.close(fd)
+                staged[name] = tmp
+                shutil.copy2(wt / name, tmp)
+        for name, action in changes:
+            path = root / name
+            entry = {'path': path, 'backup': None, 'moved': False}
+            journal.append(entry)
+            if path.exists():
+                fd, entry['backup'] = tempfile.mkstemp(dir=path.parent, prefix='.workflow-backup-'); os.close(fd)
+                os.replace(path, entry['backup'])
+            entry['moved'] = True
+            if action == 'write':
+                os.replace(staged[name], path)
+                del staged[name]
+        finish()
+    except BaseException:
+        for entry in reversed(journal):
+            if entry['moved']:
+                if os.path.lexists(entry['path']):
+                    entry['path'].unlink()
+                if entry['backup']:
+                    os.replace(entry['backup'], entry['path'])
+            elif entry['backup']:
+                os.unlink(entry['backup'])
+        for tmp in staged.values():
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+        for folder in reversed(created):
+            with contextlib.suppress(OSError):
+                folder.rmdir()
+        raise
+    for entry in journal:
+        if entry['backup']:
+            os.unlink(entry['backup'])
+
+def runtime_integrate(root, args):
+    p, s, data, job = task_job(root, args)
+    approved(root, p, s)
+    require(data['contract_digest'] == contract(root, p, s), 'Registry contract mismatch; reconcile it first.')
+    require(job.get('isolated') is True, 'Only an isolated attempt needs integration; shared-checkout work is already in place.')
+    require(job['acceptance'] == 'accepted' and job['status'] == 'returned', 'Accept the returned contribution before integrating it.')
+    require(job.get('integrated') is not True, 'This attempt is already integrated.')
+    wt, changes, conflicts, skipped = worktree_changes(root, s['id'], job)
+    base = job.get('base') or {}
+    for name in sorted(set(listed(root, job['write_paths'])) | set(base)):
+        try:
+            current = fingerprint(safe(root, name))
+        except WorkflowError as exc:
+            conflicts.append({'path': name, 'reason': str(exc)}); continue
+        if current != base.get(name):
+            conflicts.append({'path': name, 'reason': 'Changed in the main checkout since the snapshot.'})
+    for name, _ in changes:
+        try:
+            path = safe(root, name)
+            require(not path.exists() or path.is_file() and not path.is_symlink(), f'Main checkout entry is not a regular file: {name}')
+        except WorkflowError as exc:
+            conflicts.append({'path': name, 'reason': str(exc)})
+    for owner, other in all_jobs(root):
+        if (owner, other.get('task_id')) != (s['id'], job['task_id']) and other.get('status') in ACTIVE_JOB_STATUSES \
+                and other.get('isolated') is not True and other.get('write_paths') and overlaps(other['write_paths'], job['write_paths']):
+            conflicts.append({'path': ', '.join(other['write_paths']), 'reason': f'Active shared-checkout writer {owner}/{other.get("task_id")} owns overlapping paths.'})
+    if conflicts:
+        raise Conflict(f'Integration of {job["task_id"]} refused; nothing was written.', conflicts)
+    written = [n for n, a in changes if a == 'write']
+    deleted = [n for n, a in changes if a == 'delete']
+    job.update(integrated=True, integrated_at=now(), updated_at=now(), integration={'written': written, 'deleted': deleted, 'skipped': skipped})
+    apply_changes(root, wt, changes, lambda: write_json(registry_file(root, s['id']), data))
+    remove_worktree(root, s['id'], job)
+    write_json(registry_file(root, s['id']), data)
+    return {'change_id': s['id'], 'task_id': job['task_id'], 'written': written, 'deleted': deleted, 'skipped': skipped, 'job': job}
+
+def runtime_show(root, args):
+    p, s = load_v2(root, args.id)
+    value = contract(root, p, s)
+    tasks = validate_task_plan(root, p, s)['tasks']
+    orphans = []
+    data = runtime_state(root, p, s, orphans=orphans)
+    latest = {k: j for k, j in (latest_attempts(data['jobs']) if data else {}).items() if k not in orphans}
+    ready = [t['id'] for t in tasks if blocker(t, tasks, latest, s['phase']) is None and (
+        t['id'] not in latest or latest[t['id']]['status'] in ('failed', 'cancelled') or latest[t['id']]['acceptance'] == 'rejected')]
+    active = [(o, j) for o, j in all_jobs(root) if j.get('status') in ACTIVE_JOB_STATUSES]
+    result = {'change_id': s['id'], 'phase': s['phase'], 'contract_digest': value,
+              'approval_current': s.get('approval', {}).get('contract_digest') == value,
+              'registry': data, 'registry_current': data is None or data.get('contract_digest') == value and not orphans,
+              'orphan_tasks': sorted(set(orphans)),
+              'latest': latest, 'ready': ready,
+              'awaiting_review': [k for k, j in latest.items() if j['status'] == 'returned' and j['acceptance'] == 'pending'],
+              'awaiting_integration': [k for k, j in latest.items() if j['acceptance'] == 'accepted' and not done(j)],
+              'active': {'change': sum(o == s['id'] for o, _ in active), 'helpers': sum(o == 'helper' for o, _ in active),
+                         'total': len(active), 'writers': sum(bool(j.get('write_paths')) for _, j in active)},
+              'limits': runtime_limits(root, args)}
+    if args.task:
+        jobs = [j for j in (data or {'jobs': []})['jobs'] if j['task_id'] == args.task and (args.attempt is None or j['attempt'] == args.attempt)]
+        require(jobs, f'No worker record for task {args.task}.')
+        job = max(jobs, key=lambda j: j['attempt'])
+        result['job'] = job
+        path = safe(root, job['result_path']) if isinstance(job.get('result_path'), str) and job['result_path'].startswith(f'.workflow/.runtime/{s["id"]}/results/') else None
+        result['result'] = path.read_text(errors='replace') if path and path.is_file() else None
+    return result
+
+def runtime_revoke(root, args):
+    reason = bounded(args.reason, 'revocation reason', 2000, True).strip()
+    p, s = load(root, args.id)
+    require(isinstance(s.get('approval'), dict), 'This change has no approval to revoke.')
+    require(s['phase'] == 'approved' or s['phase'] in ('applying', 'checked', 'documented') and args.force_phase,
+            f'Approval can be revoked from phase approved; phase {s["phase"]} needs --force-phase.')
+    revoked = {'reason': reason, 'at': now(), 'digest': s['approval'].get('contract_digest'), 'phase': s['phase']}
+    for key in ('approval', 'check', 'documentation'):
+        s.pop(key, None)  # Same reset as validate for a stale approval; the source baseline is kept.
+    s['approval_revoked'] = revoked
+    save(p, s, 'draft')
+    return {'change': s['id'], 'phase': 'draft', 'approval_revoked': revoked}
+
+TASK_DEFINITION = ('role', 'phase', 'objective', 'criteria', 'depends_on', 'write_paths', 'read_paths')
+
+def definition_changed(task, job):
+    """A task changed when a recorded field differs; core fields must be recorded, older records may lack depends_on/read_paths."""
+    for key in TASK_DEFINITION:
+        if key not in job:
+            if key in ('depends_on', 'read_paths'):
+                continue
+            return True
+        value = job[key]
+        if isinstance(task[key], list):
+            if not isinstance(value, list) or sorted(map(str, value)) != task[key]:
+                return True
+        elif value != task[key]:
+            return True
+    return False
+
+def runtime_rebase(root, args):
+    """Carry a registry over to a re-approved contract: retire removed tasks, reopen changed ones and their dependants."""
+    reason = bounded(args.reason, 'rebase reason', 2000)
+    p, s = load_v2(root, args.id)
+    approved(root, p, s)
+    value = contract(root, p, s)
+    orphans = []
+    data = runtime_state(root, p, s, orphans=orphans)
+    require(data is not None, 'No worker registry to rebase.')
+    tasks = validate_task_plan(root, p, s)['tasks']
+    latest = latest_attempts([j for j in data['jobs'] if j['task_id'] not in orphans])
+    if data.get('contract_digest') == value and not orphans:
+        return {'change_id': s['id'], 'contract_digest': value, 'changed': False, 'registry_current': True,
+                'kept': sorted(latest), 'reopened': [], 'retired': []}
+    require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in data['jobs']),
+            'Workers are active or their outcome is unknown; reconcile them before rebasing the registry.')
+    stamp = now()
+    retired = sorted(set(orphans))
+    for job in [j for j in data['jobs'] if j['task_id'] in retired]:
+        remove_worktree(root, s['id'], job)
+        data.setdefault('retired_jobs', []).append(dict(job, retired_reason='task removed from the revised contract', retired_at=stamp))
+    data['jobs'] = [j for j in data['jobs'] if j['task_id'] not in retired]
+    reopened = {t['id']: 'task changed in revised contract' for t in tasks if t['id'] in latest and definition_changed(t, latest[t['id']])}
+    grew = True
+    while grew:
+        grew = False
+        for t in tasks:
+            if t['id'] in latest and t['id'] not in reopened and set(t['depends_on']) & set(reopened):
+                reopened[t['id']] = 'dependency changed'; grew = True
+    for identifier, why in reopened.items():
+        job = latest[identifier]
+        if job.get('review'):
+            job['superseded_review'] = job['review']
+        job.update(acceptance='rejected', review={'decision': 'rejected', 'reason': why, 'at': stamp}, updated_at=stamp)
+    kept = sorted(set(latest) - set(reopened))
+    entry = {'from': data.get('contract_digest'), 'to': value, 'at': stamp, 'reason': (reason or '').strip() or None,
+             'kept': kept, 'reopened': sorted(reopened), 'retired': retired}
+    data['contract_digest'] = value
+    data.setdefault('rebases', []).append(entry)
+    write_json(registry_file(root, s['id']), data)
+    return {'change_id': s['id'], 'contract_digest': value, 'changed': True, 'registry_current': True, 'rebase': entry,
+            'kept': kept, 'reopened': sorted(reopened), 'retired': retired}
+
+def runtime(root, args):
+    action = args.runtime_action
+    if action == 'reserve':
+        require(bool(args.task) != bool(args.helper), 'Name exactly one of --task or --helper.')
+        require(args.host is None or bool(re.fullmatch(r'[a-z0-9][a-z0-9._-]{0,63}', args.host)), 'Invalid host name.')
+        bounded(args.parent, 'parent session id', 512)
+        return reserve_helper(root, args) if args.helper else reserve_task(root, args)
+    return {'show': runtime_show, 'confirm': runtime_confirm, 'settle': runtime_settle, 'review': runtime_review,
+            'cancel': runtime_cancel, 'integrate': runtime_integrate, 'revoke-approval': runtime_revoke, 'rebase': runtime_rebase}[action](root, args)
+
 @contextlib.contextmanager
 def lock(root):
     folder = safe(root, '.workflow')
     folder.mkdir(exist_ok=True)
-    for item in folder.rglob('*'):
-        require(not item.is_symlink(), f'Symlink inside managed workflow: {item}')
+    for base, dirs, files in os.walk(folder):
+        for name in dirs + files:
+            require(not os.path.islink(os.path.join(base, name)), f'Symlink inside managed workflow: {os.path.join(base, name)}')
+        parts = Path(base).relative_to(folder).parts
+        if len(parts) == 2 and parts[0] == '.runtime':
+            dirs[:] = [d for d in dirs if d != 'worktrees']  # Isolated checkouts are Git-managed copies of the project.
     p = safe(root, '.workflow/.lock')
     try:
         fd = os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -761,6 +1396,49 @@ def parser():
     a = sub.add_parser('archive'); a.add_argument('id'); a.add_argument('--message', required=True); a.add_argument('--paths', nargs='*', default=[])
     sub.add_parser('snapshot')
     sub.add_parser('extensions')
+    r = sub.add_parser('runtime', help='Host-neutral worker dispatch gates and registry',
+                       description='Worker registry at .workflow/.runtime/<id>/state.json. JSON on stdout; {"error"} on stderr with exit 1 on refusal. '
+                                   'Mutations take .workflow/.lock and replace files atomically.')
+    actions = r.add_subparsers(dest='runtime_action', required=True)
+    def action(name, text):
+        return actions.add_parser(name, help=text, description=text)
+    def who(x, task_required=False, helper=True):
+        x.add_argument('id', help='Change id, or - for a helper without change context')
+        x.add_argument('--task', required=task_required, help='Approved plan task id')
+        if helper:
+            x.add_argument('--helper', help='Helper role (reserve) or helper id (confirm, settle, cancel)')
+    x = action('show', 'Registry, latest attempt per task, ready tasks and active counts; --task adds the job and its captured result.')
+    x.add_argument('id'); x.add_argument('--task'); x.add_argument('--attempt', type=int)
+    x = action('reserve', 'Apply every dispatch gate and record a starting job before launch (or a read-only helper with --helper ROLE).')
+    who(x)
+    x.add_argument('--correction', action='store_true', help='New attempt of an accepted/rejected task; rejects it and its dependants, reuses session and worktree')
+    x.add_argument('--isolate', action='store_true', help='Run a writing task in its own git worktree snapshot of the working tree')
+    x.add_argument('--max-workers', type=int, help='Override orchestration.defaults.max_workers (1-8, default 2)')
+    x.add_argument('--max-shared-writers', type=int, help='Override orchestration.defaults.max_shared_writers (1-8, default 1)')
+    x.add_argument('--host', help='Host name recorded on the job, e.g. claude-code')
+    x.add_argument('--parent', help='Coordinator session id recorded as parent_id')
+    x.add_argument('--profile-json', help='Resolved worker profile as a JSON object')
+    x.add_argument('--question', help='Helper question (1-8000 characters)')
+    x.add_argument('--phase', choices=('explore', 'validate'), default='explore', help='Helper phase')
+    x = action('confirm', 'Record the real native session of a starting job: starting -> running.')
+    who(x); x.add_argument('--attempt', type=int); x.add_argument('--session', required=True); x.add_argument('--model', help='Actual model observed')
+    x = action('settle', 'Record observed native state; terminal states only change through a new attempt.')
+    who(x); x.add_argument('--attempt', type=int)
+    x.add_argument('--status', required=True, choices=('running', 'waiting', 'returned', 'failed', 'cancelled', 'unknown'))
+    x.add_argument('--result-file', help='Final answer file, or - for stdin; stored bounded to 64 KiB')
+    x.add_argument('--last-tool'); x.add_argument('--error')
+    x = action('review', 'Accept or reject the latest returned attempt of a task.')
+    who(x, True, False); x.add_argument('--decision', required=True, choices=('accepted', 'rejected'))
+    x.add_argument('--reason', required=True, help='At least 8 characters'); x.add_argument('--discard', action='store_true', help='Remove a rejected worktree instead of keeping it for a correction')
+    x = action('integrate', 'Apply an accepted isolated attempt to the main checkout, all-or-nothing, refusing conflicts.')
+    who(x, True, False)
+    x = action('cancel', 'Mark the latest active attempt cancelled and remove its worktree; the host must stop the session.')
+    who(x); x.add_argument('--reason')
+    x = action('revoke-approval', 'Remove the approval and return the change to draft (from approved; later phases need --force-phase).')
+    x.add_argument('id'); x.add_argument('--reason', required=True)
+    x.add_argument('--force-phase', action='store_true', help='Also revoke from applying, checked or documented; the source baseline is kept')
+    x = action('rebase', 'Move the registry to the currently approved contract after a re-approval: jobs of removed tasks move to retired_jobs, changed tasks and their dependants are reopened (rejected), unchanged tasks keep acceptance and integration. No-op when current.')
+    x.add_argument('id'); x.add_argument('--reason')
     return p
 
 def main():
@@ -768,24 +1446,30 @@ def main():
     root = Path(args.root).absolute()
     require(root.is_dir(), 'Project directory does not exist.')
     require(root.resolve() == root, 'Use the physical project path, not a symlink alias.')
+    read_only = args.command in ('snapshot', 'status', 'extensions') or args.command == 'plan' and not args.file \
+        or args.command == 'runtime' and args.runtime_action == 'show'
+    require(read_only or not os.environ.get('STIP_WORKER'),
+            'STIP_WORKER is set: workers cannot mutate the workflow lifecycle or worker registry; report to the coordinator.')
     if args.command == 'snapshot':
         files = snapshot(root); result = {'subject_digest': digest(files), 'files': files}
     elif args.command == 'status':
         result = status(root, args)
     elif args.command == 'plan' and not args.file:
         result = plan(root, args)
+    elif args.command == 'runtime' and args.runtime_action == 'show':
+        result = runtime_show(root, args)
     elif args.command == 'extensions':
         result = extension_data(root, [k for k,v in config(root)['extensions'].items() if isinstance(v,dict) and v.get('enabled') is True])
     else:
         with lock(root):
             result = globals()[args.command](root, args)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.command == 'check' and not result['all_passed']:
+    if args.command == 'check' and result['phase'] != 'checked':
         sys.exit(2)
 
 if __name__ == '__main__':
     try:
         main()
     except (WorkflowError, OSError, ValueError, KeyError, TypeError) as exc:
-        print(json.dumps({'error': str(exc)}, ensure_ascii=False), file=sys.stderr)
+        print(json.dumps({'error': str(exc), **getattr(exc, 'details', {})}, ensure_ascii=False), file=sys.stderr)
         sys.exit(1)

@@ -13,6 +13,7 @@ def generated_files():
         result[p.parent/'scripts/configure_agents.py'] = ROOT/'scripts/configure_agents.py'
         result[p.parent/'references/orchestration.md'] = ROOT/'docs/orchestration.md'
     result[ROOT/'packages/opencode/assets/workflow.py'] = ROOT/'scripts/workflow.py'
+    result[ROOT/'packages/claude-code/assets/workflow.py'] = ROOT/'scripts/workflow.py'
     bootstrap = ROOT/'skills/stip-bootstrap'
     for name in ('setup_stip.py', 'install_extensions.py', 'install_opencode_commands.py'):
         result[bootstrap/'scripts'/name] = ROOT/'scripts'/name

@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "distribution",
+      "role": "delivery",
+      "phase": "apply",
+      "objective": "Add the marketplace file, launcher install hint and build_skills.py sync of the mod's bundled engine, preserving existing local edits.",
+      "criteria": [
+        "AC-22"
+      ],
+      "depends_on": [
+        "mod-core"
+      ],
+      "write_paths": [
+        ".claude-plugin",
+        "bin/install.mjs",
+        "packages/claude-code/assets",
+        "scripts/build_skills.py"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "docs",
+      "role": "documentation",
+      "phase": "docs",
+      "objective": "Document install, use, settings, enforcement limits and re-qualification for the Claude Code mod.",
+      "criteria": [
+        "AC-25"
+      ],
+      "depends_on": [
+        "verify"
+      ],
+      "write_paths": [
+        "README.md",
+        "docs/claude-code-plugin.md",
+        "docs/orchestration.md"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "docs-gate",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Let check pass with docs-only criteria recorded pending-docs, and require them passed at docs and archive.",
+      "criteria": [
+        "AC-26"
+      ],
+      "depends_on": [
+        "engine-runtime"
+      ],
+      "write_paths": [
+        "scripts/workflow.py",
+        "tests/test_docs_gate.py"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "engine-runtime",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Add workflow.py runtime subcommands (reserve, confirm, settle, review, cancel, integrate, show) with gates, worktree isolation and conflict-safe integration, plus unittest coverage.",
+      "criteria": [
+        "AC-1",
+        "AC-2",
+        "AC-23",
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "depends_on": [],
+      "write_paths": [
+        "scripts/workflow.py",
+        "tests/test_runtime.py"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "mod-core",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Build the Claude Code mod core: manifest, tools, agent types, spawn and tracking, guards, settings resolution and plugin tests.",
+      "criteria": [
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-20",
+        "AC-23",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "depends_on": [
+        "engine-runtime"
+      ],
+      "write_paths": [
+        "packages/claude-code/.claude-plugin",
+        "packages/claude-code/hooks/core",
+        "packages/claude-code/hooks/hooks.json",
+        "packages/claude-code/hooks/register.tsx",
+        "packages/claude-code/tests/core",
+        "packages/claude-code/types"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "mod-ui",
+      "role": "frontend",
+      "phase": "apply",
+      "objective": "Build the band, /stip pane, status line, toasts, settings pane, prompt.compose context and event-driven refresh on terminal and desktop.",
+      "criteria": [
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-20",
+        "AC-21"
+      ],
+      "depends_on": [
+        "mod-core"
+      ],
+      "write_paths": [
+        "packages/claude-code/hooks/ui",
+        "packages/claude-code/tests/ui"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "verify",
+      "role": "verification",
+      "phase": "check",
+      "objective": "Independently exercise every criterion against the integrated candidate, including a real Claude Code sandbox session with two isolated writers and visual inspection.",
+      "criteria": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-2",
+        "AC-20",
+        "AC-21",
+        "AC-22",
+        "AC-23",
+        "AC-24",
+        "AC-26",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "depends_on": [
+        "distribution",
+        "docs-gate",
+        "engine-runtime",
+        "mod-core",
+        "mod-ui"
+      ],
+      "write_paths": [],
+      "read_paths": []
+    }
+  ]
+}

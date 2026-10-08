@@ -1,0 +1,14 @@
+{
+  "name": "stipulate",
+  "owner": {
+    "name": "BRYANN2K"
+  },
+  "description": "Stip spec lifecycle for coding agents: the stipulate Claude Code mod.",
+  "plugins": [
+    {
+      "name": "stipulate",
+      "source": "./packages/claude-code",
+      "description": "Stip spec lifecycle in Claude Code: approved-contract workers, ownership guards, approval and apply gates."
+    }
+  ]
+}

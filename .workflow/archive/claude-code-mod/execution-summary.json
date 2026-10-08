@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "change_id": "claude-code-mod",
+  "contract_digest": "eb018bf7c67b85ad9b05b21559a7b53abcebee0a574c651ba236a25d41b4c708",
+  "subject_digest": "1fc2476cd094ef084c72431b75f208d9a7ea6db13a04af2325893922bb837c00",
+  "archived_at": "2026-10-08T15:45:33.386588+00:00",
+  "tasks": [
+    {
+      "task_id": "distribution",
+      "role": "delivery",
+      "phase": "apply",
+      "criteria": [
+        "AC-22"
+      ],
+      "attempt": 9,
+      "session_id": "a46fcea867a4b83fb",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "docs",
+      "role": "documentation",
+      "phase": "docs",
+      "criteria": [
+        "AC-25"
+      ],
+      "attempt": 2,
+      "session_id": "aa5f3270ce73b3de5",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "docs-gate",
+      "role": "backend",
+      "phase": "apply",
+      "criteria": [
+        "AC-26"
+      ],
+      "attempt": 1,
+      "session_id": "af306e0df671dfd64",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "engine-runtime",
+      "role": "backend",
+      "phase": "apply",
+      "criteria": [
+        "AC-1",
+        "AC-2",
+        "AC-23",
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "attempt": 5,
+      "session_id": "ad8f071c0a6f2e162",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "mod-core",
+      "role": "backend",
+      "phase": "apply",
+      "criteria": [
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-20",
+        "AC-23",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "attempt": 10,
+      "session_id": "a14d768e27d3f266e",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "mod-ui",
+      "role": "frontend",
+      "phase": "apply",
+      "criteria": [
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-20",
+        "AC-21"
+      ],
+      "attempt": 13,
+      "session_id": "a1f001383f3637067",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    },
+    {
+      "task_id": "verify",
+      "role": "verification",
+      "phase": "check",
+      "criteria": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-2",
+        "AC-20",
+        "AC-21",
+        "AC-22",
+        "AC-23",
+        "AC-24",
+        "AC-26",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "attempt": 12,
+      "session_id": "af7c0e8a9710e6983",
+      "status": "returned",
+      "acceptance": "accepted",
+      "requested_model": null,
+      "actual_model": null,
+      "effort": null,
+      "fast": null,
+      "native_outcome": null
+    }
+  ]
+}

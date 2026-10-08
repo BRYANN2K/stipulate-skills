@@ -13,10 +13,10 @@
 **Explore in natural language. Agree on a spec. Build with evidence.**
 
 Seven core skills, optional domain extensions, and a shared contract that stays with your project.
-OpenCode v2 adds native subagent orchestration, a workflow sidebar, and model settings.
+OpenCode v2 adds native subagent orchestration, a workflow sidebar, and model settings; the Claude Code mod adds worker orchestration, a live pane, and approval and ownership guards.
 Uses the Agent Skills format for **Codex, Claude Code, Grok Build, and OpenCode v2**.
 
-[Get started](#quick-start) · [See the workflow](#how-it-works) · [OpenCode plugin](#native-orchestration-in-opencode-v2) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
+[Get started](#quick-start) · [See the workflow](#how-it-works) · [OpenCode plugin](#native-orchestration-in-opencode-v2) · [Claude Code mod](#claude-code-mod) · [Browse extensions](#bring-the-right-expertise) · [Read the guide](docs/getting-started.md)
 
 </div>
 
@@ -131,9 +131,29 @@ Use phase overrides when a role needs different settings during implementation o
 
 Execution plans belong to the approved specification version. Existing v1 changes continue to work; adding an execution plan requires explicit migration and renewed approval.
 
-The plugin uses OpenCode subagents. Codex and Claude Code use their own native agent files; see [native agent configuration](docs/native-agents.md). There is no runtime selector in OpenCode settings.
+The plugin uses OpenCode subagents. Codex uses its own native agent files, and so does Claude Code without the mod; see [native agent configuration](docs/native-agents.md). There is no runtime selector in OpenCode settings.
 
 [Panel and settings guide →](docs/opencode-plugin-ui.md) · [Orchestration contract and compatibility →](docs/orchestration-contract.md)
+
+## Claude Code mod
+
+In Claude Code, the `stipulate` mod brings the same orchestration to the terminal and the desktop Code tab. Type this at the prompt of a Claude Code terminal session:
+
+```text
+/plugin install stipulate --marketplace BRYANN2K/stipulate-skills
+```
+
+Answer `y` to add the marketplace, then pick a scope. The desktop Code tab was observed loading a project-scope install; user-scope loading follows the mod API reference and has not yet been exercised. `npx github:BRYANN2K/stipulate-skills --agent claude-code` prints the same line.
+
+- **A band above the prompt.** It shows the bound change, its stage, approval and workers, with **Approve**, **Panel** and **Settings**.
+- **A `/stip` pane.** It shows stages, the plan with per-task actions, criteria you can open, research helpers, and a change picker.
+- **Workers per role.** Choose their model and effort in `/stip-settings`; the coordinator keeps the session's `/model` and `/effort`.
+- **Enforced boundaries.** Workers are denied edits outside their owned paths and lifecycle commands. Approval comes only from you, and source edits wait for approval by default.
+- **Parallel writers.** They run in isolated Git worktrees and are integrated all-or-nothing, with a conflict report when needed.
+
+The guards are coordination inside Claude Code, not an operating-system sandbox: Bash keeps your file access. The mod API is early access. The mod was qualified on Claude Code 2.1.293 and 2.1.294, so re-qualify after an update.
+
+[Install, use, settings, limits and re-qualification →](docs/claude-code-plugin.md)
 
 ## The seven skills
 
@@ -204,6 +224,8 @@ The native OpenCode integration has been exercised in an isolated terminal proje
 | Start here | For |
 | --- | --- |
 | [Installer reference](docs/installation.md) | Plugin installation, scope, updates, and removal. |
+| [Claude Code mod](docs/claude-code-plugin.md) | Mod installation, use, settings, enforcement limits, and re-qualification. |
+| [Native orchestration](docs/orchestration.md) | Plans, tools, worker records, runtime commands, and rebase. |
 | [Installation and first-feature guide](docs/getting-started.md) | Setup, prompt examples, updates, removal, and troubleshooting. |
 | [Workflow reference](docs/workflow.md) | Lifecycle commands, contracts, state, and evidence. |
 | [Domain extensions](docs/extensions.md) | Package installation, selection, and contribution rules. |
