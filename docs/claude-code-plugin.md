@@ -32,7 +32,7 @@ Known limits of the desktop app (Claude.app), observed during qualification:
 
 - **Install required.** The plugin must be installed; project scope works. `--plugin-dir` and `CLAUDE_CODE_PLUGIN_DIRS` do not reach the desktop app.
 - **Updates need a version bump.** The desktop app loads the plugin from its plugin cache. An updated mod shows only after its version in `packages/claude-code/.claude-plugin/plugin.json` changes, or after a reinstall.
-- **First message first.** Mods load only after the first message of a desktop conversation. In an empty conversation `/stip` is unavailable: send any message first.
+- **Per project.** With a project-scope install, `/stip` exists only in conversations opened on that project; elsewhere the app answers "/stip isn't a command here." Install at user scope to have it in every project.
 - **`stip-action` listed.** The desktop command menu still lists `stip-action` (the terminal hides it).
 
 ## Use
@@ -375,6 +375,6 @@ Run these steps after updating Claude Code, before relying on the guards:
 5. **Parallel writers:** with `max_shared_writers` at 2, delegate two writing tasks. Both must run in their own worktrees, and both must integrate after acceptance.
 6. **Re-entry:** start Claude Code with `--debug` (or `--debug-file <path>`) and search the log for `tool.call skipped: re-entry` on worker calls. There must be none. Such a line indicates that a worker call ran outside the mod's normal hook path.
 7. **Interface:** open `/stip` and check the band and the pane at about 80 and 140 columns: no line cut mid-word, the Plan and Settings tabs switch, **Approve** appears only when approvable. In the same debug log, presses must leave no `no handler is held` or `hook failed` line.
-8. **Desktop app** (if you use it): bump the version in `packages/claude-code/.claude-plugin/plugin.json` or reinstall, send a first message in a new conversation, then open `/stip` and repeat step 7.
+8. **Desktop app** (if you use it): bump the version in `packages/claude-code/.claude-plugin/plugin.json` or reinstall, open a new conversation on the project, then run `/stip` and repeat step 7.
 
 If a step fails, treat the guards as unverified on that build and keep using the previous build or the skills alone.
