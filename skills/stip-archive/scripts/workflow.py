@@ -911,6 +911,116 @@ def create_worktree(root, change, task, attempt):
         raise
     return {'worktree': rel, 'base_commit': base_commit, 'base': base, 'copied': copied}
 
+def refresh_worktree(root, change, task, previous):
+    """Bring every path outside write_paths in a reused worktree to the main checkout's current content.
+
+    Tracked content comes from the same snapshot as creation (stash create or HEAD); untracked read/change
+    files are copied again. Owned paths and the owned part of `base`/`copied` are left alone, so the worker's
+    uncommitted work survives and integrate still compares owned files with the original snapshot.
+    """
+    wt = worktree_path(root, change, previous)
+    old = previous['base_commit']
+    new = git(root, 'stash', 'create').stdout.decode().strip() or head(root)
+    owned_paths = task['write_paths']
+
+    def names(output):
+        return {os.fsdecode(x) for x in output.split(b'\0') if x}
+
+    def eligible(name):
+        parts = Path(name).parts
+        return bool(parts) and parts[0].casefold() != '.git' and not name.startswith('.workflow/.runtime/') and not owned(name, owned_paths)
+
+    def regular(base, name):
+        """True when base/name is a regular file reached without crossing a symlink."""
+        try:
+            path = safe(base, name)
+        except WorkflowError:
+            return False
+        return path.is_file() and not path.is_symlink()
+
+    def entry(name):
+        """The worktree path for name, or None when an ancestor is not a real directory (never followed)."""
+        path = wt
+        for part in Path(name).parts[:-1]:
+            path = path / part
+            if path.is_symlink() or not path.is_dir():
+                return None
+        return path / Path(name).parts[-1]
+
+    def clear(name):
+        """Remove a non-owned entry without following it: symlinks and special files are unlinked, directories pruned."""
+        path = wt / name
+        if path.is_symlink() or not path.is_dir():
+            path.unlink()
+            return
+        require(not any(w.startswith(name + '/') for w in owned_paths),
+                f'Cannot refresh {name}: it is a directory that contains owned paths.')
+        shutil.rmtree(path)
+
+    def clear_ancestors(name):
+        """Make every ancestor of name a real directory, removing non-owned symlinks or files in the way."""
+        parts = Path(name).parts
+        for index in range(1, len(parts)):
+            prefix = '/'.join(parts[:index])
+            path = wt / prefix
+            if path.is_symlink() or os.path.lexists(path) and not path.is_dir():
+                require(not any(w == prefix or w.startswith(prefix + '/') for w in owned_paths),
+                        f'Cannot refresh {name}: {prefix} is not a directory and holds owned paths.')
+                path.unlink()
+                removed.add(prefix)
+
+    copy_set = {n for n in listed(root, owned_paths + task.get('read_paths', []) + [f'.workflow/changes/{change}'], tracked=False)
+                if eligible(n) and regular(root, n)}
+    copied = dict(previous.get('copied') or {})
+    candidates = names(git(root, 'diff', '--no-renames', '--name-only', '-z', old, new).stdout)
+    candidates |= names(git(wt, 'diff', '--no-ext-diff', '--no-renames', '--name-only', '-z', old).stdout)
+    candidates |= names(git(wt, 'ls-files', '-z', '--others', '--exclude-standard').stdout)
+    candidates |= set(copied) | copy_set
+    candidates = sorted(n for n in candidates if eligible(n))
+    in_new = names(git(root, '--literal-pathspecs', 'ls-tree', '-r', '-z', '--name-only', new, '--', *candidates).stdout) if candidates else set()
+    written, removed, checkout, untrack = [], set(), [], []
+    for name in candidates:
+        target = entry(name)
+        before = fingerprint(target) if target is not None else None
+        regular_before = target is not None and target.is_file() and not target.is_symlink()
+        if name in copy_set or name in in_new:
+            if target is None:
+                clear_ancestors(name)
+                target = wt / name
+            if os.path.lexists(target) and not target.is_file() or target.is_symlink():
+                clear(name)  # Never write through a symlink or into a special entry.
+                removed.add(name)
+            if name in copy_set:
+                source = safe(root, name)
+                if before != fingerprint(source) or not regular_before:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+                    written.append(name)
+                copied[name] = fingerprint(target)
+            else:
+                copied.pop(name, None)
+                checkout.append((name, before if regular_before else None))
+            continue
+        copied.pop(name, None)
+        untrack.append(name)
+        if target is not None and os.path.lexists(target):
+            clear(name)
+            removed.add(name)
+            parent = target.parent
+            while parent != wt and parent.is_dir() and not parent.is_symlink() and not any(parent.iterdir()):
+                parent.rmdir(); parent = parent.parent
+    for start in range(0, len(checkout), 200):
+        chunk = checkout[start:start + 200]
+        git(wt, '--literal-pathspecs', 'checkout', '-q', new, '--', *[n for n, _ in chunk])
+        written += [n for n, before in chunk if fingerprint(wt / n) != before]
+    for start in range(0, len(untrack), 200):
+        git(wt, '--literal-pathspecs', 'rm', '-q', '--cached', '--ignore-unmatch', '--', *untrack[start:start + 200])
+    deleted = removed - set(written)
+    git(wt, 'reset', '-q', '--soft', new)  # HEAD follows the refreshed snapshot; the index and owned files are kept.
+    refreshed = {'from_commit': old, 'to_commit': new, 'written': sorted(written), 'deleted': sorted(deleted), 'at': now()}
+    return {'worktree': previous['worktree'], 'base_commit': new, 'base': previous.get('base') or {}, 'copied': copied,
+            'refreshed': refreshed}
+
 def worktree_exists(root, change, job):
     path = worktree_path(root, change, job)
     return path is not None and path.is_dir() and job.get('worktree_removed') is not True
@@ -1013,7 +1123,7 @@ def reserve_task(root, args):
     if previous and not reuse:
         remove_worktree(root, s['id'], previous)  # A fresh attempt never inherits a rejected or failed checkout.
     if reuse:
-        isolation = {key: previous[key] for key in ('worktree', 'base_commit', 'base', 'copied')}
+        isolation = refresh_worktree(root, s['id'], task, previous)
     elif isolate:
         isolation = created = create_worktree(root, s['id'], task, attempt)
     stamp = now()
@@ -1316,14 +1426,23 @@ def runtime_rebase(root, args):
     latest = latest_attempts([j for j in data['jobs'] if j['task_id'] not in orphans])
     if data.get('contract_digest') == value and not orphans:
         return {'change_id': s['id'], 'contract_digest': value, 'changed': False, 'registry_current': True,
-                'kept': sorted(latest), 'reopened': [], 'retired': []}
+                'kept': sorted(latest), 'reopened': [], 'retired': [], 'retired_integrated_paths': {}}
     require(not any(j['status'] in ACTIVE_JOB_STATUSES for j in data['jobs']),
             'Workers are active or their outcome is unknown; reconcile them before rebasing the registry.')
     stamp = now()
     retired = sorted(set(orphans))
+    integrated_paths = {}  # What each retired task already wrote or deleted in the main checkout stays there.
+    for job in data['jobs']:
+        if job['task_id'] in retired:
+            paths = integrated_paths.setdefault(job['task_id'], set())
+            integration = job.get('integration') if job.get('integrated') is True else None
+            if isinstance(integration, dict):
+                paths.update(x for key in ('written', 'deleted') for x in integration.get(key) or [] if isinstance(x, str))
+    integrated_paths = {k: sorted(v) for k, v in integrated_paths.items()}
     for job in [j for j in data['jobs'] if j['task_id'] in retired]:
         remove_worktree(root, s['id'], job)
-        data.setdefault('retired_jobs', []).append(dict(job, retired_reason='task removed from the revised contract', retired_at=stamp))
+        data.setdefault('retired_jobs', []).append(dict(job, retired_reason='task removed from the revised contract', retired_at=stamp,
+                                                        retired_integrated_paths=integrated_paths[job['task_id']]))
     data['jobs'] = [j for j in data['jobs'] if j['task_id'] not in retired]
     reopened = {t['id']: 'task changed in revised contract' for t in tasks if t['id'] in latest and definition_changed(t, latest[t['id']])}
     grew = True
@@ -1339,12 +1458,12 @@ def runtime_rebase(root, args):
         job.update(acceptance='rejected', review={'decision': 'rejected', 'reason': why, 'at': stamp}, updated_at=stamp)
     kept = sorted(set(latest) - set(reopened))
     entry = {'from': data.get('contract_digest'), 'to': value, 'at': stamp, 'reason': (reason or '').strip() or None,
-             'kept': kept, 'reopened': sorted(reopened), 'retired': retired}
+             'kept': kept, 'reopened': sorted(reopened), 'retired': retired, 'retired_integrated_paths': integrated_paths}
     data['contract_digest'] = value
     data.setdefault('rebases', []).append(entry)
     write_json(registry_file(root, s['id']), data)
     return {'change_id': s['id'], 'contract_digest': value, 'changed': True, 'registry_current': True, 'rebase': entry,
-            'kept': kept, 'reopened': sorted(reopened), 'retired': retired}
+            'kept': kept, 'reopened': sorted(reopened), 'retired': retired, 'retired_integrated_paths': integrated_paths}
 
 def runtime(root, args):
     action = args.runtime_action

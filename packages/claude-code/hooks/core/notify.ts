@@ -42,4 +42,19 @@ export const TOASTS = {
   recordsDiscarded: () => 'Approval record discarded · changed outside',
   workerCancelled: (job: string) => `${job} cancelled · tampering detected`,
   applyGate: (change: string) => `Apply gate · ${change} not approved yet`,
+  staleSetAside: () => 'Stale Stip records set aside',
+  restoreStopped: () => 'Restore loop stopped · run /stip-resync',
+  rebased: (redo: number) => (redo ? `Registry rebased · ${redo} task${redo === 1 ? '' : 's'} to redo` : 'Registry rebased'),
+  rebaseNeeded: () => 'Workers done · rebase registry in /stip',
 } as const
+
+/**
+ * The transcript notice for `details`: one "Stipulate: " prefix (a leading plugin name is dropped),
+ * whitespace collapsed. Null when the same key's toast is a repeat within the coalescing window
+ * (its toast already says ×N; the first notice holds the details).
+ */
+export function noticeText(details: string, repeat: boolean): string | null {
+  if (repeat) return null
+  const body = details.replace(/^\s*stip(?:ulate)?\s*:\s*/i, '').replace(/\s+/g, ' ').trim()
+  return body ? `Stipulate: ${body}` : null
+}

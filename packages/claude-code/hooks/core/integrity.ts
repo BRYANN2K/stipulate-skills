@@ -219,6 +219,8 @@ export type RebaseReport = {
   kept?: string[]
   reopened?: string[]
   retired?: string[]
+  /** Paths each retired task had already integrated into the main checkout (they stay there). */
+  retired_integrated_paths?: Record<string, string[]>
   rebase?: Record<string, unknown>
 }
 
@@ -249,7 +251,7 @@ export function verifyRebase(known: Registry | null, disk: Registry | null, repo
     }
     if (mayChange && after.acceptance !== 'rejected') return false
   }
-  // Retired jobs: the known ones, each with its retirement stamp (and its worktree removed).
+  // Retired jobs: the known ones, each with its retirement stamp, its worktree removed and the paths it integrated.
   const retiredBefore = ((known as any).retired_jobs ?? []) as Record<string, any>[]
   const retiredNow = ((disk as any).retired_jobs ?? []) as Record<string, any>[]
   const moved = known.jobs.filter(j => retired.has(j.task_id))
@@ -258,7 +260,7 @@ export function verifyRebase(known: Registry | null, disk: Registry | null, repo
   for (const [i, job] of moved.entries()) {
     const after = retiredNow[retiredBefore.length + i]!
     for (const k of new Set([...Object.keys(job), ...Object.keys(after)]))
-      if (canon(job[k]) !== canon(after[k]) && !['retired_reason', 'retired_at', 'worktree_removed'].includes(k)) return false
+      if (canon(job[k]) !== canon(after[k]) && !['retired_reason', 'retired_at', 'worktree_removed', 'retired_integrated_paths'].includes(k)) return false
   }
   // Header: new digest, the reported rebase entry appended, nothing else changed.
   const rebasesBefore = ((known as any).rebases ?? []) as unknown[]
@@ -267,4 +269,159 @@ export function verifyRebase(known: Registry | null, disk: Registry | null, repo
   if (rebasesNow.length !== rebasesBefore.length + 1 || canon(rebasesNow.at(-1)) !== canon(report.rebase)) return false
   const header = (r: Registry) => canon({ ...r, jobs: undefined, retired_jobs: undefined, rebases: undefined, contract_digest: undefined })
   return header(known) === header(disk)
+}
+
+// --- Change identity (AC-32): records of an earlier lifecycle of the same change id are never trusted ---
+
+/** A change lifecycle's identity: its id and the engine's `created_at`. */
+export type Identity = { change: string; created: string | null }
+
+export const identityKey = (i: Identity): string => `${i.change}@${i.created ?? ''}`
+
+export function parseIdentityKey(key: string): Identity | null {
+  const at = key.indexOf('@')
+  if (at <= 0) return null
+  const created = key.slice(at + 1)
+  return { change: key.slice(0, at), created: created || null }
+}
+
+/** The identity a lifecycle state.json text carries, or null when it is absent or unreadable. */
+export function lifecycleIdentity(text: string): Identity | null {
+  if (!text.trim()) return null
+  try {
+    const s = JSON.parse(text)
+    if (!s || typeof s.id !== 'string') return null
+    return { change: s.id, created: typeof s.created_at === 'string' ? s.created_at : null }
+  } catch {
+    return null
+  }
+}
+
+const instant = (iso: string | null | undefined): number | null => {
+  if (typeof iso !== 'string') return null
+  const t = Date.parse(iso)
+  return Number.isFinite(t) ? t : null
+}
+
+/**
+ * True when a record belongs to an older lifecycle than `current`: its identity names another change
+ * or an earlier creation, or (identity unknown) it was written before `current` was created. A current
+ * lifecycle without a creation time (older engine) never makes anything stale.
+ */
+export function predates(entry: Identity | null, writtenAt: number | null, current: Identity | null): boolean {
+  const now = instant(current?.created)
+  if (!current || now === null) return false
+  if (entry) {
+    if (entry.change !== current.change) return true
+    if (entry.created === current.created) return false
+    const then = instant(entry.created)
+    return then === null || then < now
+  }
+  return writtenAt !== null && writtenAt < now
+}
+
+/** True when a worker registry holds a job, retired job or rebase older than the `current` lifecycle. */
+export function registryPredates(text: string, current: Identity | null): boolean {
+  const now = instant(current?.created)
+  const reg = parseRegistry(text) as (Registry & { retired_jobs?: unknown; rebases?: unknown; change_id?: unknown }) | null
+  if (!reg || now === null || !current) return false
+  if (typeof reg.change_id === 'string' && reg.change_id !== current.change) return true
+  const stamps: unknown[] = [
+    ...reg.jobs.map(j => j?.created_at),
+    ...(Array.isArray(reg.retired_jobs) ? reg.retired_jobs.map((j: any) => j?.created_at) : []),
+    ...(Array.isArray(reg.rebases) ? reg.rebases.map((r: any) => r?.at) : []),
+  ]
+  return stamps.some(s => {
+    const t = instant(typeof s === 'string' ? s : null)
+    return t !== null && t < now
+  })
+}
+
+/** A lifecycle as `new` creates it: exploring, never approved. Re-creating one grants nothing. */
+export function freshLifecycle(text: string): boolean {
+  try {
+    const s = JSON.parse(text)
+    return !!s && s.phase === 'exploring' && !s.approval
+  } catch {
+    return false
+  }
+}
+
+// --- Restore loop guard (AC-32): the watch never fights another writer forever ---
+
+export const SAME_RESTORES = 2
+export const BURST_RESTORES = 5
+export const BURST_MS = 120_000
+
+export type RestoreRecord = { counts: Record<string, number>; total: number; since: number; held: string | null }
+
+/**
+ * Decides whether the watch may restore `path` once more, the disk holding content `sha`: at most
+ * SAME_RESTORES times for the same content (another writer keeps putting it back), and at most
+ * BURST_RESTORES restores of the file within BURST_MS. `notify` is true on the first refusal of a hold.
+ */
+export function restoreGate(
+  log: Record<string, RestoreRecord>,
+  path: string,
+  sha: string,
+  now: number,
+): { allowed: boolean; notify: boolean; log: Record<string, RestoreRecord> } {
+  const prev = log[path] ?? { counts: {}, total: 0, since: now, held: null }
+  const rec: RestoreRecord = now - prev.since > BURST_MS ? { ...prev, counts: { ...prev.counts }, total: 0, since: now } : { ...prev, counts: { ...prev.counts } }
+  const same = rec.counts[sha] ?? 0
+  if (same >= SAME_RESTORES || rec.total >= BURST_RESTORES) {
+    const notify = rec.held !== sha
+    rec.held = sha
+    return { allowed: false, notify, log: { ...log, [path]: rec } }
+  }
+  rec.counts[sha] = same + 1
+  rec.total += 1
+  rec.held = null
+  return { allowed: true, notify: false, log: { ...log, [path]: rec } }
+}
+
+const ACTIVE_JOB = ['starting', 'running', 'waiting', 'unknown', 'correction']
+
+/**
+ * Jobs of a registry that make a silent re-creation of its change unsafe: any active job (whoever runs
+ * it), and `session`'s own work still owed a decision (returned unreviewed, or accepted but not integrated).
+ */
+export function owedWork(text: string, session: string): string[] {
+  const reg = parseRegistry(text)
+  if (!reg) return []
+  return reg.jobs
+    .filter(
+      j =>
+        ACTIVE_JOB.includes(j.status) ||
+        (j.parent_id === session &&
+          ((j.status === 'returned' && j.acceptance === 'pending') || (j.acceptance === 'accepted' && j.isolated === true && j.integrated !== true))),
+    )
+    .map(registryKey)
+}
+
+/** The sessions a registry's jobs were reserved by (`parent_id`). */
+export function registryWriters(text: string): string[] {
+  const reg = parseRegistry(text) as (Registry & { retired_jobs?: unknown }) | null
+  if (!reg) return []
+  const jobs = [...reg.jobs, ...(Array.isArray(reg.retired_jobs) ? (reg.retired_jobs as Record<string, any>[]) : [])]
+  return [...new Set(jobs.map(j => j?.parent_id).filter((p): p is string => typeof p === 'string' && p.length > 0))]
+}
+
+/**
+ * Worktrees (project-relative) a stale registry recorded for jobs older than `current` and not yet
+ * removed: only paths under `.workflow/.runtime/<change>/worktrees/`, never one a newer job records.
+ */
+export function staleWorktrees(text: string, change: string, current: Identity | null): string[] {
+  const reg = parseRegistry(text) as (Registry & { retired_jobs?: unknown }) | null
+  if (!reg) return []
+  const jobs = [...reg.jobs, ...(Array.isArray(reg.retired_jobs) ? (reg.retired_jobs as Record<string, any>[]) : [])]
+  const prefix = `.workflow/.runtime/${change}/worktrees/`
+  const valid = (rel: unknown): rel is string =>
+    typeof rel === 'string' && rel.startsWith(prefix) && rel.length > prefix.length && !rel.split('/').includes('..') && !rel.slice(prefix.length).includes('/')
+  const now = instant(current?.created)
+  const keep = new Set(jobs.filter(j => now === null || (instant(j?.created_at) ?? now) >= now).map(j => j?.worktree))
+  const out = new Set<string>()
+  for (const j of jobs)
+    if (valid(j?.worktree) && j.worktree_removed !== true && !keep.has(j.worktree) && now !== null && (instant(j.created_at) ?? now) < now) out.add(j.worktree)
+  return [...out].sort()
 }

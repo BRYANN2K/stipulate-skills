@@ -4,6 +4,7 @@
 // here is written outside clients["claude-code"].
 import type {
   StipApplyGate,
+  StipMotion,
   StipClientSettings,
   StipEffectiveSettings,
   StipProfile,
@@ -15,6 +16,7 @@ export const PHASES = ['explore', 'validate', 'apply', 'check', 'docs'] as const
 export const MODEL_ALIASES = ['haiku', 'sonnet', 'opus', 'fable'] as const
 export const EFFORTS = ['inherit', 'low', 'medium', 'high', 'xhigh', 'max'] as const
 export const APPLY_GATES = ['off', 'warn', 'block'] as const
+export const MOTION_MODES: readonly StipMotion[] = ['auto', 'calm', 'off']
 export const SCOPES: readonly StipScope[] = ['personal', 'project', 'local']
 const PROFILE_KEYS = ['model', 'effort', 'agent', 'isolate']
 const DEFAULT_KEYS = [...PROFILE_KEYS, 'max_workers', 'max_shared_writers']
@@ -64,7 +66,7 @@ export function validateClient(value: unknown): StipClientSettings {
   if (value === undefined || value === null) return {}
   if (!isObject(value)) fail('clients["claude-code"] must be an object')
   for (const key of Object.keys(value))
-    if (!['defaults', 'roles', 'phases', 'phase_roles', 'enforcement'].includes(key)) fail(`unknown section ${key}`)
+    if (!['defaults', 'roles', 'phases', 'phase_roles', 'enforcement', 'ui'].includes(key)) fail(`unknown section ${key}`)
   if (value.defaults !== undefined) {
     const d = checkProfile(value.defaults, 'defaults', DEFAULT_KEYS) as Record<string, unknown>
     checkLimit(d.max_workers, 'max_workers')
@@ -101,6 +103,12 @@ export function validateClient(value: unknown): StipClientSettings {
     const gate = value.enforcement.apply_gate
     if (gate !== undefined && !(APPLY_GATES as readonly string[]).includes(gate as string))
       fail('enforcement.apply_gate must be off, warn or block')
+  }
+  if (value.ui !== undefined) {
+    if (!isObject(value.ui)) fail('ui must be an object')
+    for (const key of Object.keys(value.ui)) if (key !== 'motion') fail(`ui: unknown field ${key}`)
+    const motion = value.ui.motion
+    if (motion !== undefined && !(MOTION_MODES as readonly unknown[]).includes(motion)) fail('ui.motion must be auto, calm or off')
   }
   return value as StipClientSettings
 }
@@ -147,7 +155,8 @@ export function effective(
       fail(`Parallel writers (max_shared_writers > 1) need isolated worktrees; isolate is false in ${off.join(', ')}`)
   }
   const applyGate: StipApplyGate = client.enforcement?.apply_gate ?? 'block'
-  return { client, limits, applyGate }
+  const motion: StipMotion = client.ui?.motion ?? 'auto'
+  return { client, limits, applyGate, motion }
 }
 
 export type ResolvedProfile = {
@@ -272,7 +281,7 @@ export async function viewOf(raw: Record<StipScope, string>, paths: Record<StipS
   } catch (e) {
     error = (e as Error).message
     // Fail safe: an unreadable configuration keeps the strictest gate and the engine's limits.
-    eff = { client: {}, limits: { max_workers: 2, max_shared_writers: 1 }, applyGate: 'block' }
+    eff = { client: {}, limits: { max_workers: 2, max_shared_writers: 1 }, applyGate: 'block', motion: 'auto' }
   }
   return { effective: eff, byScope, paths, revision, error }
 }

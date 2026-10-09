@@ -3,6 +3,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 import { bandLine, bandSegments, compactWords, effortLabel, friendlyModel, meaningfulTool, modelEffort, planGroups, shortPath, decodeUi, encodeUi } from '../../hooks/ui/model.ts'
+import { paint } from './paint.ts'
 import { emptySnapshot } from '../../hooks/core/snapshot.ts'
 import { ROOT, DIGEST, World, install, launch } from '../core/harness.ts'
 
@@ -32,7 +33,11 @@ function world(on: On, setup?: (w: World) => void): { w: World; seen: Seen; cloc
 
 const start = ($: any) => $.session.start({ cwd: ROOT, surface: 'terminal', isInteractive: true })
 const tool = ($: any, name: string, args: Record<string, unknown> = {}) => $.tool.call({ tool: P + name, ...args } as never)
-const rowText = async (ui: any, id: string) => (await ui.find({ key: `row-${id}` }))?.text as string | undefined
+/** A task row as painted: its name and its meta line, ` | ` between them. */
+const rowText = async (ui: any, id: string) => {
+  const b = await ui.find({ key: `row-${id}` })
+  return b ? paint(b, 200).lines.map(l => l.trim()).filter(Boolean).join(' | ') : undefined
+}
 const delegate = async ($: any, task: string) => launch($, JSON.parse(String((await tool($, 'stip_delegate', { change_id: 'demo', task_id: task })).result)))
 const finish = ($: any, agentId: string, reason: 'answer' | 'error', answer = 'Done; tests pass.') =>
   $.turn.complete({ answer, durationMs: 5, isAborted: false, turnId: 't', agentId, reason } as never)
@@ -70,7 +75,7 @@ describe('band (AC-16)', () => {
     const ui = await band($, surface)
     const text = (await ui.find({ key: 'band-text' }))?.text ?? ''
     expect(text).toBe('◆ Stip  demo  Validate ▸ 0/3  ● awaiting approval')
-    expect(await ui.find({ key: 'panel' })).toBeDefined()
+    expect(await ui.find({ key: 'plan' })).toBeDefined()
     const before = w.engineCalls('approve').length
     await ui.press({ key: `approve:${DIGEST.slice(0, 12)}` })
     const call = w.engineCalls('approve').at(-1)!
@@ -84,7 +89,7 @@ describe('band (AC-16)', () => {
     await ui.unmount()
     })
 
-  test('counts running workers and those to review; Panel toggles the pane; – collapses to the mark', async ($, on) => {
+  test('counts running workers and those to review; Plan toggles the pane; no collapse control of its own', async ($, on) => {
     const { seen } = world(on)
     await start($)
     await delegate($, 'core')
@@ -94,27 +99,25 @@ describe('band (AC-16)', () => {
     const text = (await ui.find({ key: 'band-text' }))?.text ?? ''
     expect(text).toBe('◆ Stip  demo  Apply ▸ 0/3  ✓ approved  1 running  1 to review')
     expect(await ui.find({ type: 'Button', text: /Approve/ })).toBeUndefined()
-    expect((await ui.find({ key: 'panel' }))?.props.label).toBe('Panel')
-    await ui.press({ key: 'panel' })
+    expect((await ui.find({ key: 'plan' }))?.props.label).toBe('p Plan')
+    await ui.press({ key: 'plan' })
     expect(seen.open.get('stipulate')).toBe('Stip')
     await ui.redraw()
-    expect((await ui.find({ key: 'panel' }))?.props.label).toBe('Panel ▾')
-    expect((await ui.find({ key: 'panel' }))?.props.variant).toBe('primary')
+    expect((await ui.find({ key: 'plan' }))?.props.label).toBe('p Plan ▾')
+    // Approve is the band's only primary action: a shown tab is not one.
+    expect((await ui.find({ key: 'plan' }))?.props.variant).toBeUndefined()
     // Settings switches the same pane to its Settings tab; pressing the shown tab closes it.
     await ui.press({ key: 'settings' })
     expect(seen.open.get('stipulate')).toBe(SETTINGS)
     await ui.redraw()
-    expect((await ui.find({ key: 'settings' }))?.props.label).toBe('Settings ▾')
-    expect((await ui.find({ key: 'panel' }))?.props.label).toBe('Panel')
+    expect((await ui.find({ key: 'settings' }))?.props.label).toBe('s Settings ▾')
+    expect((await ui.find({ key: 'plan' }))?.props.label).toBe('p Plan')
     await ui.press({ key: 'settings' })
     expect(seen.open.has('stipulate')).toBe(false)
     await ui.redraw()
-    expect((await ui.find({ key: 'panel' }))?.props.label).toBe('Panel')
-    await ui.press({ key: 'collapse' })
-    expect((await ui.find({ key: 'band-text' }))?.text).toBe('◆ Stip')
-    expect(await ui.find({ key: 'panel' })).toBeUndefined()
-    await ui.press({ key: 'expand' })
-    expect((await ui.find({ key: 'band-text' }))?.text).toContain('1 running')
+    expect((await ui.find({ key: 'plan' }))?.props.label).toBe('p Plan')
+    // Collapsing is the host's own mark beside the band.
+    expect(await ui.find({ key: 'collapse' })).toBeUndefined()
     await ui.unmount()
   })
 
@@ -139,19 +142,22 @@ describe('pane (AC-17)', () => {
     expect(ran.text).toContain('opened')
     expect(seen.opened).toContain('stipulate')
     const ui = await pane($, surface)
-    expect((await ui.find({ key: 'stages' }))?.text).toContain('▶ Apply')
+    expect((await ui.find({ key: 'stages' }))?.text).toContain('Apply')
     expect((await ui.find({ key: 'stages' }))?.text).toContain('✓ Validate')
-    expect((await ui.find({ key: 'counts' }))?.text).toBe('1 running · 1 awaiting review · 1 ready')
-    // Criteria collapsed to one line until shown.
+    expect((await ui.find({ key: 'who-hd' }))?.text).toBe('Tasks1 running · 1 ready')
+    // AC-35: returned work waits for the person at the top.
+    expect((await ui.find({ key: 'waiting-hd' }))?.text).toBe('Waiting for you1')
+    expect((await ui.find({ key: 'waiting' }))?.text).toContain('core')
+    // Criteria: one mark each and the first open one named; the full list until shown is hidden.
     expect(await ui.find({ key: 'ac-AC-1' })).toBeUndefined()
-    expect((await ui.find({ key: 'criteria' }))?.text).toContain('2 · 0 verified · 0 failed')
+    expect((await ui.find({ key: 'criteria-hd' }))?.text).toContain('0 of 2')
+    expect((await ui.find({ key: 'crit-foot' }))?.text).toContain('AC-1 · The core works · not checked yet')
     await ui.press({ key: 'criteria-toggle' })
-    expect((await ui.find({ key: 'ac-AC-1' }))?.text).toMatch(/^○ AC-1 The core works/)
-    expect((await ui.find({ key: 'ac-AC-1' }))?.text).not.toContain('[')
-    // One row per task: icon, id, model, duration, plain state; actions only where actionable.
-    expect(await rowText(ui, 'core')).toMatch(/^◆ core\s+claude-test\s+0s\s+awaiting review$/)
-    expect(await rowText(ui, 'ui')).toMatch(/^▶ ui\s+claude-test\s+0s\s+running$/)
-    expect(await rowText(ui, 'verify')).toMatch(/^○ verify\s+ready$/)
+    expect((await ui.find({ key: 'ac-AC-1' }))?.text).toMatch(/^· AC-1 The core works/)
+    // One row per task: name over model · effort · state · time; actions only where actionable.
+    expect(await rowText(ui, 'core')).toBe('core | claude-test · awaiting review · 0s')
+    expect(await rowText(ui, 'ui')).toBe('ui | claude-test · running · 0s')
+    expect(await rowText(ui, 'verify')).toBe('verify | ready')
     expect(await ui.find({ key: 'accept:ui' })).toBeUndefined()
     expect(await ui.find({ key: 'cancel:core' })).toBeUndefined()
     expect(await ui.find({ key: 'result:core' })).toBeDefined()
@@ -171,9 +177,9 @@ describe('pane (AC-17)', () => {
     await ui.press({ key: 'delegate:verify' })
     expect(w.engineCalls('reserve').some(c => c.includes('verify'))).toBe(true)
 
-    expect(await rowText(ui, 'core')).toMatch(/^✓ core\s+claude-test\s+0s\s+accepted$/)
-    expect(await rowText(ui, 'ui')).toMatch(/^! ui\s+claude-test\s+0s\s+cancelled$/)
-    await ui.press({ key: 'details-core' })
+    expect(await rowText(ui, 'core')).toBe('core | claude-test · accepted · 0s')
+    expect(await rowText(ui, 'ui')).toBe('ui | claude-test · cancelled · 0s')
+    await ui.press({ key: 'details:core' })
     expect(await ui.find({ type: 'Text', text: /writes src\/core/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /covers AC-1 The core works/ })).toBeDefined()
     await ui.unmount()
@@ -279,25 +285,32 @@ describe('context section (AC-19)', () => {
   })
 })
 
-describe('settings tab (AC-20): who runs what', () => {
+describe('settings tab (AC-20): models by role', () => {
   const statusText = async (ui: any) => (await ui.find({ key: 'status' }))?.text ?? ''
   for (const surface of SURFACES)
-    test(`a table of Defaults and roles; refuses invalid values, saves a valid profile (${surface})`, async ($, on) => {
+    test(`Orchestrator, Defaults and the roles in use; refuses invalid values, saves a valid profile (${surface})`, async ($, on) => {
       const { w, seen } = world(on)
       await start($)
       const ran = await command($, 'stip-settings')
       expect(ran.text).toContain('opened')
       expect(seen.open.get('stipulate')).toBe(SETTINGS)
       const ui = await pane($, surface, 'settings')
-      expect((await ui.find({ key: 'scope:project' }))?.props.label).toBe('Project●')
+      // Scope chips: the current one filled (a primary pill on desktop), the others pressable.
+      if (surface === 'terminal') expect(await ui.find({ key: 'scope:project' })).toBeUndefined()
+      else expect((await ui.find({ key: 'scope:project' }))?.props.variant).toBe('primary')
+      expect(await ui.find({ key: 'scope:personal' })).toBeDefined()
       expect((await ui.find({ key: 'path' }))?.text).toBe('/proj/.workflow/config.json')
-      for (const row of ['defaults', 'role:backend', 'role:frontend', 'role:verification', 'role:documentation', 'role:research'])
-        expect(await ui.find({ key: `srow-${row}` }), row).toBeDefined()
-      expect(await ui.find({ key: 'table-head' })).toBeDefined()
+      expect(await ui.find({ key: 'orchestrator' })).toBeDefined()
+      expect(await ui.find({ key: 'srow-defaults' })).toBeDefined()
+      // The plan's roles and research inherit everything: one dimmed row, › to override.
+      expect((await ui.find({ key: 'srow-inherited' }))?.text).toContain('backend · frontend · verification · research')
+      await ui.press({ key: 'sopen:inherited' })
+      for (const row of ['role:backend', 'role:frontend', 'role:verification', 'role:research']) expect(await ui.find({ key: `srow-${row}` }), row).toBeDefined()
       const model = await ui.find({ key: 'm:role:backend' })
-      expect((model?.props.options as { label: string }[])[0]!.label).toBe('inherit (inherited)')
+      expect((model?.props.options as { label: string }[])[0]!.label).toBe('(inherit)')
       expect((model?.props.options as { label: string }[]).map(o => o.label)).toContain('Opus 5.5')
-      expect(((await ui.find({ key: 'apply-gate' }))?.props.options as { label: string }[])[0]!.label).toBe('block (default)')
+      expect(((await ui.find({ key: 'apply-gate' }))?.props.options as { label: string }[])[0]!.label).toBe('(block)')
+      expect((await ui.find({ key: 'gate-row' }))?.text).toContain('default')
 
       // Parallel writers 3 > workers 2: refused before any save.
       for (let i = 0; i < 2; i++) await ui.press({ key: 'max_shared_writers-inc' })
@@ -313,8 +326,11 @@ describe('settings tab (AC-20): who runs what', () => {
 
       await ui.select({ key: 'm:role:backend', value: 'claude-sonnet-5-5' })
       await ui.select({ key: 'e:role:backend', value: 'high' })
-      expect((await ui.find({ key: 'eff-backend/apply' }))?.text).toMatch(/backend\/apply\s*Sonnet 5\.5\s*◑ high/)
-      expect(await statusText(ui)).toBe('Unsaved changes')
+      // Its own values now: its own row; › shows how it resolves.
+      await ui.press({ key: 'sopen:role:backend' })
+      expect((await ui.find({ key: 'eff-backend/apply' }))?.text).toMatch(/backend\/apply\s*Sonnet 5\.5\s*● high/)
+      // Model, effort, and the writers limit the steppers left set.
+      expect(await statusText(ui)).toBe('Unsaved · 3 changes')
       await ui.press({ key: 'settings-save' })
       expect(w.ran).toContain('save-settings')
       const saved = JSON.parse(w.files.get(`${ROOT}/.workflow/config.json`)!)
@@ -329,6 +345,7 @@ describe('settings tab (AC-20): who runs what', () => {
     await start($)
     await command($, 'stip-settings')
     const ui = await pane($, 'mobile', 'settings')
+    await ui.press({ key: 'sopen:inherited' })
     await ui.press({ key: 'm:role:backend' })
     await ui.press({ key: 'm:role:backend' })
     await ui.press({ key: 'settings-save' })
@@ -337,24 +354,31 @@ describe('settings tab (AC-20): who runs what', () => {
     await ui.unmount()
   })
 
-  test('a narrow desktop pane shows one card per role, friendly names, wrapped lists; phase overrides are added', async ($, on) => {
+  test('a narrow desktop pane: friendly names, effective resolution and phase overrides behind ›', async ($, on) => {
     world(on)
     await start($)
     await command($, 'stip-settings')
     const ui = await pane($, 'desktop', 'settings', 45)
-    expect(await ui.find({ key: 'table-head' })).toBeUndefined()
-    expect((await ui.find({ key: 'sname-role:backend' }))?.text).toMatch(/^backend\s*in plan\s*all phases$/)
+    await ui.press({ key: 'sopen:inherited' })
+    expect((await ui.find({ key: 'sname-role:backend' }))?.text).toMatch(/^backend · in plan/)
     await ui.select({ key: 'm:role:backend', value: 'claude-opus-5-5' })
     await ui.select({ key: 'e:role:backend', value: 'xhigh' })
+    await ui.press({ key: 'sopen:role:backend' })
     const eff = await ui.find({ key: 'eff-backend/apply' })
-    expect(eff?.text).toMatch(/^backend\/apply\s*Opus 5\.5\s*◕ xhigh\s*shared$/)
+    expect(eff?.text).toMatch(/^backend\/apply\s*Opus 5\.5\s*◉ xhigh\s*shared$/)
     expect(eff?.props.flexWrap).toBe('wrap')
     const texts = (await ui.findAll({ type: 'Text' })).map((t: any) => t.text).join('\n')
     expect(texts).not.toContain('claude-opus-5-5')
     expect((await ui.find({ key: 'running-note' }))?.text).toContain('next delegation.')
-    await ui.select({ key: 'add-role', value: 'backend' })
-    await ui.select({ key: 'add-phase', value: 'check' })
+    // A role's own phase override, from its details.
+    await ui.select({ key: 'add-phase-for:backend', value: 'check' })
     expect(await ui.find({ key: 'srow-pr:check:backend' })).toBeDefined()
+    // All roles in a phase, from the Defaults details (with every role's resolution).
+    await ui.press({ key: 'sopen:defaults' })
+    expect(await ui.find({ key: 'eff-frontend/apply' })).toBeDefined()
+    await ui.select({ key: 'add-role', value: '*' })
+    await ui.select({ key: 'add-phase', value: 'docs' })
+    expect(await ui.find({ key: 'srow-phase:docs' })).toBeDefined()
     await ui.unmount()
   })
 })
@@ -385,7 +409,7 @@ describe('approval provenance in the interface', () => {
     expect(await b.find({ type: 'Button', text: /Approve/ })).toBeDefined()
     await b.unmount()
     const p = await pane($, 'terminal')
-    expect((await p.find({ key: 'title' }))?.text).toContain('approval not confirmed by you — revoked')
+    expect((await p.find({ key: 'title' }))?.text).toContain('approval not confirmed by you, revoked')
     expect(await p.find({ key: 'unconfirmed' })).toBeDefined()
     await p.unmount()
   })
@@ -444,7 +468,7 @@ describe('launch tickets', () => {
     await ui.press({ key: 'delegate:core' })
     expect(w.prompts.at(-1)).toContain('stip demo/core#1')
     expect(w.toasts.some(t => t === 'core: launch in your prompt · press Enter')).toBe(true)
-    expect(await rowText(ui, 'core')).toMatch(/^◇ core\s+ready to launch — press Enter in your prompt$/)
+    expect(await rowText(ui, 'core')).toBe('core | ready to launch, press Enter in your prompt')
     const b = await band($, 'terminal')
     expect((await b.find({ key: 'band-text' }))?.text).toContain('1 ready to launch')
     await b.unmount()
@@ -456,7 +480,7 @@ describe('launch tickets', () => {
     // Once the coordinator launches it, it is an ordinary running worker.
     await launch($, { launch: { subagent_type: 'stipulate:backend', description: 'stip demo/core#1' } })
     await tool($, 'stip_status')
-    expect(await rowText(ui, 'core')).toMatch(/^▶ core\s+claude-test\s+0s\s+running$/)
+    expect(await rowText(ui, 'core')).toBe('core | claude-test · running · 0s')
     expect(await ui.find({ key: 'relaunch:core' })).toBeUndefined()
     await ui.unmount()
   })
@@ -469,8 +493,8 @@ describe('launch tickets', () => {
     w.syncChange()
     await tool($, 'stip_status')
     const ui = await pane($, 'terminal')
-    expect(await rowText(ui, 'ui')).toMatch(/^! ui\s+.*cancelled$/)
-    await ui.press({ key: 'details-ui' })
+    expect(await rowText(ui, 'ui')).toMatch(/^ui \| .*cancelled · 0s$/)
+    await ui.press({ key: 'details:ui' })
     expect(await ui.find({ type: 'Text', text: /why: .*state\.json\); restored and cancelled/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /\/stip-resync lists the differences/ })).toBeDefined()
     await ui.unmount()
@@ -502,7 +526,7 @@ describe('tampered attempts', () => {
     expect((await b.find({ key: 'band-text' }))?.text).toContain('1 tampered')
     await b.unmount()
     const ui = await pane($, 'terminal')
-    expect(await rowText(ui, 'core')).toMatch(/^! core\s+.*tampered — inspect git diff$/)
+    expect(await rowText(ui, 'core')).toMatch(/^core \| .*tampered, inspect git diff · 0s$/)
     expect(await ui.find({ key: 'accept:core' })).toBeUndefined()
 
     const reviews = w.engineCalls('review').length
@@ -536,11 +560,11 @@ describe('research helpers (live regression: a helper row crashed the pane)', ()
       await start($)
       await withHelper($)
       const ui = await pane($, surface)
-      expect((await ui.find({ key: 'h-helpers' }))?.text).toContain('Research helpers (1)')
-      const row = (await ui.findAll({ type: 'Box' })).find((b: any) => String(b.key ?? '').startsWith('hrow-'))
-      expect(row?.text).toMatch(/research · running · /)
-      expect(row?.text).not.toContain('…')
-      expect(await ui.find({ type: 'Button', text: /Cancel/ })).toBeDefined()
+      expect((await ui.find({ key: 'helpers-hd' }))?.text).toContain('Research helpers (1)')
+      const row = (await ui.findAll({ type: 'Box' })).find((b: any) => String(b.key ?? '').startsWith('row-h-'))
+      expect(paint(row, 200).lines.join(' | ')).toMatch(/ \| claude-test · running · 0s$/)
+      const cancel = (await ui.findAll({ type: 'Button' })).find((b: any) => String(b.key).startsWith('hcancel:'))
+      expect(cancel?.props.label).toBe('✕')
       await ui.unmount()
     })
 
@@ -613,16 +637,16 @@ describe('pane layout (live review redesign)', () => {
     await $.tool.call({ tool: 'Bash', command: 'npm test', agentId: 'agent-1' } as never)
     await tool($, 'stip_status')
     const ui = await pane($, 'terminal')
-    expect(await rowText(ui, 'core')).toMatch(/running · Bash$/)
-    expect((await ui.find({ key: 'group-apply' }))?.text).toMatch(/^Apply/)
-    expect((await ui.find({ key: 'group-check' }))?.text).toMatch(/^Check/)
-    expect((await ui.find({ key: 'criteria' }))?.text).toContain('2 · 1 verified · 1 failed')
+    expect(await rowText(ui, 'core')).toMatch(/^core \| claude-test · .*npm test.* · 0s$/)
+    expect((await ui.find({ key: 'criteria-hd' }))?.text).toContain('1 of 2')
+    expect((await ui.find({ key: 'crit-strip' }))?.text).toBe(' ✓ ✗AC-1AC-2')
+    expect((await ui.find({ key: 'crit-foot' }))?.text).toContain('AC-2 · The UI shows · failed')
     await ui.press({ key: 'criteria-toggle' })
     expect((await ui.find({ key: 'ac-AC-1' }))?.text).toMatch(/^✓ AC-1/)
     expect((await ui.find({ key: 'ac-AC-2' }))?.text).toMatch(/^✗ AC-2/)
     await $.tool.call({ tool: 'SubagentHandback', agentId: 'agent-1' } as never)
     await tool($, 'stip_status')
-    expect(await rowText(ui, 'core')).toMatch(/running$/)
+    expect(await rowText(ui, 'core')).not.toContain('SubagentHandback')
     expect(JSON.stringify(await ui.drawn())).not.toContain('SubagentHandback')
     await ui.unmount()
   })
@@ -632,10 +656,13 @@ describe('pane layout (live review redesign)', () => {
     await start($)
     await delegate($, 'core')
     await finish($, 'agent-1', 'answer')
-    for (const [surface, columns] of [['mobile', 60], ['terminal', 60]] as const) {
+    for (const [surface, columns] of [['mobile', 40], ['terminal', 50]] as const) {
       const ui = await $.ui.mount({ plugin: 'stipulate', surface, component: 'Pane', requestId: 'stipulate', props: { ...PANE_PROPS, bodyColumns: columns }, viewport: VIEWPORT })
-      expect(await rowText(ui, 'core')).toMatch(/^◆ core\s+claude-test\s+(0s\s+)?awaiting review$/)
+      expect(await rowText(ui, 'core')).toMatch(/^core \| claude-test · awaiting review( · 0s)?$/)
       expect(await ui.find({ key: 'accept:core' })).toBeDefined()
+      // Below: the buttons are not beside the name in the row's first line.
+      const line = await ui.find({ key: 'line-core' })
+      expect(JSON.stringify(line)).not.toContain('accept:core')
       await ui.unmount()
     }
   })
@@ -690,7 +717,7 @@ describe('band layout (live review redesign)', () => {
     expect(bandLine(bandSegments(snap, 0, 60))).toBe('◆ Stip  presigned-uploads-quotas  Apply  ✓ approved  ▶1  ◆1')
     const narrow = bandLine(bandSegments(snap, 0, 40))
     expect(narrow.length).toBeLessThanOrEqual(40)
-    expect(narrow).toMatch(/^◆ Stip  presigned-u.*…/)
+    expect(narrow).toMatch(/^◆ Stip  presigned(-uploads)?…  /)
     expect(narrow).toMatch(/▶1  ◆1$/)
   })
 
@@ -702,7 +729,7 @@ describe('band layout (live review redesign)', () => {
     await start($)
     const ui = await mount($, 70)
     expect(await ui.find({ type: 'Button', text: /Approve/ })).toBeDefined()
-    expect((await ui.find({ key: 'settings' }))?.props.label).toBe('S')
+    expect((await ui.find({ key: 'settings' }))?.props.label).toBe('s')
     expect((await widthOf(ui)).total).toBeLessThanOrEqual(70)
     await ui.unmount()
   })
@@ -716,14 +743,15 @@ describe('attempt 9: live review items', () => {
   }
 
   test('effort indicators and model names', () => {
-    expect(effortLabel('high')).toBe('◑ high')
+    expect(effortLabel('high')).toBe('● high')
+    expect(effortLabel('medium')).toBe('◐ medium')
     expect(effortLabel('low')).toBe('○ low')
     expect(effortLabel('inherit')).toBeNull()
-    expect(modelEffort('claude-opus-5-5', 'xhigh')).toBe('Opus 5.5 ◕ xhigh')
+    expect(modelEffort('claude-opus-5-5', 'xhigh')).toBe('Opus 5.5 ◉ xhigh')
     expect(modelEffort('claude-haiku-5-5', 'inherit')).toBe('Haiku 5.5')
     expect(shortPath('/Users/u/Documents/Projects/nimbus/.workflow/config.json', '/Users/u')).toBe('~/…/.workflow/config.json')
     expect(shortPath('/Users/u/.claude/stipulate.json', '/Users/u')).toBe('~/.claude/stipulate.json')
-    expect(decodeUi(encodeUi({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false }))).toEqual({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false })
+    expect(decodeUi(encodeUi({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a' }))).toEqual({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a' })
     expect(decodeUi('core').task).toBe('core')
   })
 
@@ -733,7 +761,9 @@ describe('attempt 9: live review items', () => {
       await start($)
       await delegate($, 'core')
       const ui = await pane($, surface)
-      expect(await rowText(ui, 'core')).toMatch(/^▶ core\s+claude-test\s+◑ high\s+0s\s+running$/)
+      expect(await rowText(ui, 'core')).toBe('core | claude-test · ● high · running · 0s')
+      const mark = (await ui.findAll({ type: 'Text' })).find((t: any) => t.text === '● high')
+      expect(mark?.props.color).toBe('claude')
       await ui.unmount()
     })
 
@@ -742,24 +772,25 @@ describe('attempt 9: live review items', () => {
       world(on, withSpec)
       await start($)
       const ui = await pane($, surface, 'plan', columns)
-      expect((await ui.find({ key: 'criteria' }))?.text).toContain('11 · 1 verified · 1 failed')
-      await ui.press({ key: 'details-core' })
+      expect((await ui.find({ key: 'criteria-hd' }))?.text).toContain('1 of 11')
+      expect((await ui.find({ key: 'crit-foot' }))?.text).toMatch(/^AC-2 · .*failed/)
+      await ui.press({ key: 'details:core' })
       await ui.press({ key: 'criteria-toggle' })
       expect(await ui.find({ key: 'details-box-core' })).toBeDefined()
       const one = await ui.find({ key: 'ac-AC-1' })
       const ten = await ui.find({ key: 'ac-AC-10' })
-      expect(one?.text.startsWith('○ AC-1 ')).toBe(true)
+      expect(one?.text.startsWith('· AC-1 ')).toBe(true)
       expect(ten?.text.startsWith('✓ AC-10 ')).toBe(true)
       expect((await ui.find({ key: 'ac-AC-2' }))?.text.startsWith('✗ AC-2 ')).toBe(true)
       const idWidth = (b: any) => (b.children[1] as { props: { width: number } }).props.width
       expect(idWidth(one)).toBe(idWidth(ten))
       expect(await ui.find({ key: 'ac-full-AC-11' })).toBeUndefined()
-      await ui.press({ key: 'open-AC-11' })
+      await ui.press({ key: 'open:AC-11' })
       const full = await ui.find({ key: 'ac-full-AC-11' })
       expect(full?.text).toContain('The README documents:')
       expect(full?.text).toContain('- install')
       expect(full?.text).toContain('not checked yet')
-      await ui.press({ key: 'open-AC-10' })
+      await ui.press({ key: 'open:AC-10' })
       expect((await ui.find({ key: 'ac-full-AC-10' }))?.text).toContain('passed: checked by verify.')
       await ui.unmount()
     })
@@ -795,10 +826,11 @@ describe('attempt 9: live review items', () => {
     await plan.unmount()
     const settings = await pane($, 'terminal', 'settings')
     expect((await settings.find({ key: 'tab-settings' }))?.props.label).toBe('Settings ▾')
-    await settings.press({ key: 'tab-plan' })
-    expect(seen.open.get('stipulate')).toBe('Stip')
+    // The shown tab closes the pane; the other switches it.
     await settings.press({ key: 'tab-settings' })
     expect(seen.open.has('stipulate')).toBe(false)
+    await settings.press({ key: 'tab-plan' })
+    expect(seen.open.get('stipulate')).toBe('Stip')
     await settings.unmount()
   })
 
@@ -807,14 +839,17 @@ describe('attempt 9: live review items', () => {
     await start($)
     const ui = await $.ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'AbovePrompt', props: { ...BAND_PROPS, bodyColumns: 140 }, viewport: VIEWPORT })
     expect((await ui.find({ key: 'band-text' }))?.text).toBe('◆ Stip  demo  Apply ▸ 0/3  ✓ approved')
-    for (const key of ['panel', 'settings', 'collapse']) expect(await ui.find({ key }), key).toBeDefined()
+    for (const key of ['plan', 'settings']) expect(await ui.find({ key }), key).toBeDefined()
     const textBox = await ui.find({ key: 'band-text' })
     expect(textBox?.props.flexShrink).toBe(1)
     expect(textBox?.props.width).toBeUndefined()
+    // Hotkeys p and s on the tabs, a on Approve when shown.
+    expect((await ui.find({ key: 'plan' }))?.props.hotkey).toBe('p')
+    expect((await ui.find({ key: 'settings' }))?.props.hotkey).toBe('s')
     await ui.unmount()
   })
 
-  test('desktop, docked narrow: actions stay on the row, columns are fixed-width boxes, stages wrap, helper titles whole', async ($, on) => {
+  test('desktop, docked narrow: one-glyph details, stage chips wrap, the graph is an SVG', async ($, on) => {
     world(on)
     await start($)
     await delegate($, 'core')
@@ -824,18 +859,13 @@ describe('attempt 9: live review items', () => {
     await tool($, 'stip_status')
     for (const columns of [45, 105]) {
       const ui = await pane($, 'desktop', 'plan', columns)
-      const task = await ui.find({ key: 'task-core' })
-      const line = task?.children[0] as { props: { flexDirection: string }; children: { props: { key?: string } }[] }
-      expect(line.props.flexDirection).toBe('row')
-      expect(await ui.find({ key: 'details-core' })).toBeDefined()
-      expect((await ui.find({ key: 'details-core' }))?.props.label).toBe('›')
-      const row = await ui.find({ key: 'row-core' })
-      expect(row?.text).not.toMatch(/ {2}/)
-      const widths = (b: any) => (b.children as any[]).slice(0, 2).map(c => c.props.width)
-      expect(widths(row)).toEqual(widths(await ui.find({ key: 'row-ui' })))
+      expect((await ui.find({ key: 'details:core' }))?.props.label).toBe('›')
+      expect((await ui.find({ key: 'details:core' }))?.props.plain).toBe(true)
       expect((await ui.find({ key: 'stages' }))?.props.flexWrap).toBe('wrap')
-      const helperRow = (await ui.findAll({ type: 'Box' })).find((b: any) => String(b.key ?? '').startsWith('hrow-'))
-      expect(helperRow?.text).not.toContain('…')
+      const svgs = await ui.findAll({ type: 'Svg' })
+      expect(svgs.map((x: any) => String(x.props.alt).split(':')[0])).toEqual(['Task dependencies'])
+      // AC-38: the criteria are a glyph ruler with AC labels, not colored cells.
+      expect((await ui.find({ key: 'crit-strip' }))?.text).toBe(' · ·AC-1AC-2')
       await ui.unmount()
     }
   })
@@ -846,11 +876,12 @@ describe('attempt 9: live review items', () => {
       await start($)
       await delegate($, 'core')
       const p = await pane($, surface, 'plan', columns)
-      expect(await rowText(p, 'core')).toMatch(/^▶ core/)
+      expect(await rowText(p, 'core')).toMatch(/^core \| /)
       await p.unmount()
       const s = await pane($, surface, 'settings', columns)
+      expect((await s.find({ key: 'srow-inherited' }))?.text).toContain('backend · frontend')
+      await s.press({ key: 'sopen:inherited' })
       expect(await s.find({ key: 'srow-role:backend' })).toBeDefined()
-      expect(await s.find({ key: 'table-head' })).toBeUndefined()
       await s.unmount()
     })
 })
@@ -862,13 +893,13 @@ describe('attempt 10: compact terminal pane under 60 columns', () => {
     expect(compactWords('cancelled · attempt 2', 12)).toBe('cancelled')
     expect(compactWords('cancelled · attempt 2', 8)).toBe('cancel.')
     expect(compactWords('awaiting review', 10)).toBe('review')
-    expect(compactWords('ready to launch — press Enter in your prompt', 12)).toBe('launch')
+    expect(compactWords('ready to launch, press Enter in your prompt', 12)).toBe('launch')
     expect(compactWords('running · Bash', 14)).toBe('running · Bash')
     expect(compactWords('running · Bash', 9)).toBe('running')
   })
 
   for (const columns of [50, 40])
-    test(`one short row per task, › on the row, actions only on actionable rows (terminal, ${columns})`, async ($, on) => {
+    test(`one row per task, buttons below when they cannot sit beside, never cut mid-word (terminal, ${columns})`, async ($, on) => {
       world(on, w => w.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify({ orchestration: { clients: { 'claude-code': { defaults: { model: 'claude-opus-5-5', effort: 'high' } } } } })))
       await start($)
       await delegate($, 'core')
@@ -879,27 +910,18 @@ describe('attempt 10: compact terminal pane under 60 columns', () => {
       await tool($, 'stip_status')
       const ui = await pane($, 'terminal', 'plan', columns)
       const core = (await rowText(ui, 'core'))!
-      expect(core).toMatch(/^◆ core\s+claude-test\s+◑\s+(awaiting review|review)$/)
-      expect(core).not.toContain('…')
-      expect(core).not.toContain('0s')
-      expect(core).not.toContain('high')
-      const line = (await ui.find({ key: 'task-core' }))!.children[0] as { props: { flexDirection: string } }
-      expect(line.props.flexDirection).toBe('row')
-      expect((await ui.find({ key: 'details-core' }))?.props.label).toBe('›')
+      expect(core).toMatch(/^core \| claude-test · ●( high)? · awaiting review/)
       expect(await ui.find({ key: 'accept:core' })).toBeDefined()
       expect(await ui.find({ key: 'cancel:ui' })).toBeDefined()
-      expect(await ui.find({ key: 'rb-verify' })).toBeDefined()
-      expect(await ui.find({ type: 'Button', text: /^Details$/ })).toBeUndefined()
-      // Helper: two clean lines; model and effort in its Details.
-      const hrow = (await ui.findAll({ type: 'Box' })).find((b: any) => String(b.key ?? '').startsWith('hrow-'))
-      expect(hrow?.text).toMatch(/^▶ research · running · 0s$/)
-      const title = (await ui.findAll({ type: 'Box' })).find((b: any) => String(b.key ?? '').startsWith('htitle-'))
-      expect(title?.text.length).toBeGreaterThan(3)
+      expect((await ui.find({ key: 'details:core' }))?.props.label).toBe('›')
       expect((await ui.find({ key: 'picker' }))?.props.label).toBe('demo ▾')
+      const painted = paint(await ui.drawn(), columns)
+      expect(painted.lines.every(l => [...l].length <= columns)).toBe(true)
+      expect(painted.issues.filter(i => i.kind === 'split' || i.kind === 'overflow')).toEqual([])
       await ui.unmount()
     })
 
-  test('the band keeps Settings as [ S ] and shortens "approved (adopted)" when narrow', async ($, on) => {
+  test('the band shortens "approved (adopted)" first, then keeps Settings as [ S ] when narrow', async ($, on) => {
     world(on, w => {
       w.baselined = false
       w.userDigest = null
@@ -908,24 +930,24 @@ describe('attempt 10: compact terminal pane under 60 columns', () => {
     const wide = await band($, 'terminal')
     expect((await wide.find({ key: 'band-text' }))?.text).toContain('✓ approved (adopted)')
     await wide.unmount()
-    for (const columns of [70, 50]) {
+    for (const [columns, label] of [[70, 's Settings'], [50, 's']] as const) {
       const ui = await $.ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'AbovePrompt', props: { ...BAND_PROPS, bodyColumns: columns }, viewport: VIEWPORT })
-      expect((await ui.find({ key: 'settings' }))?.props.label).toBe('S')
+      expect((await ui.find({ key: 'settings' }))?.props.label).toBe(label)
       expect((await ui.find({ key: 'band-text' }))?.text).not.toContain('(adopted)')
       await ui.unmount()
     }
   })
 
-  test('wide terminal and desktop layouts are unchanged', async ($, on) => {
+  test('wide terminal and desktop panes keep the row\'s buttons beside it', async ($, on) => {
     world(on)
     await start($)
     await delegate($, 'core')
     const wide = await pane($, 'terminal')
-    expect(await rowText(wide, 'core')).toMatch(/^▶ core\s+claude-test\s+0s\s+running$/)
-    expect((await wide.find({ key: 'details-core' }))?.props.label).toBe('Details')
+    expect(await rowText(wide, 'core')).toBe('core | claude-test · running · 0s')
+    expect(JSON.stringify(await wide.find({ key: 'line-core' }))).toContain('cancel:core')
     await wide.unmount()
     const desk = await pane($, 'desktop', 'plan', 50)
-    expect((await desk.find({ key: 'details-core' }))?.props.label).toBe('›')
+    expect((await desk.find({ key: 'details:core' }))?.props.label).toBe('›')
     await desk.unmount()
   })
 })
@@ -995,11 +1017,11 @@ describe('attempt 12: plan changes and rebase outcome', () => {
       const added = w.toasts.slice(before)
       expect(added).toEqual(['Registry rebased · 1 task to redo'])
       expect(await ui.find({ key: 'rebase-row' })).toBeUndefined()
-      expect(await rowText(ui, 'core')).toMatch(columns < 60 ? /^↻ core.*redo/ : /^↻ core.*redo · contract changed$/)
+      expect(await rowText(ui, 'core')).toMatch(columns < 60 ? /^core \| .*redo/ : /^core \| .*redo · contract changed · \S+$/)
       expect(await ui.find({ key: 'redo:core' })).toBeDefined()
       expect((await ui.find({ key: 'retired' }))?.text).toMatch(/^Retired \(1\)/)
       await ui.press({ key: 'retired-toggle' })
-      expect((await ui.find({ key: 'retired-full' }))?.text).toContain('ui · removed from the plan')
+      expect((await ui.find({ key: 'retired-full' }))?.text).toContain('ui · removed from the plan; nothing it integrated remains in the checkout')
       const reserves = w.engineCalls('reserve').length
       await ui.press({ key: 'redo:core' })
       const reserve = w.engineCalls('reserve').at(-1)!
@@ -1016,20 +1038,26 @@ describe('attempt 13: roles and the orchestrator in settings', () => {
   const withCustom = (w: World) => w.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify({ orchestration: { clients: { 'claude-code': { roles: { reviewer: { model: 'haiku' } } } } } }))
 
   for (const surface of SURFACES)
-    test(`every built-in role is listed, plan roles first and marked, then custom ones (${surface}, 105)`, async ($, on) => {
+    test(`roles in use first (the plan's grouped while they inherit), custom ones, then every other built-in role behind Show (${surface}, 105)`, async ($, on) => {
       on('session.model', () => ({ value: 'claude-opus-5-5' }) as never)
       world(on, withCustom)
       await start($)
       const ui = await pane($, surface, 'settings')
-      const roles = await roleKeys(ui)
-      expect(roles.slice(0, 3)).toEqual(['backend', 'frontend', 'verification'])
-      for (const role of BUILTIN) expect(roles).toContain(role)
-      expect(roles.at(-1)).toBe('reviewer')
+      expect(await roleKeys(ui)).toEqual(['reviewer'])
+      expect((await ui.find({ key: 'roles-hd' }))?.text).toContain('3 roles in plan')
+      expect((await ui.find({ key: 'sname-inherited' }))?.text).toMatch(/^backend · frontend · verification · research · in plan · inherited/)
+      await ui.press({ key: 'sopen:inherited' })
+      expect((await roleKeys(ui)).slice(0, 4)).toEqual(['backend', 'frontend', 'verification', 'research'])
       expect((await ui.find({ key: 'sname-role:backend' }))?.text).toContain('in plan')
+      expect((await ui.find({ key: 'sname-role:research' }))?.text).toContain('helpers')
+      expect((await ui.find({ key: 'other-roles' }))?.text).toContain('Other roles (9)')
+      await ui.press({ key: 'other-roles-toggle' })
+      const roles = await roleKeys(ui)
+      for (const role of BUILTIN) expect(roles).toContain(role)
       expect((await ui.find({ key: 'sname-role:cloud' }))?.text).not.toContain('in plan')
       // The orchestrator is this session: informational, not editable.
       const orch = await ui.find({ key: 'orchestrator' })
-      expect(orch?.text).toMatch(/^Orchestrator\s*all\s*Opus 5\.5\s*· this session — change with \/model and \/effort$/)
+      expect(orch?.text).toMatch(/^Orchestrator\/model · \/effortOpus 5\.5 · this session · change with \/model and \/effort$/)
       expect(JSON.stringify(orch)).not.toContain('"Select"')
       await ui.unmount()
     })
@@ -1043,7 +1071,9 @@ describe('attempt 13: roles and the orchestrator in settings', () => {
     await start($)
     for await (const _ of ($ as any).turn.step({ turnId: 't', index: 0, model: 'claude-opus-5-5', effort: 'xhigh', messageCount: 1 })) void _
     const ui = await pane($, 'terminal', 'settings')
-    expect((await ui.find({ key: 'orchestrator' }))?.text).toContain('Opus 5.5 ◕ xhigh')
+    expect((await ui.find({ key: 'orch-meta' }))?.text).toMatch(/^Opus 5\.5 · ◉ xhigh · this session/)
+    const mark = (await ui.findAll({ type: 'Text' })).find((t: any) => t.text === '◉ xhigh')
+    expect(mark?.props.color).toBe('claude')
     await ui.unmount()
   })
 
@@ -1060,7 +1090,7 @@ describe('attempt 13: roles and the orchestrator in settings', () => {
       await ui.input({ key: 'add-role-name', text: 'backend' })
       expect(await status()).toMatch(/backend is already listed/)
       await ui.input({ key: 'add-role-name', text: 'qa-lead' })
-      expect(await ui.find({ key: 'srow-role:qa-lead' })).toBeDefined()
+      expect((await ui.find({ key: 'sname-role:qa-lead' }))?.text).toContain('new')
       await ui.select({ key: 'm:role:qa-lead', value: 'claude-haiku-5-5' })
       await ui.press({ key: 'settings-save' })
       const saved = JSON.parse(w.files.get(`${ROOT}/.workflow/config.json`)!)
@@ -1077,28 +1107,18 @@ describe('attempt 13: roles and the orchestrator in settings', () => {
     await ui.unmount()
   })
 
-  for (const [surface, columns] of [['terminal', 50], ['desktop', 45]] as const)
-    test(`narrow: roles neither in the plan nor configured fold under Other roles (${surface}, ${columns})`, async ($, on) => {
+  for (const [surface, columns] of [['terminal', 50], ['desktop', 45], ['terminal', 140]] as const)
+    test(`roles neither in the plan nor configured fold under Other roles at every width (${surface}, ${columns})`, async ($, on) => {
       world(on, withCustom)
       await start($)
       const ui = await pane($, surface, 'settings', columns)
-      const shown = await roleKeys(ui)
-      expect(shown).toEqual(['backend', 'frontend', 'verification', 'reviewer'])
-      const others = BUILTIN.filter(r => !['backend', 'frontend', 'verification'].includes(r))
+      expect(await roleKeys(ui)).toEqual(['reviewer'])
+      const others = BUILTIN.filter(r => !['backend', 'frontend', 'verification', 'research'].includes(r))
       expect((await ui.find({ key: 'other-roles' }))?.text).toContain(`Other roles (${others.length})`)
       await ui.press({ key: 'other-roles-toggle' })
       expect(await roleKeys(ui)).toContain('cloud')
       await ui.unmount()
     })
-
-  test('wide: nothing is folded', async ($, on) => {
-    world(on)
-    await start($)
-    const ui = await pane($, 'terminal', 'settings')
-    expect(await ui.find({ key: 'other-roles' })).toBeUndefined()
-    expect(await roleKeys(ui)).toContain('communication')
-    await ui.unmount()
-  })
 })
 
 describe('action rows', () => {
@@ -1106,7 +1126,7 @@ describe('action rows', () => {
     world(on)
     await start($)
     const rows: [string, string, string][] = [
-      ['{"action":"accept","change_id":"demo","task_id":"core"}', '{"ok":false,"error":"Only a returned native contribution can be reviewed."}', 'stip: refused — Only a returned native contribution can be reviewed.'],
+      ['{"action":"accept","change_id":"demo","task_id":"core"}', '{"ok":false,"error":"Only a returned native contribution can be reviewed."}', 'stip: refused: Only a returned native contribution can be reviewed.'],
       ['{"action":"approve","change_id":"demo","digest":"38f287d1aaaa"}', '{"ok":true,"action":"approve","value":{"phase":"approved","approval":{"contract_digest":"38f287d1","by":"user","recorded_at":"2026-10-08T10:00:00Z"}}}', 'stip: approved 38f287d1'],
       ['{"action":"accept","change_id":"demo","task_id":"core"}', 'stipulate: {"ok":true,"action":"accept","value":{}}', 'stip: accept core done'],
       ['{"action":"refresh"}', '{"ok":true,"action":"refresh","value":{"changeId":"demo"', 'stip: refreshed'],

@@ -32,10 +32,31 @@ export type StipWorker = {
   hasResult: boolean
   isolated: boolean
   integrated: boolean
+  /**
+   * The model the attempt runs on: the one the host reported at launch (`actual_model`), else the
+   * model recorded in its launch profile; null when it inherits the coordinator's model.
+   */
   model: string | null
+  /** The effort recorded in the launch profile at reserve ('low' … 'max', or 'inherit'); null when none was recorded. */
+  effort: string | null
+  /**
+   * What the worker is doing, while it is active: a short phrase derived from its last tool call
+   * ("writing README.md", "running pytest"), else its last tool, else a status word ("starting",
+   * "waiting on permission"); null once it finished.
+   */
+  activity: string | null
+  /** The last tool calls this session saw the attempt make (at most 6, oldest first); [] when none were observed. */
+  steps: StipStep[]
   error: string | null
   reviewReason: string | null
 }
+
+/**
+ * One observed tool call of a worker or helper: the tool name and a short, capitalized human phrase
+ * for it ("Reading api.py", "Running tests", "Searching the code"; an unknown tool reads
+ * "Using <name>", never the bare name), at most 40 characters.
+ */
+export type StipStep = { tool: string; activity: string; at: number }
 
 /** One task of the approved execution plan with its latest attempt. */
 export type StipTask = {
@@ -50,7 +71,15 @@ export type StipTask = {
   awaitingReview: boolean
   awaitingIntegration: boolean
   latest: StipWorker | null
+  /**
+   * The profile a dispatch would launch this task with under the current settings (resolved per
+   * role and phase): model (null when inherited), effort ('inherit' or a level), agent type, isolation.
+   * Null when the settings are invalid for it. Absent before settings are loaded.
+   */
+  planned?: StipPlannedProfile | null
 }
+
+export type StipPlannedProfile = { model: string | null; effort: string | null; agent: string | null; isolate: boolean }
 
 /** A read-only research helper. */
 export type StipHelper = {
@@ -65,6 +94,14 @@ export type StipHelper = {
   startedAt: number | null
   finishedAt: number | null
   error: string | null
+  /** As StipWorker.model: the reported model, else the recorded profile's, else null (inherited). */
+  model: string | null
+  /** As StipWorker.effort. */
+  effort: string | null
+  /** As StipWorker.activity. */
+  activity: string | null
+  /** As StipWorker.steps. */
+  steps: StipStep[]
   /** A 2-5 word label: the coordinator's `title`, else a model label, else a heuristic one. */
   title: string
   titleSource: StipTitleSource
@@ -83,6 +120,17 @@ export type StipCriterion = {
   text: string
   evidence?: string
   status: 'passed' | 'failed' | 'unverified' | 'pending'
+  /** The current check report records it `pending-docs` (covered by a docs task; the ruler's `◌`). */
+  pendingDocs: boolean
+  /** The recorded proof: the current check report's entry, else evidence.md's line; null when none. */
+  proof: StipProof | null
+}
+
+export type StipProof = {
+  status: 'passed' | 'failed' | 'unverified' | 'pending-docs'
+  text: string
+  /** `check`: the check report recorded in state.json; `evidence`: a line of evidence.md. */
+  source: 'check' | 'evidence'
 }
 
 /**
@@ -130,6 +178,165 @@ export type StipRebase = {
   reopened: string[]
   /** Tasks removed from the plan; their jobs moved to `retired_jobs`. */
   retired: string[]
+  /**
+   * Per retired task, the paths its integrated work had written or deleted in the main checkout:
+   * retiring a task does not undo them, they remain in the checkout ({} when none).
+   */
+  retiredIntegratedPaths: Record<string, string[]>
+}
+
+/**
+ * A task's state in the dependency graph (one per plan task):
+ * - integrated: the latest attempt is accepted (and integrated, when isolated);
+ * - running: the first attempt is active (starting, running, waiting, unknown);
+ * - correction: a later attempt is active, or the latest attempt was rejected and is to be redone;
+ * - pending: returned and awaiting review, or accepted and awaiting integration;
+ * - failed: the latest attempt failed or was cancelled;
+ * - ready: no attempt yet, and the engine reports it dispatchable;
+ * - blocked: no attempt yet, and not dispatchable (dependencies or phase).
+ */
+export type StipNodeState = 'integrated' | 'running' | 'correction' | 'pending' | 'failed' | 'ready' | 'blocked'
+
+export type StipGraphNode = {
+  id: string
+  role: string
+  phase: string
+  state: StipNodeState
+  /** The latest attempt number, or null before the first dispatch. */
+  attempt: number | null
+  /** Column for a left-to-right layout: 0 without dependencies, else 1 + the deepest dependency. */
+  depth: number
+  dependsOn: string[]
+}
+
+/** The task dependency graph: edges point from a dependency to the task that depends on it. */
+export type StipGraph = {
+  nodes: StipGraphNode[]
+  /** `done`: the dependency is integrated (its edge is satisfied). */
+  edges: { from: string; to: string; done: boolean }[]
+}
+
+/** The pane's motion setting (AC-36): `calm` drops in-between frames, `off` shows final states. */
+export type StipMotion = 'auto' | 'calm' | 'off'
+
+/**
+ * Setup state (AC-35): what `/stip` shows in a project without `.workflow/`, from cheap file reads
+ * and one `git status`. Null in a project that uses Stip.
+ */
+export type StipSetup = {
+  /** The project root, with the home folder written `~`. */
+  project: string
+  /** Language(s) detected from manifest files ("Python", "TypeScript"), else null. */
+  code: string | null
+  /** Test runner detected ("pytest", "vitest", "cargo test"), else null. */
+  tests: string | null
+  /** `repo` false outside a git repository (then branch and clean are null). */
+  git: { repo: boolean; branch: string | null; clean: boolean | null }
+  /** Agent instruction files present at the root (AGENTS.md, CLAUDE.md, .claude/CLAUDE.md). */
+  rules: string[]
+  /** The CI configuration found (".github/workflows"), else null. */
+  ci: string | null
+}
+
+/** An item of an archived proposal's "Follow-ups" / "Known limitations" section. */
+export type StipFollowUp = {
+  /** A short title (the item's lead clause). */
+  title: string
+  /** The rest of the item, or null. */
+  detail: string | null
+  /** The archived change it comes from. */
+  source: string
+}
+
+/** An accepted spec (`.workflow/specs/<id>.md`). */
+export type StipAcceptedSpec = {
+  id: string
+  /** Acceptance criteria in the spec. */
+  criteria: number
+  /** When the change of the same id was archived (ISO), else null. */
+  archivedAt: string | null
+  /** The short hash of the commit that archived it (git history), else null. */
+  commit: string | null
+}
+
+/** New change state (AC-35, AC-37): follow-ups from archived changes and the accepted specs. */
+export type StipStart = { followUps: StipFollowUp[]; specs: StipAcceptedSpec[] }
+
+/** A classified finding of proposal.md: established -> Confirmed, inferred -> Likely, incomplete/missing -> Open. */
+export type StipFinding = {
+  kind: 'Confirmed' | 'Likely' | 'Open'
+  source: 'established' | 'inferred' | 'incomplete' | 'missing'
+  text: string
+}
+
+/** A numbered or listed decision (or open question) of proposal.md. */
+export type StipDecision = {
+  /** "D1", "Q2", or the item's number; null when unnumbered. */
+  id: string | null
+  text: string
+  /** The text after "Recommended:", when the item gives one. */
+  recommended: string | null
+  /** An open question still waiting on the person (Q-numbered, or under an "Open questions" heading). */
+  open: boolean
+}
+
+/** Explore state (AC-35): the bound change's proposal.md, read as the coordinator writes it. */
+export type StipExplore = {
+  /**
+   * Plain text (markdown stripped): the first paragraph under "Problem"; when the section opens with
+   * a list, its lead line, or the items joined with "; ". Null when there is none.
+   */
+  problem: string | null
+  /** The Problem section's list items as plain text (at most 6), when it opens with a list; else []. */
+  problemItems: string[]
+  findings: StipFinding[]
+  decisions: StipDecision[]
+  /** The change's selected extensions. */
+  extensions: string[]
+}
+
+/**
+ * Validate state (AC-35): what changed since the version the person last approved through Stip
+ * (recorded at approval time), by id. Null when no approved version is recorded for the change.
+ */
+export type StipContractDiff = {
+  /** The digest of the last approved version. */
+  since: string
+  /** When it was approved (ISO). */
+  approvedAt: string
+  criteria: { id: string; change: 'added' | 'changed' | 'removed'; title: string }[]
+  addedTasks: string[]
+  changedTasks: string[]
+  removedTasks: string[]
+}
+
+/** Check state (AC-35): the independent review's progress. */
+export type StipCheckView = {
+  /** The active check-phase task, else null. */
+  reviewer: string | null
+  /** The criterion the reviewer's latest tool call named (one AC id in its input), else null. */
+  criterion: string | null
+  /** When the current check report was recorded (ISO), else null. */
+  reportAt: string | null
+}
+
+/** Archive state (AC-35): the summary of the bound change just archived in this session. */
+export type StipArchiveSummary = {
+  changeId: string
+  /** The proposal's first heading, else the id. */
+  title: string
+  /** Short hash of the archive commit (git history), else null. */
+  commit: string | null
+  createdAt: string | null
+  archivedAt: string | null
+  /** created_at -> archive, in milliseconds; null when either is unknown. */
+  durationMs: number | null
+  criteria: { passed: number; total: number }
+  /** `corrections`: attempts beyond the first, summed; `corrected`: the tasks that needed one. */
+  tasks: { total: number; corrections: number; corrected: string[] }
+  /** Per task: the model (reported, else requested; null when inherited/unknown), effort and attempts. */
+  models: { taskId: string; model: string | null; effort: string | null; attempts: number }[]
+  followUps: StipFollowUp[]
 }
 
 /** What `refresh($)` computes for the bound change. */
@@ -157,10 +364,17 @@ export type StipSnapshot = {
   lastRebase: StipRebase | null
   /** Attempts of this change whose registry record was tampered with; inspect `git diff` before accepting. */
   tampered: StipTamper[]
+  /**
+   * Workflow files (project-relative) the integrity watch stopped restoring because another writer
+   * kept changing them back: dispatch for the change is refused until /stip-resync.
+   */
+  restoreHeld: string[]
   extensions: string[]
   tasks: StipTask[]
   workers: StipWorker[]
   helpers: StipHelper[]
+  /** The plan's dependency graph with each task's state (for the Ledger's task graph). */
+  graph: StipGraph
   ready: string[]
   awaitingReview: string[]
   awaitingIntegration: string[]
@@ -172,6 +386,20 @@ export type StipSnapshot = {
   archivedCount: number
   /** Acceptance criteria of the bound change. */
   criteria: StipCriterion[]
+  /** Setup state: non-null only in a project without `.workflow/` (then nothing else is filled). */
+  setup: StipSetup | null
+  /** New change state: follow-ups and accepted specs (filled whether or not a change is bound). */
+  start: StipStart
+  /** Explore state: the bound change's proposal.md; null when nothing is bound. */
+  explore: StipExplore | null
+  /** Validate state: changes since the last approved version; null when none is recorded. */
+  contractDiff: StipContractDiff | null
+  /** Check state. */
+  check: StipCheckView
+  /** Archive state: the change this session had bound and saw archived; null otherwise. */
+  archived: StipArchiveSummary | null
+  /** Motion (AC-36): the setting, and whether the person is editing the prompt right now. */
+  ui: { motion: StipMotion; typing: boolean }
   error: string | null
   refreshedAt: number
 }
@@ -194,6 +422,8 @@ export type StipClientSettings = {
   phases?: Record<string, StipProfile>
   phase_roles?: Record<string, Record<string, StipProfile>>
   enforcement?: { apply_gate?: StipApplyGate }
+  /** Interface preferences. */
+  ui?: { motion?: StipMotion }
 }
 
 export type StipScope = 'personal' | 'project' | 'local'
@@ -203,6 +433,8 @@ export type StipEffectiveSettings = {
   client: StipClientSettings
   limits: { max_workers: number; max_shared_writers: number }
   applyGate: StipApplyGate
+  /** ui.motion, default 'auto'. */
+  motion: StipMotion
 }
 
 export type StipSettingsView = {
@@ -230,6 +462,12 @@ export type StipBinding = {
   status: StipJobStatus
   startedAt: number
   lastTool: string | null
+  /** A short phrase for the last tool call ("editing app.ts"); absent before the first call. */
+  activity?: string | null
+  /** The last tool calls (at most 6, oldest first). */
+  steps?: StipStep[]
+  /** The one acceptance criterion the latest tool call's input named, kept until another is named. */
+  criterion?: string | null
 }
 
 /**
@@ -252,6 +490,24 @@ export type StipAction =
   | { action: 'result'; helper_id: string }
   | { action: 'settings-load' }
   | { action: 'settings-save'; scope: StipScope; value: StipClientSettings; revision: string }
+  /** Fills `/stip-bootstrap` in the prompt (Setup state). */
+  | { action: 'setup' }
+  /** Fills `/stip-explore ` in the prompt; the bound change stays open (AC-37). */
+  | { action: 'new' }
+  /** Fills `/stip-explore <title>` in the prompt (a follow-up). */
+  | { action: 'new-from'; title: string }
+
+/**
+ * An interface action sent without a slash command (nothing appears in the transcript): the UI
+ * writes `PluginState['stipulate'].request` from a ui.press / ui.input / ui.select hook, e.g.
+ *   update($, requestAtom, () => ({ id, action }))
+ * The core's state.set hook runs the action before that write resolves and publishes the outcome
+ * in `reply` under the same `id` (read it right after the write).
+ */
+export type StipRequest = { id: string; action: StipAction }
+
+/** The outcome of the last StipRequest (`at`: epoch ms). */
+export type StipReplyRecord = { id: string; reply: StipActionReply; at: number }
 
 export type StipActionReply =
   | { ok: true; action: StipAction['action']; value: unknown }
@@ -298,6 +554,15 @@ declare module 'claude-code' {
       selectedTask: string | null
       /** UI: the settings pane's unsaved edit. */
       settingsDraft: unknown
+      /**
+       * The bound change this session saw archived (the Archive state's summary) and the changes open
+       * at that moment: auto-binding then waits for a new change, and any bind clears it.
+       */
+      justArchived: { id: string; others: string[] } | null
+      /** An interface action to run (see StipRequest); written by the UI, served by the core. */
+      request: StipRequest | null
+      /** The outcome of the last request, by its id. */
+      reply: StipReplyRecord | null
     }
   }
 }

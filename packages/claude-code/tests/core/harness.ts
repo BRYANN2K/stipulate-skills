@@ -99,6 +99,26 @@ export class World {
   /** Paths `git status --porcelain` reports modified in the main checkout. */
   gitDirty: string[] = []
   store: Record<string, any> = {}
+  /** Extra lifecycle fields (e.g. created_at), as the real engine records them. */
+  lifecycleExtra: Record<string, unknown> = {}
+  /** False: the change's lifecycle file does not exist (not created yet). */
+  hasChange = true
+  /** Files the plugin moved aside (`mv`), as [from, to]. */
+  moved: [string, string][] = []
+  /** `git worktree …` calls the plugin made (argv after `git`). */
+  gitCalls: string[][] = []
+  /** The `created_at` the engine stamps on new jobs. */
+  jobStamp = '2026-01-01T00:00:00Z'
+  /** Refuse an isolated reserve whose worktree path already exists, as the real engine does. */
+  worktreeCheck = false
+  /** The person's prompt box (what `$.prompt.read` answers). */
+  draft = ''
+  /** The branch `git status -b` reports (null: not a git repository, git status fails). */
+  branch: string | null = 'main'
+  /** `git log -1 --format=%h -- <path>` answers, by path. */
+  commits: Record<string, string> = {}
+  /** Every git command the plugin ran (argv after `git`). */
+  gitRuns: string[][] = []
 
   constructor() {
     this.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify({ schema_version: 1, extensions: {} }))
@@ -109,16 +129,19 @@ export class World {
     this.syncChange()
   }
 
+  /** The lifecycle state.json text the engine writes for the world's current state. */
+  lifecycleText(): string {
+    return JSON.stringify({
+      schema_version: 2,
+      id: 'demo',
+      ...this.lifecycleExtra,
+      phase: this.phase,
+      ...(this.approvalCurrent ? { approval: { contract_digest: this.contractDigest, by: this.approvedBy, recorded_at: this.approvedAt } } : {}),
+    })
+  }
+
   syncChange() {
-    this.files.set(
-      `${ROOT}/.workflow/changes/demo/state.json`,
-      JSON.stringify({
-        schema_version: 2,
-        id: 'demo',
-        phase: this.phase,
-        ...(this.approvalCurrent ? { approval: { contract_digest: this.contractDigest, by: this.approvedBy, recorded_at: this.approvedAt } } : {}),
-      }),
-    )
+    if (this.hasChange) this.files.set(`${ROOT}/.workflow/changes/demo/state.json`, this.lifecycleText())
     this.files.set(`${ROOT}/.workflow/.runtime/demo/state.json`, JSON.stringify({ version: 1, change_id: 'demo', contract_digest: this.registryDigest, ...(this.rebases.length ? { rebases: this.rebases } : {}), ...(this.retiredJobs.length ? { retired_jobs: this.retiredJobs } : {}), jobs: this.jobs }, null, 2) + '\n')
     this.files.set(`${ROOT}/.workflow/.runtime/engine-helpers.json`, JSON.stringify({ version: 1, jobs: this.helpers }, null, 2) + '\n')
   }
@@ -156,6 +179,12 @@ export class World {
       this.rebases = parsed.rebases ?? []
       this.retiredJobs = parsed.retired_jobs ?? []
       if (typeof parsed.contract_digest === 'string') this.registryDigest = parsed.contract_digest
+    } else {
+      // No registry on disk (never written, or set aside): the engine starts from none.
+      this.jobs = []
+      this.rebases = []
+      this.retiredJobs = []
+      this.registryDigest = this.contractDigest
     }
     const hreg = this.files.get(`${ROOT}/.workflow/.runtime/engine-helpers.json`)
     if (hreg) this.helpers = JSON.parse(hreg).jobs
@@ -200,7 +229,15 @@ export class World {
       if (this.registryDigest === this.contractDigest && !orphans.length) return ok({ change_id: 'demo', contract_digest: this.contractDigest, changed: false, registry_current: true, kept: ids, reopened: [], retired: [] })
       if (this.jobs.some(active)) return no('Workers are active or their outcome is unknown; reconcile them before rebasing the registry.')
       const stamp = '2026-02-02T00:00:00+00:00'
-      for (const j of this.jobs.filter(j => orphans.includes(j.task_id))) this.retiredJobs.push({ ...j, retired_reason: 'task removed from the revised contract', retired_at: stamp })
+      // What retired tasks already integrated stays in the main checkout: reported per task.
+      const integratedPaths: Record<string, string[]> = {}
+      for (const j of this.jobs.filter(j => orphans.includes(j.task_id))) {
+        const paths = new Set(integratedPaths[j.task_id] ?? [])
+        if (j.integrated === true) for (const p of [...(j.integration?.written ?? []), ...(j.integration?.deleted ?? [])]) paths.add(p)
+        integratedPaths[j.task_id] = [...paths].sort()
+      }
+      for (const j of this.jobs.filter(j => orphans.includes(j.task_id)))
+        this.retiredJobs.push({ ...j, retired_reason: 'task removed from the revised contract', retired_at: stamp, retired_integrated_paths: integratedPaths[j.task_id] })
       this.jobs = this.jobs.filter(j => !orphans.includes(j.task_id))
       const reopened = new Map<string, string>()
       for (const id of ids) if (this.changedTasks.has(id)) reopened.set(id, 'task changed in revised contract')
@@ -215,11 +252,11 @@ export class World {
         Object.assign(job, { acceptance: 'rejected', review: { decision: 'rejected', reason: why, at: stamp }, updated_at: stamp })
       }
       const kept = ids.filter(id => !reopened.has(id))
-      const entry = { from: this.registryDigest, to: this.contractDigest, at: stamp, reason: this.flag(args, '--reason') ?? null, kept, reopened: [...reopened.keys()].sort(), retired: orphans }
+      const entry = { from: this.registryDigest, to: this.contractDigest, at: stamp, reason: this.flag(args, '--reason') ?? null, kept, reopened: [...reopened.keys()].sort(), retired: orphans, retired_integrated_paths: integratedPaths }
       this.rebases.push(entry)
       this.registryDigest = this.contractDigest
       done()
-      return ok({ change_id: 'demo', contract_digest: this.contractDigest, changed: true, registry_current: true, rebase: entry, kept, reopened: entry.reopened, retired: orphans })
+      return ok({ change_id: 'demo', contract_digest: this.contractDigest, changed: true, registry_current: true, rebase: entry, kept, reopened: entry.reopened, retired: orphans, retired_integrated_paths: integratedPaths })
     }
     if (cmd === 'plan') return ok({ change: args[1], plan: JSON.parse(stdin ?? 'null') })
     if (cmd !== 'runtime') return no(`unexpected command ${cmd}`)
@@ -253,7 +290,7 @@ export class World {
     }
     if (sub === 'reserve') {
       if (helper) {
-        const job = { kind: 'helper', helper_id: `helper-${'0'.repeat(8)}-0000-4000-8000-${String(this.helpers.length + 1).padStart(12, '0')}`, change_id: id === '-' ? null : id, role: helper, phase: this.flag(args, '--phase') ?? 'explore', objective: this.flag(args, '--question'), status: 'starting', session_id: null, attempt: 1, host: this.flag(args, '--host'), created_at: '2026-01-01T00:00:00Z' }
+        const job = { kind: 'helper', helper_id: `helper-${'0'.repeat(8)}-0000-4000-8000-${String(this.helpers.length + 1).padStart(12, '0')}`, change_id: id === '-' ? null : id, role: helper, phase: this.flag(args, '--phase') ?? 'explore', objective: this.flag(args, '--question'), status: 'starting', session_id: null, attempt: 1, host: this.flag(args, '--host'), profile: JSON.parse(this.flag(args, '--profile-json') ?? 'null'), created_at: '2026-01-01T00:00:00Z' }
         this.helpers.push(job)
         done()
         return ok({ change_id: job.change_id, job, cwd: ROOT })
@@ -265,6 +302,8 @@ export class World {
       if (previous && active(previous)) return no('This task already has an active or unknown native run.')
       const isolate = args.includes('--isolate')
       const attempt = (previous?.attempt ?? 0) + 1
+      const tree = `${ROOT}/.workflow/.runtime/demo/worktrees/${task}-${attempt}`
+      if (isolate && this.worktreeCheck && this.realPath(tree) !== undefined) return no(`Worktree path already exists: .workflow/.runtime/demo/worktrees/${task}-${attempt}`)
       const t = this.tasks.find(x => x.id === task)!
       const job: FakeJob = {
         run_id: `run-${task}-${attempt}`,
@@ -283,7 +322,7 @@ export class World {
         host: this.flag(args, '--host'),
         profile: JSON.parse(this.flag(args, '--profile-json') ?? 'null'),
         isolated: isolate,
-        created_at: '2026-01-01T00:00:00Z',
+        created_at: this.jobStamp,
         ...(isolate ? { worktree: `.workflow/.runtime/demo/worktrees/${task}-${attempt}`, integrated: false } : {}),
       }
       this.jobs.push(job)
@@ -332,8 +371,10 @@ export class World {
             : [{ path: 'src/core/a.ts', reason: 'Changed in the main checkout since the snapshot.' }],
         })
       job.integrated = true
+      const written = [`${job.write_paths?.[0] ?? 'src/core'}/a.ts`]
+      job.integration = { written, deleted: [] }
       done()
-      return ok({ task_id: task, written: ['src/core/a.ts'], deleted: [], skipped: this.integrateSkipped, job })
+      return ok({ task_id: task, written, deleted: [], skipped: this.integrateSkipped, job })
     }
     if (sub === 'cancel') {
       if (!active(job)) return no('No active attempt to cancel.')
@@ -455,8 +496,38 @@ export function install(on0: On, world: World): MockClock {
       world.files.set(req.dest, req.text)
       return value({ exitCode: 0, stdout: JSON.stringify({ saved: true }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
     }
-    if (argv[0] === 'git' && argv[1] === 'status')
-      return value({ exitCode: 0, stdout: world.gitDirty.map(p => ` M ${p}\n`).join(''), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+    if (argv[0] === 'mv') {
+      // `mv -n src dest`: moves one file of the virtual file system (never over an existing one).
+      const [src, dest] = argv.slice(-2) as [string, string]
+      world.moved.push([src, dest])
+      const tree = [...world.files.keys()].filter(f => f.startsWith(src + '/'))
+      if ((!world.files.has(src) && !tree.length) || world.realPath(dest) !== undefined)
+        return value({ exitCode: 1, stdout: '', stderr: `mv: ${src}: cannot move`, isStdoutTruncated: false, isStderrTruncated: false })
+      if (world.files.has(src)) {
+        world.files.set(dest, world.files.get(src)!)
+        world.files.delete(src)
+      }
+      // A directory moves with everything under it.
+      for (const f of tree) {
+        world.files.set(dest + f.slice(src.length), world.files.get(f)!)
+        world.files.delete(f)
+      }
+      return value({ exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+    }
+    if (argv[0] === 'git' && argv[1] === 'worktree') {
+      world.gitCalls.push(argv.slice(1))
+      return value({ exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+    }
+    if (argv[0] === 'git') world.gitRuns.push(argv.slice(1))
+    if (argv[0] === 'git' && argv[1] === 'status') {
+      if (argv.includes('-b') && world.branch === null) return value({ exitCode: 128, stdout: '', stderr: 'fatal: not a git repository', isStdoutTruncated: false, isStderrTruncated: false })
+      const head = argv.includes('-b') ? `## ${world.branch}...origin/${world.branch}\n` : ''
+      return value({ exitCode: 0, stdout: head + world.gitDirty.map(p => ` M ${p}\n`).join(''), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+    }
+    if (argv[0] === 'git' && argv[1] === 'log') {
+      const hash = world.commits[argv.at(-1)!]
+      return value({ exitCode: 0, stdout: hash ? `${hash}\n` : '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+    }
     if (argv[0] === 'git' && argv.includes('rev-parse'))
       return value({ exitCode: 0, stdout: world.head + '\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
     const at = argv.indexOf('--root')
@@ -478,7 +549,14 @@ export function install(on0: On, world: World): MockClock {
     const usage = { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 }
     return value(text === null ? { isAnswered: false, reason: 'empty-reply', usage } : { isAnswered: true, text, usage })
   })
-  on('prompt.fill', ($, e) => (world.prompts.push(e.text), { isFilled: true }) as never)
+  on('prompt.fill', ($, e) => (world.prompts.push(e.text), (world.draft = e.text), { isFilled: true }) as never)
+  on('prompt.read', () => value({ text: world.draft, cursor: world.draft.length }))
+  // The editor beneath every plugin: the splice applied, the caret after what went in.
+  on('prompt.edit', ($, e) => {
+    const text = e.text.slice(0, e.start) + e.inputText + e.text.slice(e.end)
+    world.draft = text
+    return { text, cursor: e.start + e.inputText.length } as never
+  })
   on('fs.write', ($, e) => (world.activity++, world.files.set(e.path, e.text), value(undefined)))
   // A tick's work runs as many host round trips; settle until it has drained before assertions.
   const drain = async () => {

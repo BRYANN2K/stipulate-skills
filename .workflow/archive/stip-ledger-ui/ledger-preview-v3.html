@@ -1,0 +1,367 @@
+<title>Stip Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a terminal frame (TUI) above a desktop pane (GUI), both rendering the same live Stip change. Single dark world, like Claude Code. */
+:root{
+  --ink:#0f1012; --panel:#17181b; --panel-2:#1e1f23; --line:#2c2d33; --muted:#8b8d96; --fg:#e8e6e1;
+  --claude:#d97757; --ok:#6fbf73; --run:#8fb3ff; --warn:#e3b55b; --bad:#e06c6c; --pending:#9a8cff;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:grid;gap:36px}
+header.page{display:grid;gap:6px}
+header.page h1{font-family:var(--mono);font-weight:700;font-size:clamp(20px,3vw,28px);margin:0;letter-spacing:-.01em;text-wrap:balance}
+header.page h1 b{color:var(--claude)}
+header.page p{margin:0;color:var(--muted);max-width:68ch;line-height:1.5}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sec{display:grid;gap:12px;min-width:0}
+.sec h2{font-size:15px;font-weight:600;margin:0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.sec h2 span{color:var(--muted);font-weight:400;font-size:13px}
+
+/* ---------- TUI ---------- */
+.term{background:#111214;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-family:var(--mono);font-size:12.5px;line-height:1.55}
+.term .bar{display:flex;gap:7px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11.5px}
+.term .bar i{width:10px;height:10px;border-radius:50%;background:#3a3b41;display:block}
+.term .bar em{font-style:normal;margin-left:8px}
+.tbody{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:520px}
+.transcript{padding:14px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden}
+.transcript .dot{color:var(--fg)} .transcript .dim{color:var(--muted)}
+.transcript p{margin:0;white-space:pre-wrap}
+.tool{color:var(--muted)} .tool b{color:var(--fg);font-weight:500}
+.spacer{flex:1}
+.band{border-top:1px solid var(--line);padding:8px 2px 0;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.band .mark{color:var(--claude);font-weight:700}
+.band .chg{font-weight:700}
+.band .stage{color:var(--run)}
+.band .ok{color:var(--ok)}
+.band .cnt{color:var(--run)}
+.tbtns{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.tbtn{font:inherit;background:none;border:0;color:var(--fg);padding:0;cursor:pointer}
+.tbtn::before{content:"[ "} .tbtn::after{content:" ]"}
+.tbtn .k{color:var(--claude)}
+.tbtn.active{color:var(--claude);font-weight:700}
+.tbtn:focus-visible,.pill:focus-visible{outline:2px solid var(--claude);outline-offset:2px}
+.prompt{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 2px;color:var(--muted)}
+.status{color:var(--warn);font-size:11.5px}
+
+.pane{padding:14px 16px;display:flex;flex-direction:column;gap:14px;min-width:0;background:#131417}
+.phead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.picker{border:1px solid var(--line);padding:1px 8px;border-radius:4px;font-weight:700}
+.badge-ok{color:var(--ok)}
+.rail{display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:6px}
+.st{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.st.done{color:var(--ok)} .st.now{color:var(--run);font-weight:700} .st.next{color:var(--muted)}
+.conn{width:26px;height:2px;margin:0 6px;background:var(--line);position:relative;overflow:hidden;border-radius:2px}
+.conn.done{background:color-mix(in srgb,var(--ok) 65%,transparent)}
+.conn.flow::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0 30%,var(--run) 45% 55%,transparent 70%);background-size:200% 100%;animation:flow 1.1s linear infinite}
+@keyframes flow{from{background-position:100% 0}to{background-position:-100% 0}}
+
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.card{border:1px solid var(--line);border-radius:6px;padding:8px 9px;display:grid;gap:3px;min-width:0;background:var(--panel)}
+.card .t{font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.card .m{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .s{white-space:nowrap}
+.card.run{border-color:color-mix(in srgb,var(--run) 55%,var(--line))}
+.ring{width:9px;height:9px;border-radius:50%;display:inline-block;border:2px solid var(--run);border-right-color:transparent;animation:spin 1s linear infinite;vertical-align:-1px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.lanes{display:grid;gap:4px}
+.lane{display:grid;grid-template-columns:11ch minmax(0,1fr);gap:8px;align-items:center}
+.lane .n{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{position:relative;height:10px;background:repeating-linear-gradient(90deg,#1c1d21 0 calc(10% - 1px),#24252a calc(10% - 1px) 10%);border-radius:2px}
+.seg{position:absolute;top:1px;bottom:1px;border-radius:2px}
+.axis{display:grid;grid-template-columns:11ch minmax(0,1fr);gap:8px;color:var(--muted);font-size:11px}
+.axis div:last-child{display:flex;justify-content:space-between}
+
+.crit{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.cell{width:16px;height:16px;border-radius:3px;display:grid;place-items:center;font-size:10px;color:#111}
+.c-pass{background:var(--ok)} .c-pend{background:none;border:1px dashed var(--pending);color:var(--pending)}
+.receipt{border-top:1px dashed var(--line);padding-top:10px;display:grid;gap:2px;color:var(--muted)}
+.receipt b{color:var(--fg);font-weight:500}
+
+
+.tchips{display:flex;flex-wrap:wrap;gap:6px}
+.tchip{padding:0 6px;border:1px solid var(--line);border-radius:3px;color:var(--muted)}
+.tchip.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.tchip.now{background:var(--run);color:#111;border-color:var(--run);font-weight:700}
+.tbox{border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:grid;gap:8px;background:var(--panel)}
+.tbox .hd{display:flex;justify-content:space-between;color:var(--muted)}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.trow b{font-weight:700}
+.trow small{grid-column:1;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .acts{grid-row:1 / span 2;grid-column:2;align-self:center;display:flex;gap:6px;color:var(--fg)}
+.graph{margin:0;font:inherit;line-height:1.25;overflow-x:auto;color:var(--muted)}
+.graph .g{color:var(--ok)} .graph .b{color:var(--run)}
+.tcrit{letter-spacing:2px}
+.tcrit .p{color:var(--ok)} .tcrit .w{color:var(--pending)}
+
+.sgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center}
+.srow .r{display:grid;gap:1px;min-width:0}
+.srow .r b{font-weight:600}
+.srow .r small{color:var(--muted);font-size:12px}
+.sel{font:inherit;font-size:12.5px;border:1px solid var(--line);background:#26272c;color:var(--fg);border-radius:8px;padding:3px 8px;white-space:nowrap}
+.sel.inh{color:var(--muted);border-style:dashed}
+.sel .eff{margin-right:3px}
+.stepper{display:inline-flex;align-items:center;gap:6px}
+.stepper .ib{width:24px;height:24px}
+.savebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.savebar small{color:var(--muted)}
+.tset .row2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}
+.tset .row2 small{color:var(--muted);font-size:12px}
+.tset .vals{color:var(--fg)}
+.tset .vals .d{color:var(--muted)}
+@media (max-width:900px){.sgrid{grid-template-columns:1fr}}
+/* ---------- GUI ---------- */
+.desk{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);overflow:hidden}
+.chat{padding:22px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--line);min-width:0}
+.msg{background:var(--panel-2);border-radius:12px;padding:12px 14px;line-height:1.5;max-width:60ch}
+.dband{margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
+.dband .mark{color:var(--claude);font-weight:600}
+.pill{font:inherit;font-size:13px;border:1px solid var(--line);background:#26272c;color:var(--fg);border-radius:8px;padding:4px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.pill kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--muted)}
+.pill.primary{background:var(--fg);color:var(--ink);border-color:var(--fg)}
+.pill.ghost{background:none;border-color:transparent;color:var(--muted);padding:4px 6px}
+.dinput{border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--muted)}
+.dpane{padding:18px;display:grid;gap:16px;align-content:start;min-width:0}
+.dhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dhead .sp{flex:1}
+.drail{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--muted)}
+.chip.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+.chip.now{color:var(--ink);background:var(--run);border-color:var(--run);font-weight:600}
+.dcard{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:#1a1b1f}
+.dcard h3{margin:0;font-size:13px;font-weight:600;display:flex;justify-content:space-between;color:var(--muted)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.row .who{display:grid;gap:2px;min-width:0}
+.row .who b{font-weight:600}
+.row .who small{color:var(--muted)}
+.eff{color:var(--claude)}
+.st-ok{color:var(--ok)} .st-run{color:var(--run)}
+.ibtns{display:flex;gap:4px}
+.ib{font:inherit;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#26272c;color:var(--fg);cursor:pointer;display:grid;place-items:center}
+.ib:focus-visible{outline:2px solid var(--claude);outline-offset:2px}
+svg text{font-family:var(--mono)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.note{border-left:2px solid var(--claude);padding:2px 0 2px 12px;color:var(--muted);line-height:1.5;font-size:13.5px}
+.note b{color:var(--fg);font-weight:600}
+
+@media (max-width:900px){
+  .tbody{grid-template-columns:1fr}
+  .transcript{border-right:0;border-bottom:1px solid var(--line);min-height:auto}
+  .desk{grid-template-columns:1fr}
+  .chat{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (max-width:520px){ .cards{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .conn.flow::after,.ring{animation:none} }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <span class="label">Preview · not built yet</span>
+    <h1><b>◆</b> Stip Ledger</h1>
+    <p>Visual direction for the next Stip mod change, drawn with the real data from the Nimbus run: the same change shown in the Claude Code terminal and in the desktop app. The terminal mirrors the desktop layout with box-drawing text and colored cells; the desktop uses native pills and SVG. Working name, not final.</p>
+  </header>
+
+  <!-- TUI -->
+  <section class="sec" aria-labelledby="tui">
+    <h2 id="tui">Terminal <span>docked pane at fullscreen · band above the prompt</span></h2>
+    <div class="term" role="img" aria-label="Claude Code terminal with the Stip pane docked on the right">
+      <div class="bar"><i></i><i></i><i></i><em>~/Documents/Projects/nimbus — claude · Opus 5.5 ● high</em></div>
+      <div class="tbody">
+        <div class="transcript">
+          <p><span class="dot">⏺</span> The check passed. AC-1 to AC-13 pass and AC-14, the README, waits for the docs task. The docs worker is running on Haiku 5.5.</p>
+          <p class="tool">⏺ <b>stipulate:documentation</b>(stip presigned-uploads-quotas/docs#3)<br>&nbsp;&nbsp;⎿ Backgrounded agent</p>
+          <div class="spacer"></div>
+          <div class="band" aria-label="Stip band">
+            <span class="mark">◆ Stip</span><span class="chg">presigned-uploads-quotas</span>
+            <span class="stage">Docs ▸ 4/5</span><span class="ok">✓ approved</span>
+            <span class="tbtns">
+              <button class="tbtn active" data-tab="plan" type="button"><span class="k">p</span> Plan ▾</button>
+              <button class="tbtn" data-tab="settings" type="button"><span class="k">s</span> Settings</button>
+              <button class="tbtn" type="button" aria-label="Collapse band">–</button>
+            </span>
+          </div>
+          <div class="prompt">❯ Type / for commands</div>
+          <div class="status">stipulate · presigned-uploads-quotas · docs · 1 running</div>
+        </div>
+
+        <div class="pane" aria-label="Stip pane">
+          <div class="phead">
+            <span class="picker">presigned-uploads-quotas ▾</span>
+            <span style="flex:1"></span>
+            <span class="tbtns" style="margin-left:0"><button class="tbtn active" type="button">Plan ▾</button><button class="tbtn" type="button">Settings</button></span>
+          </div>
+          <div class="tchips" aria-label="Lifecycle">
+            <span class="tchip done">✓ Explore</span><span class="tchip done">✓ Validate</span><span class="tchip done">✓ Apply</span><span class="tchip done">✓ Check</span><span class="tchip now">Docs</span><span class="tchip">Archive</span>
+          </div>
+
+          <div class="tbox">
+            <div class="hd"><span>Who runs what</span><span>live</span></div>
+            <div class="trow"><b>docs</b><span class="acts"><span>[✕]</span><span>[›]</span></span><small>Haiku 5.5 · <span class="eff">● high</span> · writing README.md</small></div>
+            <div class="trow"><b>verify</b><span class="acts"><span>[▤]</span><span>[›]</span></span><small>Fable 5.1 · <span class="eff">◐ medium</span> · 223 probes · <span class="st-ok">accepted</span></small></div>
+            <div class="trow"><b>wiring · quotas · signed-urls</b><span class="acts"><span>[›]</span></span><small>Opus 5.5 · <span class="eff">○ low</span> · <span class="st-ok">integrated</span></small></div>
+          </div>
+
+          <div class="tbox">
+            <div class="hd"><span>Task graph</span></div>
+<pre class="graph" aria-label="signed-urls and quotas feed wiring, then verify, then docs"><span class="g">╭─────────────╮</span>
+<span class="g">│ signed-urls │</span>─╮
+<span class="g">╰─────────────╯</span> │  <span class="g">╭────────╮</span>  <span class="g">╭────────╮</span>  <span class="b">╭──────╮</span>
+                ├─▶<span class="g">│ wiring │</span>─▶<span class="g">│ verify │</span>┄▶<span class="b">│ docs │</span>
+<span class="g">╭─────────────╮</span> │  <span class="g">╰────────╯</span>  <span class="g">╰────────╯</span>  <span class="b">╰──────╯</span>
+<span class="g">│   quotas    │</span>─╯
+<span class="g">╰─────────────╯</span></pre>
+            <div class="legend"><span><i style="background:var(--ok)"></i>integrated</span><span><i style="background:var(--run)"></i>running</span><span><i style="background:var(--warn)"></i>correction</span></div>
+          </div>
+
+          <div class="tbox">
+            <div class="hd"><span>Criteria</span><span>13 / 14</span></div>
+            <div class="tcrit" aria-label="13 criteria passed, AC-14 waiting on docs"><span class="p">■■■■■■■■■■■■■</span><span class="w">◌</span></div>
+            <small style="color:var(--muted)">AC-14 · README documents presigned URLs and quotas · waiting on docs</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUI -->
+  <section class="sec" aria-labelledby="gui">
+    <h2 id="gui">Desktop app <span>same change, native pills and an SVG task graph</span></h2>
+    <div class="desk">
+      <div class="chat">
+        <div class="msg">The check passed. AC-1 to AC-13 pass and AC-14, the README, waits for the docs task. The docs worker is running on Haiku 5.5.</div>
+        <div class="dband">
+          <span class="mark">◆ Stip</span><b>presigned-uploads-quotas</b>
+          <span style="color:var(--run)">Docs ▸ 4/5</span><span class="badge-ok">✓ approved</span>
+          <span style="flex:1"></span>
+          <button class="pill" type="button">Plan ▾ <kbd>P</kbd></button>
+          <button class="pill" type="button">Settings <kbd>S</kbd></button>
+          <button class="pill ghost" type="button" aria-label="Collapse band">–</button>
+        </div>
+        <div class="dinput">Type / for commands</div>
+      </div>
+      <div class="dpane">
+        <div class="dhead"><button class="pill" type="button">presigned-uploads-quotas ▾</button><span class="sp"></span><button class="pill primary" type="button">Plan</button><button class="pill" type="button">Settings</button></div>
+        <div class="drail"><span class="chip done">✓ Explore</span><span class="chip done">✓ Validate</span><span class="chip done">✓ Apply</span><span class="chip done">✓ Check</span><span class="chip now">Docs</span><span class="chip">Archive</span></div>
+
+        <div class="dcard">
+          <h3>Who runs what <span>live</span></h3>
+          <div class="row"><div class="who"><b>docs</b><small>Haiku 5.5 · <span class="eff">● high</span> · writing README.md</small></div><div class="ibtns"><button class="ib" type="button" aria-label="Cancel docs">✕</button><button class="ib" type="button" aria-label="Details">›</button></div></div>
+          <div class="row"><div class="who"><b>verify</b><small>Fable 5.1 · <span class="eff">◐ medium</span> · 223 probes · <span class="st-ok">accepted</span></small></div><div class="ibtns"><button class="ib" type="button" aria-label="View result">▤</button><button class="ib" type="button" aria-label="Details">›</button></div></div>
+          <div class="row"><div class="who"><b>wiring · quotas · signed-urls</b><small>Opus 5.5 · <span class="eff">○ low</span> · <span class="st-ok">integrated</span></small></div><div class="ibtns"><button class="ib" type="button" aria-label="Details">›</button></div></div>
+        </div>
+
+        <div class="dcard">
+          <h3>Task graph</h3>
+          <svg viewBox="0 0 380 120" width="100%" role="img" aria-label="Task dependencies: signed-urls and quotas feed wiring, then verify, then docs">
+            <g fill="none" stroke-width="1.6">
+              <path d="M84 30 C110 30 112 60 138 60" stroke="#6fbf73"/>
+              <path d="M84 90 C110 90 112 60 138 60" stroke="#6fbf73"/>
+              <path d="M206 60 L232 60" stroke="#6fbf73"/>
+              <path d="M300 60 L326 60" stroke="#8fb3ff" stroke-dasharray="4 4"/>
+            </g>
+            <g font-size="11">
+              <rect x="6" y="18" width="78" height="24" rx="6" fill="#1f2b20" stroke="#6fbf73"/><text x="45" y="34" text-anchor="middle" fill="#cfe9d0">signed-urls</text>
+              <rect x="6" y="78" width="78" height="24" rx="6" fill="#1f2b20" stroke="#6fbf73"/><text x="45" y="94" text-anchor="middle" fill="#cfe9d0">quotas</text>
+              <rect x="138" y="48" width="68" height="24" rx="6" fill="#1f2b20" stroke="#6fbf73"/><text x="172" y="64" text-anchor="middle" fill="#cfe9d0">wiring</text>
+              <rect x="232" y="48" width="68" height="24" rx="6" fill="#1f2b20" stroke="#6fbf73"/><text x="266" y="64" text-anchor="middle" fill="#cfe9d0">verify</text>
+              <rect x="326" y="48" width="48" height="24" rx="6" fill="#1d2433" stroke="#8fb3ff"/><text x="350" y="64" text-anchor="middle" fill="#dbe5ff">docs</text>
+            </g>
+          </svg>
+          <div class="legend"><span><i style="background:var(--ok)"></i>integrated</span><span><i style="background:var(--run)"></i>running</span><span><i style="background:var(--warn)"></i>correction</span></div>
+        </div>
+
+        <div class="dcard">
+          <h3>Criteria <span>13 / 14</span></h3>
+          <div class="crit"><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pass">✓</span><span class="cell c-pend">◌</span></div>
+          <small style="color:var(--muted)">AC-14 · README documents presigned URLs and quotas · waiting on docs</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="set">
+    <h2 id="set">Settings tab <span>same chips and cards; every value editable in place</span></h2>
+    <div class="sgrid">
+      <div class="term" role="img" aria-label="Terminal settings tab">
+        <div class="bar"><i></i><i></i><i></i><em>Stip pane · Settings</em></div>
+        <div class="pane tset">
+          <div class="phead"><span class="picker">presigned-uploads-quotas ▾</span><span style="flex:1"></span><span class="tbtns" style="margin-left:0"><button class="tbtn" type="button">Plan</button><button class="tbtn active" type="button">Settings ▾</button></span></div>
+          <div class="tchips"><span class="tchip">Personal</span><span class="tchip now">Project</span><span class="tchip">Local</span><span style="color:var(--muted)">~/…/nimbus/.workflow/config.json</span></div>
+          <div class="tbox">
+            <div class="hd"><span>Who runs what</span><span>5 roles in plan</span></div>
+            <div class="row2"><b>Orchestrator</b><span class="acts" style="color:var(--muted)">/model · /effort</span><small>Opus 5.5 · <span class="eff">● high</span> · this session</small></div>
+            <div class="row2"><b>Defaults</b><span class="acts">[›]</span><small class="vals">[Opus 5.5 ▾] [<span class="eff">○</span> low ▾] [own worktree ▾]</small></div>
+            <div class="row2"><b>security · backend · api</b><span class="acts">[›]</span><small class="vals"><span class="d">Opus 5.5 · ○ low · own worktree · inherited</span></small></div>
+            <div class="row2"><b>verification</b><span class="acts">[›]</span><small class="vals">[Fable 5.1 ▾] [<span class="eff">◐</span> medium ▾] <span class="d">[shared ▾]</span></small></div>
+            <div class="row2"><b>documentation</b><span class="acts">[›]</span><small class="vals">[Haiku 5.5 ▾] [<span class="eff">●</span> high ▾] <span class="d">own worktree</span></small></div>
+            <div class="row2"><b>research</b><span class="acts">[›]</span><small class="vals">[Sonnet 5.5 ▾] [<span class="eff">○</span> low ▾] <span class="d">shared</span></small></div>
+            <div style="color:var(--muted)">Other roles (9) [Show] · [+ Add role]</div>
+          </div>
+          <div class="tbox">
+            <div class="hd"><span>Limits and guards</span></div>
+            <div>Workers [−] 3 [+]   Parallel writers [−] 2 [+]</div>
+            <div>Apply gate [block ▾] <span style="color:var(--muted)">default</span></div>
+          </div>
+          <div class="savebar"><span class="tbtn" style="color:var(--claude);font-weight:700">[ Save ]</span><span class="tbtn">[ Discard ]</span><small>Unsaved · 1 change</small></div>
+        </div>
+      </div>
+      <div class="desk" style="grid-template-columns:1fr">
+        <div class="dpane">
+          <div class="dhead"><button class="pill" type="button">presigned-uploads-quotas ▾</button><span class="sp"></span><button class="pill" type="button">Plan</button><button class="pill primary" type="button">Settings</button></div>
+          <div class="drail"><span class="chip">Personal</span><span class="chip now">Project</span><span class="chip">Local</span><span style="color:var(--muted);font-size:12.5px;align-self:center">~/…/nimbus/.workflow/config.json</span></div>
+          <div class="dcard">
+            <h3>Who runs what <span>5 roles in plan</span></h3>
+            <div class="srow"><div class="r"><b>Orchestrator</b><small>this session · change with /model and /effort</small></div><span class="sel inh">Opus 5.5</span><span class="sel inh"><span class="eff">●</span>high</span><span></span></div>
+            <div class="srow"><div class="r"><b>Defaults</b><small>every role unless set</small></div><button class="sel" type="button">Opus 5.5 ▾</button><button class="sel" type="button"><span class="eff">○</span>low ▾</button><button class="sel" type="button">own worktree ▾</button></div>
+            <div class="srow"><div class="r"><b>security · backend · api</b><small>in plan · inherited</small></div><span class="sel inh">Opus 5.5</span><span class="sel inh"><span class="eff">○</span>low</span><button class="ib" type="button" aria-label="Override">›</button></div>
+            <div class="srow"><div class="r"><b>verification</b><small>in plan</small></div><button class="sel" type="button">Fable 5.1 ▾</button><button class="sel" type="button"><span class="eff">◐</span>medium ▾</button><span class="sel inh">shared</span></div>
+            <div class="srow"><div class="r"><b>documentation</b><small>in plan</small></div><button class="sel" type="button">Haiku 5.5 ▾</button><button class="sel" type="button"><span class="eff">●</span>high ▾</button><span class="sel inh">own worktree</span></div>
+            <div class="srow"><div class="r"><b>research</b><small>helpers</small></div><button class="sel" type="button">Sonnet 5.5 ▾</button><button class="sel" type="button"><span class="eff">○</span>low ▾</button><span class="sel inh">shared</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pill ghost" type="button">Other roles (9)</button><button class="pill" type="button">+ Add role</button></div>
+          </div>
+          <div class="dcard">
+            <h3>Limits and guards</h3>
+            <div class="srow" style="grid-template-columns:minmax(0,1fr) auto"><div class="r"><b>Workers</b><small>at once, all changes</small></div><span class="stepper"><button class="ib" type="button" aria-label="Fewer">−</button><b>3</b><button class="ib" type="button" aria-label="More">+</button></span></div>
+            <div class="srow" style="grid-template-columns:minmax(0,1fr) auto"><div class="r"><b>Parallel writers</b><small>each in its own worktree</small></div><span class="stepper"><button class="ib" type="button" aria-label="Fewer">−</button><b>2</b><button class="ib" type="button" aria-label="More">+</button></span></div>
+            <div class="srow" style="grid-template-columns:minmax(0,1fr) auto"><div class="r"><b>Apply gate</b><small>edits before approval</small></div><button class="sel" type="button">block ▾</button></div>
+          </div>
+          <div class="savebar"><button class="pill primary" type="button">Save</button><button class="pill" type="button">Discard</button><small>Unsaved · 1 change</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="what">
+    <h2 id="what">What changes from today</h2>
+    <div class="notes">
+      <div class="note"><b>Stage chips.</b> Done stages in green, the current one filled, the rest dim. Same order and words on both surfaces.</div>
+      <div class="note"><b>Who runs what.</b> One row per task or group: model, Claude's effort mark, what it is doing, and only the actions that row allows.</div>
+      <div class="note"><b>Task graph.</b> Dependencies at a glance: box-drawing text in the terminal, SVG on desktop. Color carries the state.</div>
+      <div class="note"><b>Criteria strip.</b> One mark per criterion, with the open item named underneath.</div>
+      <div class="note"><b>Icon buttons.</b> Row actions are one-glyph buttons (✕ cancel, ▤ result, › details); each view keeps one main action.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var c=null; var s=0;
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(c&&!reduce){ setInterval(function(){ s++; c.textContent=Math.floor(s/60)+'m'+String(s%60).padStart(2,'0')+'s'; },1000); }
+  document.querySelectorAll('.tbtn[data-tab]').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.tbtn[data-tab]').forEach(function(x){ x.classList.remove('active'); x.textContent=x.textContent.replace(' ▾',''); });
+      b.classList.add('active'); if(b.textContent.indexOf('▾')<0) b.insertAdjacentText('beforeend',' ▾');
+    });
+  });
+})();
+</script>

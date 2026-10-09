@@ -4,7 +4,12 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type {
+  StipArchiveSummary,
+  StipCheckView,
   StipCriterion,
+  StipPlannedProfile,
+  StipSetup,
+  StipStart,
   StipTamper,
   StipTicket,
   StipBinding,
@@ -59,10 +64,49 @@ import {
   viewOf,
   withClient,
 } from './settings.ts'
-import { ACTIVE, buildSnapshot, emptySnapshot, type Job } from './snapshot.ts'
-import { TOASTS, coalesce, toastText, type CoalesceState } from './notify.ts'
+import { ACTIVE, activityOf, buildSnapshot, emptySnapshot, pathsByTask, stepPhrase, type Job } from './snapshot.ts'
+import {
+  SETUP_FILES,
+  acceptedSpec,
+  approvedContract,
+  archiveSummary,
+  contractDiff,
+  criterionIn,
+  exploreOf,
+  exploreTitle,
+  followUpsOf,
+  pushStep,
+  reportOf,
+  setupSummary,
+  withProof,
+  type ApprovedContract,
+} from './ledger.ts'
+import { TOASTS, coalesce, noticeText, toastText, type CoalesceState } from './notify.ts'
 import { LABEL_PROMPT, cleanLabel, fallbackLabel, parseCriteria, parseEvidence } from './criteria.ts'
-import { canon, hmac, legalTransition, sha256Sync, verifyRebase, parseRegistry, registryKey, verifyRegistry, type Registry, type Verdict } from './integrity.ts'
+import {
+  canon,
+  freshLifecycle,
+  hmac,
+  identityKey,
+  legalTransition,
+  lifecycleIdentity,
+  owedWork,
+  parseIdentityKey,
+  registryWriters,
+  staleWorktrees,
+  predates,
+  registryPredates,
+  restoreGate,
+  sha256Sync,
+  verifyRebase,
+  parseRegistry,
+  registryKey,
+  verifyRegistry,
+  type Identity,
+  type Registry,
+  type RestoreRecord,
+  type Verdict,
+} from './integrity.ts'
 
 export * from './settings.ts'
 export { applyGate, isApproved, workerBash, workerWrite, helperBash, mainBash, protectedState } from './guards.ts'
@@ -191,16 +235,25 @@ let mainBashInFlight = 0
 // change them. Lifecycle state.json: changes inside a coordinator Bash call are accepted when no worker
 // call overlapped it and the phase move is legal; anything else is restored.
 
-/** Known-good text per watched file ('' when absent). */
-/** This instance's cache of known-good text; the shared journal (below) is authoritative. */
-const localKnown = new Map<string, string>()
+/**
+ * This instance's cache of known-good text, with the lifecycle identity it belongs to (null for files
+ * outside a change); the shared journal (below) is authoritative.
+ */
+const localKnown = new Map<string, { text: string; identity: string | null }>()
 
 // Known-good state is shared by every Stip instance on the project (another session, a backgrounded
 // one, the module after a hot reload): each own engine write records the resulting text in a journal
 // beside the registry, signed with a key kept in the plugin store. A change on disk that matches the
 // journal is another instance's legitimate write, never tampering.
+//
+// AC-32: a journal entry is bound to the lifecycle it was written for (change id + the lifecycle's
+// `created_at`) and to the instance that wrote it, both signed. An entry, a cached copy or a registry
+// from an earlier lifecycle of the same change id (sessions left from an earlier project at the same
+// path) is never used to restore this lifecycle: it is set aside (renamed with a timestamp) once, with
+// one notice, and the current files become the baseline.
 
-type Journal = { text: string; sha: string; by: string; at: number; mac: string }
+/** `v: 2` entries sign `by` and `identity` too; entries without `v` are the earlier format. */
+type Journal = { text: string; sha: string; by: string; at: number; mac: string; v?: 2; identity?: string | null }
 
 function journalPath(root: string, path: string): string {
   if (path === `${root}/.workflow/.runtime/engine-helpers.json`) return `${root}/.workflow/.runtime/stip-known-helpers.json`
@@ -210,6 +263,14 @@ function journalPath(root: string, path: string): string {
   if (life) return `${root}/.workflow/.runtime/${life[1]}/stip-known-lifecycle.json`
   return `${path}.stip-known.json`
 }
+
+/** The change a watched file belongs to (its lifecycle or its worker registry), or null. */
+function changeOfPath(path: string): string | null {
+  return /\/\.workflow\/(?:changes|\.runtime)\/([a-z0-9]+(?:-[a-z0-9]+)*)\/state\.json$/.exec(path)?.[1] ?? null
+}
+const isLifecyclePath = (path: string) => /\/\.workflow\/changes\/[a-z0-9-]+\/state\.json$/.test(path)
+const lifecyclePathOf = (root: string, id: string) => `${root}/.workflow/changes/${id}/state.json`
+const registryPathOf = (root: string, id: string) => `${root}/.workflow/.runtime/${id}/state.json`
 
 const fingerprint = async (path: string, text: string) =>
   sha256Sync(path.includes('/.workflow/.runtime/') ? canon(parseRegistry(text)) : text)
@@ -227,8 +288,9 @@ async function journalKey($: Dollar): Promise<Uint8Array> {
   return macKey
 }
 
-async function mac($: Dollar, path: string, sha: string, at: number): Promise<string> {
-  return hmac(await journalKey($), `${path}\n${sha}\n${at}`)
+async function mac($: Dollar, path: string, sha: string, at: number, bound?: { by: string; identity: string | null }): Promise<string> {
+  const message = bound ? `v2\n${path}\n${sha}\n${at}\n${bound.by}\n${bound.identity ?? ''}` : `${path}\n${sha}\n${at}`
+  return hmac(await journalKey($), message)
 }
 
 /** Journal entries already verified, by their raw text (a tick re-verifies only what changed). */
@@ -244,7 +306,8 @@ async function readJournal($: Dollar, path: string): Promise<Journal | null> {
     const j = JSON.parse(text) as Journal
     if (typeof j.text !== 'string' || typeof j.sha !== 'string' || typeof j.at !== 'number') return null
     // A journal entry not signed with the project's key, or whose text does not match, is ignored.
-    if (j.mac !== (await mac($, path, j.sha, j.at)) || j.sha !== (await fingerprint(path, j.text))) return null
+    const bound = j.v === 2 ? { by: String(j.by), identity: typeof j.identity === 'string' ? j.identity : null } : undefined
+    if (j.mac !== (await mac($, path, j.sha, j.at, bound)) || j.sha !== (await fingerprint(path, j.text))) return null
     if (verifiedJournal.size > 64) verifiedJournal.clear()
     verifiedJournal.set(text, j)
     return j
@@ -253,25 +316,248 @@ async function readJournal($: Dollar, path: string): Promise<Journal | null> {
   }
 }
 
-/** Known-good text: the shared journal's when valid, else this instance's own. */
+/** The lifecycle identity a journal entry belongs to: signed in v2, else read from a lifecycle's own text. */
+function entryIdentity(path: string, j: Journal): Identity | null {
+  if (j.v === 2) return typeof j.identity === 'string' ? parseIdentityKey(j.identity) : null
+  return isLifecyclePath(path) ? lifecycleIdentity(j.text) : null
+}
+
+/** Whether a journal entry belongs to the lifecycle this session is bound to (`want`, an identity key). */
+function entryMatches(path: string, j: Journal, want: string): boolean {
+  const id = entryIdentity(path, j)
+  if (id) return identityKey(id) === want
+  // An earlier-format registry entry names no lifecycle: usable only when written after this one was created.
+  return !predates(null, j.at, parseIdentityKey(want))
+}
+
+/** Known-good text: the shared journal's when valid for this lifecycle, else this instance's own. */
 async function known($: Dollar, path: string): Promise<string | undefined> {
+  const change = changeOfPath(path)
+  if (change && !pinned.has(change)) await settleIdentity($, change).catch(e => log($, `identity ${change}: ${errorText(e)}`))
+  const want = change ? pinned.get(change) : undefined
   const j = await readJournal($, path)
-  if (j) {
-    localKnown.set(path, j.text)
+  if (j && (want === undefined || entryMatches(path, j, want))) {
+    localKnown.set(path, { text: j.text, identity: want ?? null })
     return j.text
   }
-  return localKnown.get(path)
+  const mine = localKnown.get(path)
+  if (!mine) return undefined
+  return want === undefined || mine.identity === null || mine.identity === want ? mine.text : undefined
 }
 
 async function setKnown($: Dollar, path: string, text: string) {
-  localKnown.set(path, text)
+  const change = changeOfPath(path)
+  // A lifecycle names its own identity; a registry belongs to the lifecycle this session is bound to.
+  const own = isLifecyclePath(path) ? lifecycleIdentity(text) : null
+  const identity = own ? identityKey(own) : change ? (pinned.get(change) ?? null) : null
+  localKnown.set(path, { text, identity })
   const { root } = await context($)
   const at = await $.clock.now()
   const sha = await fingerprint(path, text)
-  const entry: Journal = { text, sha, by: instanceId, at, mac: await mac($, path, sha, at) }
+  const entry: Journal = { text, sha, by: instanceId, at, v: 2, identity, mac: await mac($, path, sha, at, { by: instanceId, identity }) }
   const raw = JSON.stringify(entry)
   verifiedJournal.set(raw, entry)
   await $.fs.write(journalPath(root, path), raw)
+}
+
+/** Change id -> the identity key of the lifecycle this session is bound to (first sight, or an accepted re-creation). */
+const pinned = new Map<string, string>()
+/** Set-aside notices already given, by change and identity (one notice per lifecycle). */
+const setAsideNoticed = new Set<string>()
+
+/** Renames a file aside (`<name>.stale-<stamp>`); answers the new path, or null when it could not. */
+async function setAside($: Dollar, path: string, stamp: string): Promise<string | null> {
+  if (!(await $.fs.exists(path).catch(() => false))) return null
+  const dest = `${path}.stale-${stamp}`
+  const r = await $.process.run(['mv', '-n', path, dest], { timeoutMs: 10_000 }).catch(() => null)
+  if (r && r.exitCode === 0 && !(await $.fs.exists(path).catch(() => true))) return dest
+  // A journal can be emptied in place (an empty journal is no entry); an engine file never is.
+  if (path.endsWith('.json') && /\/stip-known[^/]*\.json$/.test(path)) {
+    await $.fs.write(dest, await readOr($, path))
+    await $.fs.write(path, '')
+    return dest
+  }
+  log($, `set aside ${path}: ${r ? r.stderr.trim() || `exit ${r.exitCode}` : 'mv unavailable'}`)
+  return null
+}
+
+const asideStamp = async ($: Dollar) => new Date(await $.clock.now()).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')
+
+/** Active workers this session runs for a change (a re-creation under them is not accepted). */
+async function ownActive($: Dollar, changeId: string): Promise<boolean> {
+  return Object.values(await read($, workersAtom)).some(b => b.kind === 'task' && b.changeId === changeId && ACTIVE_WORKER.includes(b.status))
+}
+
+/** What one setting-aside moved, and whose records they were (for one accurate notice). */
+type Aside = { paths: string[]; worktrees: string[]; writers: Set<string>; earlier: string | null }
+const noAside = (): Aside => ({ paths: [], worktrees: [], writers: new Set(), earlier: null })
+
+/**
+ * Binds this session to the change's current lifecycle (AC-32). On first sight, records left for an
+ * older lifecycle of the same id are set aside; later, a different lifecycle is accepted only as a
+ * re-creation: newer, fresh (exploring, never approved), with no active job of the old lifecycle and
+ * none of this session's work owed a review or an integration, unless the person confirmed it
+ * (/stip-resync). Anything else is left to the watch, which restores it as tampering.
+ */
+async function settleIdentity($: Dollar, changeId: string, options: { confirmed?: boolean } = {}): Promise<string[]> {
+  const { root } = await context($)
+  const life = lifecyclePathOf(root, changeId)
+  const reg = registryPathOf(root, changeId)
+  const disk = await readOr($, life)
+  const current = lifecycleIdentity(disk)
+  if (!current || current.change !== changeId) return []
+  const key = identityKey(current)
+  const pin = pinned.get(changeId)
+  if (pin === key) return []
+  const aside = noAside()
+  if (pin !== undefined) {
+    const before = parseIdentityKey(pin)
+    aside.earlier = before?.created ?? null
+    if (!options.confirmed) {
+      if (!predates(before, null, current) || !freshLifecycle(disk) || (await ownActive($, changeId))) return []
+      const trusted = (await known($, reg)) ?? (await readOr($, reg))
+      if (owedWork(trusted, instanceId).length) return []
+    }
+  } else {
+    // First sight: a signed lifecycle entry newer than the file is the truth (the file was put back).
+    const j = await readJournal($, life)
+    const jid = j ? entryIdentity(life, j) : null
+    if (jid && jid.change === changeId && predates(current, null, jid)) {
+      pinned.set(changeId, identityKey(jid))
+      return []
+    }
+  }
+  const stamp = await asideStamp($)
+  for (const path of [life, reg]) {
+    const j = await readJournal($, path)
+    if (j && predates(entryIdentity(path, j), j.at, current)) {
+      aside.earlier ??= entryIdentity(path, j)?.created ?? null
+      if (j.by) aside.writers.add(j.by)
+      const moved = await setAside($, journalPath(root, path), stamp)
+      if (moved) aside.paths.push(moved)
+    }
+    const mine = localKnown.get(path)
+    if (mine && mine.identity !== key) localKnown.delete(path)
+    rejected.delete(path)
+    restoreLog = Object.fromEntries(Object.entries(restoreLog).filter(([p]) => p !== path))
+    held.delete(path)
+  }
+  pinned.set(changeId, key)
+  const r = await setAsideRegistry($, changeId, stamp)
+  aside.paths.push(...r.paths)
+  aside.worktrees.push(...r.worktrees)
+  for (const w of r.writers) aside.writers.add(w)
+  await noticeSetAside($, changeId, current, aside, pin !== undefined ? (options.confirmed ? 'confirmed' : 'recreated') : 'first')
+  return [...aside.paths, ...aside.worktrees]
+}
+
+/**
+ * Sets aside a worker registry whose records predate the lifecycle this session is bound to, and the
+ * git worktrees its old jobs left (moved aside, then `git worktree prune`), so a new reserve can create
+ * its own. Worktrees recorded by jobs of the current lifecycle are never touched.
+ */
+async function setAsideRegistry($: Dollar, changeId: string, stamp?: string): Promise<Aside> {
+  const { root } = await context($)
+  const pin = pinned.get(changeId)
+  const current = pin ? parseIdentityKey(pin) : null
+  const reg = registryPathOf(root, changeId)
+  const text = await readOr($, reg)
+  const out = noAside()
+  if (!text || !registryPredates(text, current)) return out
+  // Never under a running engine command (it holds the lock and may be writing this file).
+  if (engineInFlight > 0 || (await $.fs.exists(`${root}/.workflow/.lock`).catch(() => true))) return out
+  const when = stamp ?? (await asideStamp($))
+  const moved = await setAside($, reg, when)
+  if (!moved) return out
+  out.paths.push(moved)
+  for (const w of registryWriters(text)) out.writers.add(w)
+  for (const rel of staleWorktrees(text, changeId, current)) {
+    const dir = await setAside($, `${root}/${rel}`, when)
+    if (dir) out.worktrees.push(dir)
+  }
+  if (out.worktrees.length)
+    await $.process.run(['git', 'worktree', 'prune'], { cwd: root, timeoutMs: 15_000 }).catch(e => log($, `worktree prune: ${errorText(e)}`))
+  localKnown.delete(reg)
+  rejected.delete(reg)
+  held.delete(reg)
+  await setKnown($, reg, '')
+  return out
+}
+
+/** Who wrote the set-aside records, in words. */
+function writtenBy(writers: Set<string>): string {
+  const others = [...writers].filter(w => w !== instanceId && w !== 'unknown')
+  const mine = writers.has(instanceId)
+  const named = others.length ? `another session (${others.slice(0, 2).map(w => w.slice(0, 8)).join(', ')}${others.length > 2 ? ', …' : ''})` : ''
+  if (mine && named) return `this session and ${named}`
+  if (mine) return 'this session'
+  return named || 'an earlier session'
+}
+
+async function noticeSetAside($: Dollar, changeId: string, current: Identity, aside: Aside, how: 'first' | 'recreated' | 'confirmed') {
+  const all = [...aside.paths, ...aside.worktrees]
+  if (!all.length) return
+  const once = `${changeId}@${identityKey(current)}`
+  const { root } = await context($)
+  const rel = (list: string[]) => list.map(p => p.slice(root.length + 1)).join(', ')
+  log($, `set aside for ${changeId}: ${rel(all)}`)
+  if (setAsideNoticed.has(once)) return
+  setAsideNoticed.add(once)
+  const earlier = `its earlier lifecycle (created ${aside.earlier ?? 'earlier'})`
+  const lead =
+    how === 'first'
+      ? `records of an earlier lifecycle of ${changeId} (created ${aside.earlier ?? 'earlier'}), written by ${writtenBy(aside.writers)}, were set aside, not restored`
+      : `${changeId} was re-created (new lifecycle created ${current.created ?? 'now'})${how === 'confirmed' ? ', as you confirmed' : ''}; the records of ${earlier}, written by ${writtenBy(aside.writers)}, were set aside`
+  await notify(
+    $,
+    `stale:${once}`,
+    TOASTS.staleSetAside(),
+    `${lead}: ${rel(aside.paths) || 'none'}` +
+      (aside.worktrees.length ? `; ${aside.worktrees.length} old worktree${aside.worktrees.length === 1 ? '' : 's'} moved aside (${rel(aside.worktrees)}), git worktrees pruned` : '') +
+      `. The current lifecycle (created ${current.created ?? 'at an unknown time'}) is the baseline.`,
+  )
+}
+
+/** Keeps every watched change on its lifecycle: identity first, then stale registries. */
+async function guardIdentities($: Dollar, changes: Iterable<string>) {
+  for (const id of new Set(changes)) {
+    try {
+      await settleIdentity($, id)
+      if (pinned.has(id)) {
+        const r = await setAsideRegistry($, id)
+        const current = parseIdentityKey(pinned.get(id)!)
+        if (current) await noticeSetAside($, id, current, r, 'first')
+      }
+    } catch (e) {
+      log($, `identity ${id}: ${errorText(e)}`)
+    }
+  }
+}
+
+// --- Restore loop guard: never fight another writer forever ---
+
+let restoreLog: Record<string, RestoreRecord> = {}
+/** Files the watch stopped restoring (path -> change id or null), until /stip-resync or the file is good again. */
+const held = new Map<string, string | null>()
+
+/**
+ * Whether the watch may restore `path` (holding `disk`) once more; on the first refusal, one notice.
+ * A held file blocks dispatch for its change until the person runs /stip-resync.
+ */
+async function mayRestore($: Dollar, path: string, disk: string): Promise<boolean> {
+  const gate = restoreGate(restoreLog, path, sha256Sync(disk), await $.clock.now())
+  restoreLog = gate.log
+  if (gate.allowed) return true
+  held.set(path, changeOfPath(path))
+  if (gate.notify) {
+    const { root } = await context($)
+    const rel = path.slice(root.length + 1)
+    const text = `${rel} keeps being changed back outside this Claude Code session; it was restored ${restoreLog[path]?.total ?? 0} time(s) and is no longer restored, to avoid a restore loop. Dispatch for this change is paused. ${RESYNC_HINT}`
+    await notify($, `held:${path}`, TOASTS.restoreStopped(), text, 20_000)
+    statusLine($, TOASTS.restoreStopped())
+    log($, text)
+  }
+  return false
 }
 
 /** This instance (session id; the same across hot reloads of one session). */
@@ -338,6 +624,7 @@ async function watchedFiles($: Dollar): Promise<{ registries: string[]; lifecycl
  */
 async function baselineWatched($: Dollar) {
   const { registries, lifecycles } = await watchedFiles($)
+  await guardIdentities($, lifecycles.map(p => changeOfPath(p)!).filter(Boolean))
   for (const p of [...registries, ...lifecycles]) if ((await known($, p)) === undefined) await setKnown($, p, await readOr($, p))
 }
 
@@ -430,6 +717,7 @@ async function dirtyPaths($: Dollar, writePaths: string[]): Promise<string[]> {
 /** Restores known-good registry state, cancels that change's workers and flags tampered attempts. */
 async function onRegistryTamper($: Dollar, path: string, verdict: Verdict, disk: Registry | null) {
   const { root } = await context($)
+  if (!(await mayRestore($, path, disk ? canon(disk) : ''))) return
   const text = registryText(verdict.restored)
   rejected.set(path, disk ? registryText(disk) : await readOr($, path))
   if (text) await $.fs.write(path, text)
@@ -474,6 +762,7 @@ async function onLifecycleTamper($: Dollar, path: string, why: string) {
   const { root } = await context($)
   const good = (await known($, path)) ?? ''
   const disk = await readOr($, path)
+  if (!(await mayRestore($, path, disk))) return
   const changeId = /changes\/([a-z0-9-]+)\/state\.json$/.exec(path)?.[1] ?? null
   const archived = !disk && changeId !== null && (await $.fs.exists(`${root}/.workflow/archive/${changeId}/state.json`))
   rejected.set(path, disk)
@@ -516,8 +805,11 @@ async function integrityTick($: Dollar, force = false): Promise<string[]> {
   const { registries, lifecycles } = await watchedFiles($)
   for (const path of registries) {
     const disk = await readOr($, path)
-    const good = (await known($, path))!
-    if (canon(parseRegistry(disk)) === canon(parseRegistry(good))) continue
+    const good = (await known($, path)) ?? ''
+    if (canon(parseRegistry(disk)) === canon(parseRegistry(good))) {
+      held.delete(path)
+      continue
+    }
     const verdict = verifyRegistry(parseRegistry(good), parseRegistry(disk))
     if (verdict.ok) continue
     changed.push(path)
@@ -526,7 +818,10 @@ async function integrityTick($: Dollar, force = false): Promise<string[]> {
   // A coordinator Bash call in flight attributes lifecycle changes when it ends.
   if (mainBashInFlight === 0)
     for (const path of lifecycles) {
-      if ((await readOr($, path)) === (await known($, path))) continue
+      if ((await readOr($, path)) === (await known($, path))) {
+        held.delete(path)
+        continue
+      }
       changed.push(path)
       await onLifecycleTamper($, path, 'not made by Stip or the coordinator in this session')
     }
@@ -536,6 +831,8 @@ async function integrityTick($: Dollar, force = false): Promise<string[]> {
 /** At the end of a coordinator Bash call: accept its lifecycle changes only when unambiguous and legal. */
 async function attributeCoordinatorBash($: Dollar, overlapped: boolean) {
   const { lifecycles } = await watchedFiles($)
+  // A change the command re-created (a fresh lifecycle under a reused id) is bound first (AC-32).
+  await guardIdentities($, lifecycles.map(p => changeOfPath(p)!).filter(Boolean))
   for (const path of lifecycles) {
     const disk = await readOr($, path)
     const good = (await known($, path))
@@ -560,7 +857,7 @@ async function flushPendingTools($: Dollar) {
     pendingTools.delete(agentId)
     const b = (await read($, workersAtom))[agentId]
     if (!b || !ACTIVE_WORKER.includes(b.status) || !b.agentId) continue
-    await patchBinding($, agentId, { lastTool: tool })
+    await recordStep($, agentId, tool, {}, null)
     await mutate($, [...settleArgs(b, 'running'), '--last-tool', tool.slice(0, 256)]).catch(err => log($, `flush ${b.taskId}: ${errorText(err)}`))
   }
 }
@@ -580,6 +877,9 @@ export const selectedTaskAtom = atom({ plugin: 'stipulate', key: 'selectedTask' 
 export const settingsDraftAtom = atom({ plugin: 'stipulate', key: 'settingsDraft' } as const, null)
 export const ticketsAtom = atom({ plugin: 'stipulate', key: 'tickets' } as const, {})
 export const tamperedAtom = atom({ plugin: 'stipulate', key: 'tampered' } as const, {})
+export const justArchivedAtom = atom({ plugin: 'stipulate', key: 'justArchived' } as const, null)
+export const requestAtom = atom({ plugin: 'stipulate', key: 'request' } as const, null)
+export const replyAtom = atom({ plugin: 'stipulate', key: 'reply' } as const, null)
 
 // --- Toasts: short, coalesced; details go to a transcript notice the model does not read ---
 
@@ -592,9 +892,11 @@ async function notify($: Dollar, key: string, short: string, details?: string, t
   try {
     $.ui.toast(r.text, { timeoutMs })
   } catch {}
-  if (details)
+  // A repeat within the window is counted on the toast (×N); the transcript keeps the first notice only.
+  const text = details ? noticeText(details, (r.state[key]?.count ?? 1) > 1) : null
+  if (text)
     await $.session
-      .append({ message: { type: 'system', content: [{ type: 'text', text: `Stipulate: ${details}` }] } } as never)
+      .append({ message: { type: 'system', content: [{ type: 'text', text }] } } as never)
       .catch(() => undefined)
 }
 
@@ -687,13 +989,25 @@ const latestOf = (jobs: Job[], taskId: string) =>
 
 // --- Binding: the change this session works on ---
 
-/** The bound change; auto-binds when exactly one non-archived change exists. */
+/**
+ * The bound change; auto-binds when exactly one non-archived change exists. When the bound change
+ * was archived, it is remembered for the Archive state's summary, and auto-binding then waits for a
+ * change opened after it (the changes open at that moment are not picked up on their own).
+ */
 async function boundChange($: Dollar): Promise<string | null> {
   const current = await read($, bindingAtom)
   const changes = await listChanges($)
   if (current && changes.some(c => c.id === current)) return current
-  const next = changes.length === 1 ? changes[0]!.id : null
+  if (current) {
+    const { root } = await context($)
+    if (await $.fs.exists(`${root}/.workflow/archive/${current}`).catch(() => false))
+      await update($, justArchivedAtom, () => ({ id: current, others: changes.map(c => c.id) }))
+  }
+  const archived = await read($, justArchivedAtom)
+  const only = changes.length === 1 ? changes[0]!.id : null
+  const next = only && !archived?.others.includes(only) ? only : null
   if (next !== current) await update($, bindingAtom, () => next)
+  if (next && archived) await update($, justArchivedAtom, () => null)
   return next
 }
 
@@ -701,6 +1015,7 @@ async function bindChange($: Dollar, id: string): Promise<StipSnapshot> {
   const changes = await listChanges($)
   if (!changes.some(c => c.id === id)) throw new Error(`Unknown or archived change: ${id}`)
   await update($, bindingAtom, () => id)
+  await update($, justArchivedAtom, () => null)
   return refresh($, { force: true })
 }
 
@@ -730,6 +1045,8 @@ async function loadSettings($: Dollar): Promise<StipSettingsView> {
   const view = await viewOf(await rawScopes($, paths), paths)
   await update($, settingsAtom, () => view)
   cachedGate = { ...cachedGate, mode: view.effective.applyGate }
+  const motion = view.effective.motion
+  await update($, snapshotAtom, s => (s && s.ui.motion !== motion ? { ...s, ui: { ...s.ui, motion } } : s))
   return view
 }
 
@@ -1093,8 +1410,19 @@ async function refresh($: Dollar, options: { force?: boolean } = {}): Promise<St
   if (!options.force && held && now - lastRefresh < 1000) return held
   refreshing = (async () => {
     try {
+      // Setup state (AC-35): no .workflow/ here, so no engine, guard or provenance work, only file reads.
+      const { root } = await context($)
+      if (!(await hasWorkflow($, root))) {
+        const snapshot = await setupSnapshot($)
+        await update($, snapshotAtom, () => snapshot)
+        return snapshot
+      }
       await checkProvenance($).catch(e => log($, `provenance: ${errorText(e)}`))
-      const snapshot = await computeSnapshot($, await boundChange($))
+      const bound = await boundChange($)
+      // Records of an earlier lifecycle of this change id never feed the snapshot or the watch (AC-32).
+      if (bound) await guardIdentities($, [bound])
+      const snapshot = await computeSnapshot($, bound)
+      lastSignature = await stateSignature($).catch(() => '')
       await update($, snapshotAtom, () => snapshot)
       cachedGate = { ...cachedGate, changeId: snapshot.changeId, phase: snapshot.phase, approved: snapshot.approval.current }
       await syncBindings($, snapshot)
@@ -1107,16 +1435,56 @@ async function refresh($: Dollar, options: { force?: boolean } = {}): Promise<St
   return refreshing
 }
 
+/** The profile a task would launch with under the current settings (null when the settings refuse it). */
+function plannedProfile(settings: StipSettingsView, t: { role: string; phase: string; writePaths: string[] }): StipPlannedProfile | null {
+  if (settings.error) return null
+  try {
+    const p = resolveProfile(settings.effective, t.role, t.phase, { writing: t.writePaths.length > 0 })
+    return { model: p.model && p.model !== 'inherit' ? p.model : null, effort: p.effort || null, agent: p.agent ?? null, isolate: p.isolate === true }
+  } catch {
+    return null
+  }
+}
+
+/** What the snapshot was computed from, as of the last refresh (see stateSignature). */
+let lastSignature = ''
+
+/**
+ * A cheap fingerprint of the files the snapshot reflects (the bound change's lifecycle, evidence and
+ * worker registry, the helpers registry, the list of changes): file reads only, never the engine.
+ */
+async function stateSignature($: Dollar): Promise<string> {
+  const { root } = await context($)
+  const bound = await read($, bindingAtom)
+  const files = [`${root}/.workflow/.runtime/engine-helpers.json`]
+  if (bound)
+    files.push(lifecyclePathOf(root, bound), registryPathOf(root, bound), `${root}/.workflow/changes/${bound}/evidence.md`, `${root}/.workflow/changes/${bound}/execution-plan.json`)
+  const parts = [bound ?? '', ...(await $.fs.list(`${root}/.workflow/changes`).catch(() => [])).map(e => e.name).sort()]
+  for (const f of files) parts.push(sha256Sync(await readOr($, f).catch(() => '')))
+  return sha256Sync(parts.join('\n'))
+}
+
 async function computeSnapshot($: Dollar, changeId: string | null): Promise<StipSnapshot> {
   const now = await $.clock.now()
   const briefs = await listChanges($).catch(() => [] as ChangeBrief[])
-  const finish = async (snap: StipSnapshot): Promise<StipSnapshot> => ({
-    ...snap,
-    changes: await changeSummaries($, briefs, changeId, snap.approval.current).catch(() => snap.changes),
-    archivedCount: await archivedCount($).catch(() => 0),
-    criteria: changeId ? await criteriaOf($, changeId).catch(() => []) : [],
-    helpers: await titledHelpers($, snap.helpers),
-  })
+  const finish = async (snap: StipSnapshot): Promise<StipSnapshot> => {
+    const criteria = changeId ? await criteriaOf($, changeId).catch(() => []) : []
+    const settings = await read($, settingsAtom)
+    const archived = await read($, justArchivedAtom)
+    return {
+      ...snap,
+      changes: await changeSummaries($, briefs, changeId, snap.approval.current).catch(() => snap.changes),
+      archivedCount: await archivedCount($).catch(() => 0),
+      criteria,
+      helpers: await titledHelpers($, snap.helpers),
+      start: await startOf($).catch(e => (log($, `start: ${errorText(e)}`), snap.start)),
+      explore: changeId ? await exploreFor($, changeId, snap.extensions).catch(() => null) : null,
+      contractDiff: changeId ? await diffFor($, changeId, criteria, snap.tasks).catch(() => null) : null,
+      check: changeId ? await checkFor($, changeId, snap).catch(() => snap.check) : snap.check,
+      archived: !changeId && archived ? await archiveFor($, archived.id).catch(e => (log($, `archive summary: ${errorText(e)}`), null)) : null,
+      ui: { motion: settings?.effective.motion ?? 'auto', typing },
+    }
+  }
   const changes = briefs as StipChangeRef[]
   if (!changeId) return finish(emptySnapshot(changes, now))
   let snapshot: StipSnapshot
@@ -1150,9 +1518,11 @@ async function computeSnapshot($: Dollar, changeId: string | null): Promise<Stip
     snapshot = emptySnapshot(changes, now, changeId, errorText(e))
   }
   const settings = await read($, settingsAtom)
-  if (settings) snapshot = { ...snapshot, limits: settings.effective.limits }
+  if (settings) snapshot = { ...snapshot, limits: settings.effective.limits, tasks: snapshot.tasks.map(t => ({ ...t, planned: plannedProfile(settings, t) })) }
   const tampered = Object.values(await read($, tamperedAtom)).filter(t => t.changeId === changeId)
-  return finish({ ...snapshot, tampered })
+  const { root } = await context($)
+  const restoreHeld = [...held].filter(([, c]) => c === changeId).map(([p]) => p.slice(root.length + 1))
+  return finish({ ...snapshot, tampered, restoreHeld })
 }
 
 // --- Display data: change picker, criteria, labels ---
@@ -1211,9 +1581,11 @@ async function labelFor($: Dollar, kind: 'requirement' | 'question', text: strin
 async function criteriaOf($: Dollar, changeId: string): Promise<StipCriterion[]> {
   const { root } = await context($)
   const spec = await readOr($, `${root}/.workflow/changes/${changeId}/spec.md`)
-  const evidence = parseEvidence(await readOr($, `${root}/.workflow/changes/${changeId}/evidence.md`).catch(() => ''))
+  const evidenceMd = await readOr($, `${root}/.workflow/changes/${changeId}/evidence.md`).catch(() => '')
+  const evidence = parseEvidence(evidenceMd)
+  const state = await readJson($, lifecyclePathOf(root, changeId)).catch(() => null)
   const labels = await labelStore($)
-  const out: StipCriterion[] = []
+  const out: Omit<StipCriterion, 'proof' | 'pendingDocs'>[] = []
   for (const c of parseCriteria(spec)) {
     const ev = evidence[c.id]
     out.push({
@@ -1224,7 +1596,146 @@ async function criteriaOf($: Dollar, changeId: string): Promise<StipCriterion[]>
       status: ev?.status ?? 'pending',
     })
   }
-  return out
+  // Check state: each criterion's recorded proof (the current check report, else evidence.md).
+  return withProof(out, reportOf(state), evidenceMd)
+}
+
+// --- Ledger states (AC-35): file reads only, never the engine ---
+
+/** Setup: what a project without .workflow/ has, for the read-only /stip. */
+async function setupOf($: Dollar): Promise<StipSetup> {
+  const { root } = await context($)
+  const present = new Set<string>()
+  for (const f of SETUP_FILES) if (await $.fs.exists(`${root}/${f}`).catch(() => false)) present.add(f)
+  const text = async (f: string) => (present.has(f) ? await readOr($, `${root}/${f}`).catch(() => '') : undefined)
+  const git = await $.process.run(['git', 'status', '--porcelain=v1', '-b'], { cwd: root, timeoutMs: 10_000 }).catch(() => null)
+  return setupSummary({
+    project: root,
+    home: (await $.env.get('HOME').catch(() => undefined)) ?? null,
+    present,
+    pyproject: await text('pyproject.toml'),
+    packageJson: await text('package.json'),
+    gitStatus: git && git.exitCode === 0 ? git.stdout : null,
+  })
+}
+
+async function setupSnapshot($: Dollar): Promise<StipSnapshot> {
+  const now = await $.clock.now()
+  const settings = await read($, settingsAtom)
+  return { ...emptySnapshot([], now), setup: await setupOf($), ui: { motion: settings?.effective.motion ?? 'auto', typing } }
+}
+
+const SLUG_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+let startCache: { key: string; value: StipStart } | null = null
+/** Short hashes of archive commits, by archived change id (git history; immutable once found). */
+const commits = new Map<string, string>()
+
+/** The commit that archived a change: the last commit touching `.workflow/archive/<id>`. */
+async function archiveCommit($: Dollar, id: string): Promise<string | null> {
+  const hit = commits.get(id)
+  if (hit) return hit
+  const { root } = await context($)
+  const r = await $.process.run(['git', 'log', '-1', '--format=%h', '--', `.workflow/archive/${id}`], { cwd: root, timeoutMs: 10_000 }).catch(() => null)
+  const hash = r && r.exitCode === 0 ? r.stdout.trim().split('\n')[0]?.trim() : ''
+  if (hash && /^[0-9a-f]{4,40}$/.test(hash)) commits.set(id, hash)
+  return hash && /^[0-9a-f]{4,40}$/.test(hash) ? hash : null
+}
+
+async function archivedAtOf($: Dollar, id: string): Promise<string | null> {
+  const { root } = await context($)
+  const summary = await readJson($, `${root}/.workflow/archive/${id}/execution-summary.json`).catch(() => null)
+  if (typeof summary?.archived_at === 'string') return summary.archived_at
+  const state = await readJson($, `${root}/.workflow/archive/${id}/state.json`).catch(() => null)
+  return state?.phase === 'archived' && typeof state.updated_at === 'string' ? state.updated_at : null
+}
+
+/** New change: follow-ups of archived proposals (newest first) and the accepted specs. Cached by folder listing. */
+async function startOf($: Dollar): Promise<StipStart> {
+  const { root } = await context($)
+  const names = async (dir: string, re: RegExp) =>
+    (await $.fs.list(dir).catch(() => [])).filter(e => re.test(e.name) && !e.isLink).map(e => e.name).sort()
+  const archived = await names(`${root}/.workflow/archive`, SLUG_NAME)
+  const specs = (await names(`${root}/.workflow/specs`, /^[a-z0-9]+(?:-[a-z0-9]+)*\.md$/)).map(n => n.slice(0, -3))
+  const key = `${root}\u0000${archived.join(',')}\u0000${specs.join(',')}`
+  if (startCache?.key === key) return startCache.value
+  const when = new Map<string, string | null>()
+  for (const id of archived) when.set(id, await archivedAtOf($, id))
+  const newest = [...archived].sort((a, b) => (when.get(b) ?? '').localeCompare(when.get(a) ?? ''))
+  const followUps = []
+  for (const id of newest) followUps.push(...followUpsOf(await readOr($, `${root}/.workflow/archive/${id}/proposal.md`).catch(() => ''), id))
+  const accepted = []
+  for (const id of specs) {
+    const isArchived = archived.includes(id)
+    accepted.push(acceptedSpec(id, await readOr($, `${root}/.workflow/specs/${id}.md`).catch(() => ''), when.get(id) ?? null, isArchived ? await archiveCommit($, id) : null))
+  }
+  accepted.sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? '') || a.id.localeCompare(b.id))
+  const value: StipStart = { followUps: followUps.slice(0, 20), specs: accepted }
+  // A commit found later (the archive commit lands after the folder) is picked up by the next refresh.
+  if (accepted.every(a => !archived.includes(a.id) || a.commit)) startCache = { key, value }
+  return value
+}
+
+/** Explore: problem, findings and decisions from the bound change's proposal.md. */
+async function exploreFor($: Dollar, changeId: string, extensions: string[]) {
+  const { root } = await context($)
+  return exploreOf(await readOr($, `${root}/.workflow/changes/${changeId}/proposal.md`).catch(() => ''), extensions)
+}
+
+/** The contracts the person approved through Stip, per project root and change (plugin store). */
+async function approvedContracts($: Dollar): Promise<Record<string, ApprovedContract>> {
+  const { root } = await context($)
+  const all = await $.store.get('contracts')
+  const mine = all && typeof all === 'object' && !Array.isArray(all) ? (all as Record<string, any>)[root] : null
+  return mine && typeof mine === 'object' ? (mine as Record<string, ApprovedContract>) : {}
+}
+
+/** Records the criteria and plan the person approved (for "changed since the last approved version"). */
+async function recordApprovedContract($: Dollar, changeId: string, digest: string, plan: PlanTask[]) {
+  const { root } = await context($)
+  const spec = await readOr($, `${root}/.workflow/changes/${changeId}/spec.md`).catch(() => '')
+  const entry = approvedContract(digest, new Date(await $.clock.now()).toISOString(), spec, plan)
+  const raw = await $.store.get('contracts')
+  const all = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, any>) : {}
+  await $.store.set('contracts', { ...all, [root]: { ...(all[root] ?? {}), [changeId]: entry } })
+}
+
+/** Validate: what changed by id since the version the person last approved. */
+async function diffFor($: Dollar, changeId: string, criteria: StipCriterion[], tasks: StipSnapshot['tasks']) {
+  return contractDiff((await approvedContracts($))[changeId], criteria, tasks)
+}
+
+/** Check: the active check-phase task and the criterion its latest tool call named. */
+async function checkFor($: Dollar, changeId: string, snap: StipSnapshot): Promise<StipCheckView> {
+  const { root } = await context($)
+  const state = await readJson($, lifecyclePathOf(root, changeId)).catch(() => null)
+  const reviewer = snap.tasks.find(t => t.phase === 'check' && t.latest && ACTIVE.includes(t.latest.status)) ?? null
+  const live = reviewer
+    ? Object.values(await read($, workersAtom)).find(b => b.kind === 'task' && b.changeId === changeId && b.taskId === reviewer.id && b.attempt === reviewer.latest!.attempt)
+    : undefined
+  return { reviewer: reviewer?.id ?? null, criterion: live?.criterion ?? null, reportAt: typeof state?.check?.at === 'string' ? state.check.at : null }
+}
+
+const archiveCache = new Map<string, StipArchiveSummary>()
+
+/** Archive: the summary of a change this session saw archived (immutable once its commit is known). */
+async function archiveFor($: Dollar, id: string): Promise<StipArchiveSummary | null> {
+  const hit = archiveCache.get(id)
+  if (hit) return hit
+  const { root } = await context($)
+  const dir = `${root}/.workflow/archive/${id}`
+  if (!(await $.fs.exists(dir).catch(() => false))) return null
+  const value = archiveSummary({
+    id,
+    state: await readJson($, `${dir}/state.json`).catch(() => null),
+    summary: await readJson($, `${dir}/execution-summary.json`).catch(() => null),
+    registry: await readJson($, registryPathOf(root, id)).catch(() => null),
+    spec: await readOr($, `${dir}/spec.md`).catch(() => ''),
+    evidence: await readOr($, `${dir}/evidence.md`).catch(() => ''),
+    proposal: await readOr($, `${dir}/proposal.md`).catch(() => ''),
+    commit: await archiveCommit($, id),
+  })
+  if (value.commit) archiveCache.set(id, value)
+  return value
 }
 
 async function titledHelpers($: Dollar, helpers: StipSnapshot['helpers']): Promise<StipSnapshot['helpers']> {
@@ -1400,6 +1911,11 @@ export type DelegateInput = { changeId: string; taskId: string; instructions?: s
 async function delegate($: Dollar, input: DelegateInput) {
   const { changeId, taskId } = input
   const { root } = await context($)
+  const holds = [...held].filter(([, c]) => c === changeId).map(([p]) => p.slice(root.length + 1))
+  if (holds.length)
+    throw new EngineError(
+      `Dispatch is paused for ${changeId}: ${holds.join(', ')} kept being changed outside this session and is no longer restored. Ask the person to review it with /stip-resync.`,
+    )
   await reconcile($, [changeId])
   const status = await engine($, ['status', changeId, '--compact'])
   const task: PlanTask | undefined = status.plan?.tasks?.find((t: PlanTask) => t.id === taskId)
@@ -1481,6 +1997,15 @@ async function delegate($: Dollar, input: DelegateInput) {
     profile: recorded,
     ...ticketReply(ticket),
     ...(reopened ? { note: `${taskId} was reopened by the rebase onto the revised contract; this attempt redoes it against the new task definition.` } : {}),
+    ...(job.refreshed && typeof job.refreshed === 'object'
+      ? {
+          refreshed: {
+            written: Array.isArray(job.refreshed.written) ? job.refreshed.written.length : 0,
+            deleted: Array.isArray(job.refreshed.deleted) ? job.refreshed.deleted.length : 0,
+            note: 'The reused worktree was brought to the main checkout\'s current content outside the task\'s write_paths; its own work was kept.',
+          },
+        }
+      : {}),
   }
 }
 
@@ -1750,6 +2275,9 @@ async function approveChange($: Dollar, id: string, expectedDigest?: string) {
     pendingApprovals.delete(id)
   }
   unconfirmed.delete(id)
+  await recordApprovedContract($, id, String(result.approval?.contract_digest ?? status.contract_digest), Array.isArray(status.plan?.tasks) ? status.plan.tasks : []).catch(e =>
+    log($, `approved contract ${id}: ${errorText(e)}`),
+  )
   const rebase = await rebaseIfStale($, id, 're-approved by the person')
   await refresh($, { force: true }).catch(() => undefined)
   await registerAgentTypes($).catch(() => undefined)
@@ -1762,6 +2290,8 @@ export type RebaseOutcome = {
   kept?: string[]
   reopened?: string[]
   retired?: string[]
+  /** Per retired task, the paths its integrated work wrote or deleted: they remain in the checkout (AC-34). */
+  retiredIntegratedPaths?: Record<string, string[]>
   error?: string
 }
 
@@ -1772,7 +2302,16 @@ export function rebaseSummary(o: RebaseOutcome): string {
   const parts = [`${o.kept?.length ?? 0} kept`]
   if (o.reopened?.length) parts.push(`reopened ${o.reopened.join(', ')} (redelegate them)`)
   if (o.retired?.length) parts.push(`retired ${o.retired.join(', ')} (no longer in the plan)`)
-  return `The worker registry was moved to the new contract: ${parts.join('; ')}.`
+  const remain = remainingPaths(o.retiredIntegratedPaths)
+  return `The worker registry was moved to the new contract: ${parts.join('; ')}.${remain ? ` ${remain}` : ''}`
+}
+
+/** One sentence naming the integrated paths of retired tasks, which stay in the checkout; '' when none. */
+export function remainingPaths(byTask: Record<string, string[]> | undefined): string {
+  const entries = Object.entries(byTask ?? {}).filter(([, paths]) => paths.length)
+  if (!entries.length) return ''
+  const list = entries.map(([task, paths]) => `${task}: ${paths.join(', ')}`).join('; ')
+  return `Already integrated by retired tasks, these files remain in the checkout (keep, revert or reassign them): ${list}.`
 }
 
 /**
@@ -1786,9 +2325,16 @@ async function rebaseIfStale($: Dollar, id: string, reason: string): Promise<Reb
   if (!shown?.registry || (shown.registry_current !== false && !orphans.length)) return { needed: false, done: false }
   try {
     const r = await mutate($, ['runtime', 'rebase', id, '--reason', reason])
-    const outcome: RebaseOutcome = { needed: true, done: true, kept: r.kept ?? [], reopened: r.reopened ?? [], retired: r.retired ?? [] }
+    const outcome: RebaseOutcome = {
+      needed: true,
+      done: true,
+      kept: r.kept ?? [],
+      reopened: r.reopened ?? [],
+      retired: r.retired ?? [],
+      retiredIntegratedPaths: pathsByTask(r.retired_integrated_paths ?? (r.rebase as Record<string, unknown> | undefined)?.retired_integrated_paths),
+    }
     const redo = outcome.reopened!.length
-    await notify($, `rebased:${id}`, redo ? `Registry rebased · ${redo} task${redo === 1 ? '' : 's'} to redo` : 'Registry rebased', `${id}: ${rebaseSummary(outcome)}`)
+    await notify($, `rebased:${id}`, TOASTS.rebased(redo), `${id}: ${rebaseSummary(outcome)}`)
     return outcome
   } catch (e) {
     return {
@@ -1810,8 +2356,15 @@ function summary(job: Record<string, any> | undefined) {
 async function act($: Dollar, a: Record<string, unknown>): Promise<unknown> {
   const reason = typeof a.reason === 'string' ? a.reason : ''
   switch (a.action) {
-    case 'refresh':
+    case 'refresh': {
+      // .workflow/ created during the session outside a tool call of it (another terminal): activate.
+      const { root } = await context($)
+      if (!activated && (await hasWorkflow($, root))) {
+        await activate($)
+        return read($, snapshotAtom)
+      }
       return refresh($, { force: true })
+    }
     case 'bind':
       return bindChange($, str(a.change_id, 'change_id'))
     case 'accept':
@@ -1845,8 +2398,44 @@ async function act($: Dollar, a: Record<string, unknown>): Promise<unknown> {
       return loadSettings($)
     case 'settings-save':
       return saveSettings($, a.scope as StipScope, (a.value ?? {}) as StipClientSettings, str(a.revision, 'revision'))
+    case 'setup':
+      return fillPrompt($, '/stip-bootstrap')
+    // AC-37: a new change starts in the person's prompt; the bound change stays open.
+    case 'new':
+      return fillPrompt($, '/stip-explore ')
+    case 'new-from':
+      return fillPrompt($, `/stip-explore ${exploreTitle(a.title)}`)
   }
   throw new EngineError(`Unknown action ${String(a.action)}`)
+}
+
+/** One interface action, with the Setup restriction, as a StipActionReply (never throws). */
+async function serveAction($: Dollar, a: Record<string, unknown>): Promise<Record<string, unknown>> {
+  try {
+    const { root } = await context($)
+    if (!SETUP_ACTIONS.includes(String(a.action)) && !(await hasWorkflow($, root)))
+      return { ok: false, error: 'Stip is not set up in this project yet: press Set up (it starts /stip-bootstrap in your prompt).' }
+    const value = await act($, a)
+    return { ok: true, action: a.action, value }
+  } catch (err) {
+    return { ok: false, error: errorText(err), ...(err instanceof EngineError && err.conflicts ? { conflicts: err.conflicts } : {}) }
+  }
+}
+
+let requestSeq = 0
+
+/** Actions a project without .workflow/ serves (Setup state): nothing that runs the engine. */
+const SETUP_ACTIONS = ['setup', 'refresh']
+
+/**
+ * Puts a slash command in the person's prompt box for them to send. A draft already there is never
+ * overwritten: the reply then carries the text to send instead.
+ */
+async function fillPrompt($: Dollar, text: string) {
+  const box = await $.prompt.read().catch(() => ({ text: '', cursor: 0 }))
+  if (box.text.trim()) return { prompt_filled: false, send_this: text, reason: 'Your prompt holds a draft; it was left as it is.' }
+  const filled = await $.prompt.fill({ text, mode: 'replace' }).catch(() => ({ isFilled: false }))
+  return { prompt_filled: filled.isFilled === true, ...(filled.isFilled ? {} : { send_this: text }) }
 }
 
 /**
@@ -1881,7 +2470,13 @@ function coordinatorNotes(s: StipSnapshot): string[] {
       `The last rebase reopened ${redo.join(', ')} (changed in the revised contract, or depending on a changed task): ` +
         'their previous work is rejected and must be redelegated (stip_delegate; add correction: true to reuse an isolated worktree).',
     )
-  if (s.lastRebase?.retired.length) notes.push(`Retired by the last rebase (no longer in the plan): ${s.lastRebase.retired.join(', ')}.`)
+  if (s.lastRebase?.retired.length) {
+    notes.push(`Retired by the last rebase (no longer in the plan): ${s.lastRebase.retired.join(', ')}.`)
+    const remain = remainingPaths(s.lastRebase.retiredIntegratedPaths)
+    if (remain) notes.push(remain)
+  }
+  if (s.restoreHeld.length)
+    notes.push(`Dispatch is paused: ${s.restoreHeld.join(', ')} kept being changed outside this session and is no longer restored; the person reviews it with /stip-resync.`)
   return notes
 }
 
@@ -1968,7 +2563,10 @@ async function serve($: Dollar, name: string, a: Record<string, unknown>): Promi
   switch (name) {
     case 'stip_status': {
       let id = typeof a.change_id === 'string' && a.change_id ? a.change_id : await boundChange($)
-      if (id && !(await read($, bindingAtom))) await update($, bindingAtom, () => id)
+      if (id && !(await read($, bindingAtom))) {
+        await update($, bindingAtom, () => id)
+        await update($, justArchivedAtom, () => null)
+      }
       if (id) await reconcile($, [id])
       const bound = await read($, bindingAtom)
       const snapshot = id === bound ? await refresh($, { force: true }) : await computeSnapshot($, id)
@@ -2107,10 +2705,81 @@ async function guardMain($: Dollar, e: { tool: string } & Record<string, unknown
   return {}
 }
 
-async function trackBefore($: Dollar, b: StipBinding, tool: string) {
+/**
+ * Records one observed tool call on the worker's binding (last tool, activity, the trail of recent
+ * steps, the criterion it named) and on the published snapshot's worker or helper, so the pane's
+ * trail follows the calls without an engine run (AC-21, AC-35).
+ */
+async function recordStep($: Dollar, agentId: string, tool: string, input: Record<string, unknown>, criterion: string | null, at?: number) {
+  const when = at ?? (await $.clock.now())
+  const activity = activityOf(tool, input)
+  // The trail's phrase is a short human one ("Reading api.py", "Running tests"), never a bare tool name.
+  const step = { tool, activity: stepPhrase(tool, input), at: when }
+  let after: StipBinding | undefined
+  mirrorAll(
+    await update($, workersAtom, m => {
+      const b = m[agentId]
+      if (!b) return m
+      after = { ...b, lastTool: tool, activity, steps: pushStep(b.steps, step), ...(criterion ? { criterion } : {}) }
+      return { ...m, [agentId]: after }
+    }),
+  )
+  const b = after as StipBinding | undefined
+  if (!b) return
+  await update($, snapshotAtom, s => {
+    if (!s) return s
+    const steps = b.steps ?? []
+    const mine = (w: { taskId: string; attempt: number }) => b.kind === 'task' && b.changeId === s.changeId && w.taskId === b.taskId && w.attempt === b.attempt
+    const live = (w: StipSnapshot['workers'][number]) => (mine(w) ? { ...w, lastTool: tool, steps, activity: w.activity === null ? null : activity } : w)
+    let check = s.check
+    if (criterion && s.check.reviewer === b.taskId && b.kind === 'task' && b.changeId === s.changeId) check = { ...s.check, criterion }
+    return {
+      ...s,
+      workers: s.workers.map(live),
+      tasks: s.tasks.map(t => (t.latest && mine(t.latest) ? { ...t, latest: live(t.latest) } : t)),
+      helpers: s.helpers.map(h => (b.kind === 'helper' && h.helperId === b.helperId ? { ...h, steps, activity: h.activity === null ? null : activity } : h)),
+      check,
+    }
+  })
+}
+
+// --- Typing (AC-36): nothing animates while the person edits the prompt ---
+
+/** How long after the last edit the person counts as no longer typing. */
+const TYPING_IDLE_MS = 1_500
+let typing = false
+let lastEdit = 0
+
+async function setTyping($: Dollar, on: boolean) {
+  if (typing === on) return
+  typing = on
+  await update($, snapshotAtom, s => (s && s.ui.typing !== on ? { ...s, ui: { ...s.ui, typing: on } } : s))
+}
+
+/** One prompt edit: typing while the draft holds text, until TYPING_IDLE_MS pass without an edit. */
+async function noteEdit($: Dollar, draft: string) {
+  lastEdit = await $.clock.now()
+  if (!draft.trim()) return setTyping($, false)
+  if (typing) return
+  await setTyping($, true)
+  armTypingTimer($, TYPING_IDLE_MS)
+}
+
+function armTypingTimer($: Dollar, ms: number) {
+  $.clock.after(ms, () => {
+    void (async () => {
+      if (!typing) return
+      const idle = (await $.clock.now()) - lastEdit
+      if (idle >= TYPING_IDLE_MS) await setTyping($, false)
+      else armTypingTimer($, TYPING_IDLE_MS - idle)
+    })().catch(err => log($, `typing: ${errorText(err)}`))
+  })
+}
+
+async function trackBefore($: Dollar, b: StipBinding, tool: string, input: Record<string, unknown> = {}) {
   if (!b.agentId) return
   const now = await $.clock.now()
-  await patchBinding($, b.agentId, { lastTool: tool })
+  await recordStep($, b.agentId, tool, input, criterionIn(input), now)
   const key = jobKey(b)
   const statusChange = b.status === 'unknown' || b.status === 'waiting'
   if (!statusChange && now - (lastToolWrite.get(key) ?? 0) < LAST_TOOL_INTERVAL) return
@@ -2223,6 +2892,64 @@ async function resyncPlan($: Dollar): Promise<{ path: string; content: string; s
   return out
 }
 
+// --- Activation ---
+
+/** True once Stip is active in this module instance (tools, guards, watch); false in Setup. */
+let activated = false
+
+/** Registers the tools and commands, loads the state and starts the watch (a project with .workflow/). */
+async function activate($: Dollar) {
+  if (activated) return
+  activated = true
+  // Every Bash call of the session (coordinator, subagents, workers) inherits these: no Python
+  // bytecode or pytest cache files appear in checkouts or worktrees. Commands are not rewritten.
+  await $.env.set('PYTHONDONTWRITEBYTECODE', '1').catch(err => log($, `env: ${errorText(err)}`))
+  const addopts = (await $.env.get('PYTEST_ADDOPTS').catch(() => undefined)) ?? ''
+  if (!/no:cacheprovider/.test(addopts))
+    await $.env.set('PYTEST_ADDOPTS', `${addopts ? `${addopts} ` : ''}-p no:cacheprovider`).catch(err => log($, `env: ${errorText(err)}`))
+  for (const tool of TOOLS) await $.tool.register({ ...tool, isDeferred: false })
+  await $.command.register({ name: 'stip-approve', description: 'Approve the bound Stipulate contract (shows its digest first)', argumentHint: '[change-id] [confirm <digest>]' })
+  await $.command.register({ name: 'stip-resync', description: 'Review and adopt workflow changes made outside this Claude Code session', argumentHint: '[confirm]' })
+  await $.command.register({ name: 'stip-bind', description: 'Bind this session to a Stipulate change', argumentHint: '[change-id]' })
+  await $.command.register({ name: 'stip-action', description: 'Stipulate interface action (JSON; used by the band and pane)', argumentHint: '{"action": ...}', immediate: true })
+  await loadSettings($)
+  await rebuildWorkers($)
+  await registerAgentTypes($).catch(err => log($, `agent types: ${errorText(err)}`))
+  await reconcile($).catch(err => log($, `reconcile: ${errorText(err)}`))
+  await refresh($, { force: true })
+  await baselineWatched($).catch(err => log($, `baseline: ${errorText(err)}`))
+  // Integrity watch and re-entry flush, every 3 s while workers run.
+  $.clock.every(3_000, () => {
+    void (async () => {
+      await flushPendingTools($)
+      await integrityTick($)
+      await labelTick($)
+    })().catch(err => log($, `watch: ${errorText(err)}`))
+  })
+  // Fallback refresh, never faster than every 10 s (AC-21): while agents are active; idle, only
+  // when the bound change's workflow files changed (another session's work), read without the engine.
+  $.clock.every(15_000, () => {
+    void (async () => {
+      if ((await $.clock.now()) - lastRefresh < 10_000) return
+      const held = await read($, snapshotAtom)
+      const busy = held !== null && held.active.total > 0
+      if (busy || (await stateSignature($)) !== lastSignature) await refresh($)
+    })().catch(err => log($, `timer: ${errorText(err)}`))
+  })
+}
+
+/**
+ * Setup state (AC-35): a project without .workflow/. Only a read-only /stip and the interface's
+ * action command are registered (Set up fills /stip-bootstrap); no tools, guards or engine calls.
+ */
+async function enterSetup($: Dollar) {
+  await $.command.register({ name: 'stip', description: 'Open the Stip pane: set up Stip in this project' })
+  await $.command.register({ name: 'stip-action', description: 'Stipulate interface action (JSON; used by the band and pane)', argumentHint: '{"action": ...}', immediate: true })
+  await loadSettings($).catch(err => log($, `settings: ${errorText(err)}`))
+  await update($, snapshotAtom, () => null)
+  await refresh($, { force: true })
+}
+
 // --- Registration ---
 
 export const registerCore: Register = on => {
@@ -2230,45 +2957,20 @@ export const registerCore: Register = on => {
     try {
       const { root } = await context($)
       instanceId = await $.session.id().catch(() => instanceId)
-      if (await hasWorkflow($, root)) {
-        // Every Bash call of the session (coordinator, subagents, workers) inherits these: no Python
-        // bytecode or pytest cache files appear in checkouts or worktrees. Commands are not rewritten.
-        await $.env.set('PYTHONDONTWRITEBYTECODE', '1').catch(err => log($, `env: ${errorText(err)}`))
-        const addopts = (await $.env.get('PYTEST_ADDOPTS').catch(() => undefined)) ?? ''
-        if (!/no:cacheprovider/.test(addopts))
-          await $.env.set('PYTEST_ADDOPTS', `${addopts ? `${addopts} ` : ''}-p no:cacheprovider`).catch(err => log($, `env: ${errorText(err)}`))
-        for (const tool of TOOLS) await $.tool.register({ ...tool, isDeferred: false })
-        await $.command.register({ name: 'stip-approve', description: 'Approve the bound Stipulate contract (shows its digest first)', argumentHint: '[change-id] [confirm <digest>]' })
-        await $.command.register({ name: 'stip-resync', description: 'Review and adopt workflow changes made outside this Claude Code session', argumentHint: '[confirm]' })
-        await $.command.register({ name: 'stip-bind', description: 'Bind this session to a Stipulate change', argumentHint: '[change-id]' })
-        await $.command.register({ name: 'stip-action', description: 'Stipulate interface action (JSON; used by the band and pane)', argumentHint: '{"action": ...}', immediate: true })
-        await loadSettings($)
-        await rebuildWorkers($)
-        await registerAgentTypes($).catch(err => log($, `agent types: ${errorText(err)}`))
-        await reconcile($).catch(err => log($, `reconcile: ${errorText(err)}`))
-        await refresh($, { force: true })
-        await baselineWatched($).catch(err => log($, `baseline: ${errorText(err)}`))
-        // Integrity watch and re-entry flush, every 3 s while workers run.
-        $.clock.every(3_000, () => {
-          void (async () => {
-            await flushPendingTools($)
-            await integrityTick($)
-            await labelTick($)
-          })().catch(err => log($, `watch: ${errorText(err)}`))
-        })
-        // Fallback refresh, never faster than every 10 s and only while agents are active (AC-21).
-        $.clock.every(15_000, () => {
-          void (async () => {
-            const held = await read($, snapshotAtom)
-            const busy = held !== null && held.active.total > 0
-            if (busy && (await $.clock.now()) - lastRefresh >= 10_000) await refresh($)
-          })().catch(err => log($, `timer: ${errorText(err)}`))
-        })
-      }
+      activated = false
+      if (await hasWorkflow($, root)) await activate($)
+      else await enterSetup($)
     } catch (err) {
       log($, `session.start: ${errorText(err)}`)
     }
     return next(e)
+  })
+
+  // AC-36: whether the person is editing the prompt (motion pauses meanwhile). Observes only.
+  on('prompt.edit', async ($, e, next) => {
+    const box = await next(e)
+    await noteEdit($, typeof box?.text === 'string' ? box.text : '').catch(err => log($, `typing: ${errorText(err)}`))
+    return box
   })
 
   on('tool.call', async ($, e, next) => {
@@ -2280,7 +2982,7 @@ export const registerCore: Register = on => {
         const why = await guardWorker($, e as never, b)
         if (why) return { deny: why }
         workerCalls++
-        await trackBefore($, b, e.tool)
+        await trackBefore($, b, e.tool, e as Record<string, unknown>)
         let ran
         if (e.tool === 'Bash') {
           // Every worker command runs marked: the engine then refuses any mutation (AC-11).
@@ -2314,7 +3016,13 @@ export const registerCore: Register = on => {
       }
     }
     const { root } = await context($)
-    if (!(await hasWorkflow($, root))) return next(e)
+    if (!(await hasWorkflow($, root))) {
+      // Setup state: no guard here. A call that created .workflow/ (/stip-bootstrap) activates Stip.
+      const ran = await next(e)
+      if (mutating && !activated && (await hasWorkflow($, root).catch(() => false)))
+        await activate($).catch(err => log($, `activate: ${errorText(err)}`))
+      return ran
+    }
     const verdict = await guardMain($, e as never, root)
     if (verdict.deny) return { deny: verdict.deny }
     if (verdict.warn) await notify($, 'gate', TOASTS.applyGate(cachedGate.changeId ?? 'the change'), verdict.warn)
@@ -2423,7 +3131,7 @@ export const registerCore: Register = on => {
         }
         const after = await refresh($, { force: true }).catch(() => null)
         if (after && !after.registryCurrent && after.active.change === 0 && after.approval.current)
-          await notify($, `rebase:${after.changeId}`, 'Workers done · rebase registry in /stip', `${after.changeId}: the worker registry is still tied to the previous contract; rebase it from the /stip pane (Rebase registry).`)
+          await notify($, `rebase:${after.changeId}`, TOASTS.rebaseNeeded(), `${after.changeId}: the worker registry is still tied to the previous contract; rebase it from the /stip pane (Rebase registry).`)
       }
     }
     return next(e)
@@ -2469,18 +3177,39 @@ export const registerCore: Register = on => {
   })
 
   on('command.run', { command: 'stip-action' }, async ($, e) => {
-    const reply = (value: unknown) => ({ text: JSON.stringify(value) })
+    const fromUs = e.origin.kind === 'plugin' && (e.origin as { name?: string }).name === PLUGIN
+    const byPerson = fromUs || e.origin.kind === 'composer' || e.origin.kind === 'bridge'
+    if (!byPerson) return { text: JSON.stringify({ ok: false, error: 'Interface actions come from the person or the Stipulate interface.' }) }
+    let a: Record<string, unknown>
     try {
-      const a = JSON.parse(e.args) as Record<string, unknown>
-      const fromUs = e.origin.kind === 'plugin' && (e.origin as { name?: string }).name === PLUGIN
-      const byPerson = fromUs || e.origin.kind === 'composer' || e.origin.kind === 'bridge'
-      if (!byPerson) return reply({ ok: false, error: 'Interface actions come from the person or the Stipulate interface.' })
-      const value = await act($, a)
-      return reply({ ok: true, action: a.action, value })
+      a = JSON.parse(e.args) as Record<string, unknown>
     } catch (err) {
-      return reply({ ok: false, error: errorText(err), ...(err instanceof EngineError && err.conflicts ? { conflicts: err.conflicts } : {}) })
+      return { text: JSON.stringify({ ok: false, error: errorText(err) }) }
     }
+    // The same path the interface takes (a `request` write served by the hook below).
+    const id = `cmd-${++requestSeq}`
+    await update($, requestAtom, () => ({ id, action: a as never }))
+    const got = await read($, replyAtom)
+    return { text: JSON.stringify(got?.id === id ? got.reply : await serveAction($, a)) }
   })
+
+  // /stip-action stays typeable (a fallback, and the person's own reasons) but is left out of the
+  // typeahead and /help: the interface sends its actions through `request` instead.
+  on('command.describe', { command: 'stip-action' }, ($, e, next) => next({ ...e, isHidden: true }))
+
+  // Interface actions without a transcript row: the UI writes `request` (only this plugin writes its
+  // own state, never the model); the action runs before that write resolves and `reply` holds the outcome.
+  on('state.set', { plugin: 'stipulate', key: 'request' }, async ($, e, next) => {
+    const done = await next(e)
+    const result = ((done as { value?: unknown }).value ?? done) as { isSet?: boolean }
+    if ('deny' in done || result.isSet === false) return done
+    const req = e.value as { id?: unknown; action?: unknown } | null
+    if (!req || typeof req.id !== 'string' || !req.action || typeof req.action !== 'object') return done
+    const reply = await serveAction($, req.action as Record<string, unknown>)
+    const now = await $.clock.now()
+    await update($, replyAtom, () => ({ id: req.id as string, reply: reply as never, at: now }))
+    return done
+  }).catch(($, e, next) => next(e))
 
   on('command.run', { command: 'stip-resync' }, async ($, e) => {
     try {
@@ -2498,8 +3227,15 @@ export const registerCore: Register = on => {
       if (e.origin.kind !== 'composer' && e.origin.kind !== 'bridge') return { text: 'Re-sync must be typed by the person at the prompt.' }
       for (const p of plan) {
         if ((await readOr($, p.path)) !== p.content && p.content) await $.fs.write(p.path, p.content)
+        // A lifecycle the person adopts under a new identity is a confirmed re-creation (AC-32): the old
+        // lifecycle's records are set aside and this session is bound to the new one.
+        const change = isLifecyclePath(p.path) ? changeOfPath(p.path) : null
+        const adopted = lifecycleIdentity(p.content)
+        if (change && adopted && pinned.get(change) !== identityKey(adopted)) await settleIdentity($, change, { confirmed: true })
         await setKnown($, p.path, p.content)
         rejected.delete(p.path)
+        held.delete(p.path)
+        restoreLog = Object.fromEntries(Object.entries(restoreLog).filter(([k]) => k !== p.path))
       }
       await checkProvenance($).catch(() => undefined)
       await refresh($, { force: true }).catch(() => undefined)

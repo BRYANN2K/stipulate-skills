@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "core-fixes",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Never let another session's stale journal or registry override this session's lifecycle, surface retired integrated paths, and expose the data the Ledger UI needs (efforts, groups, graph).",
+      "criteria": [
+        "AC-32",
+        "AC-34"
+      ],
+      "depends_on": [
+        "engine-fixes"
+      ],
+      "write_paths": [
+        "packages/claude-code/hooks/core",
+        "packages/claude-code/tests/core",
+        "packages/claude-code/types"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "core-states",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Provide the data each pane state needs (proposal findings, decisions and follow-ups, criteria changed since the last approval, recorded proof per criterion, archive summary and durations), register a read-only /stip before bootstrap, and add the motion setting.",
+      "criteria": [
+        "AC-35",
+        "AC-36",
+        "AC-37"
+      ],
+      "depends_on": [
+        "ledger-ui"
+      ],
+      "write_paths": [
+        "packages/claude-code/hooks/core",
+        "packages/claude-code/tests/core",
+        "packages/claude-code/types"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "docs",
+      "role": "documentation",
+      "phase": "docs",
+      "objective": "Update the Claude Code mod documentation for the Ledger interface and the fixes.",
+      "criteria": [
+        "AC-25"
+      ],
+      "depends_on": [
+        "verify"
+      ],
+      "write_paths": [
+        "README.md",
+        "docs/claude-code-plugin.md"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "engine-fixes",
+      "role": "backend",
+      "phase": "apply",
+      "objective": "Refresh non-owned files from the main checkout on isolated corrections, and report integrated paths of retired tasks in rebase output.",
+      "criteria": [
+        "AC-31",
+        "AC-34"
+      ],
+      "depends_on": [],
+      "write_paths": [
+        "scripts/workflow.py",
+        "tests/test_runtime_fixes.py"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "ledger-ui",
+      "role": "frontend",
+      "phase": "apply",
+      "objective": "Build the Stip Ledger pane and band on terminal and desktop per ledger-preview.html, with Claude-style effort marks, width-safe layouts and silent stale presses.",
+      "criteria": [
+        "AC-27",
+        "AC-28",
+        "AC-29",
+        "AC-30",
+        "AC-33"
+      ],
+      "depends_on": [
+        "core-fixes"
+      ],
+      "write_paths": [
+        "packages/claude-code/hooks/ui",
+        "packages/claude-code/tests/ui"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "states-ui",
+      "role": "frontend",
+      "phase": "apply",
+      "objective": "Build every pane state with its motion, the + New control, plain section titles and the glyph criteria ruler, matching ledger-states.html on terminal and desktop.",
+      "criteria": [
+        "AC-35",
+        "AC-36",
+        "AC-37",
+        "AC-38"
+      ],
+      "depends_on": [
+        "core-states"
+      ],
+      "write_paths": [
+        "packages/claude-code/hooks/ui",
+        "packages/claude-code/tests/ui"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "verify",
+      "role": "verification",
+      "phase": "check",
+      "objective": "Independently verify every criterion against the integrated candidate, including live terminal and desktop renders.",
+      "criteria": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-2",
+        "AC-20",
+        "AC-21",
+        "AC-22",
+        "AC-23",
+        "AC-24",
+        "AC-26",
+        "AC-27",
+        "AC-28",
+        "AC-29",
+        "AC-3",
+        "AC-30",
+        "AC-31",
+        "AC-32",
+        "AC-33",
+        "AC-34",
+        "AC-35",
+        "AC-36",
+        "AC-37",
+        "AC-38",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "depends_on": [
+        "core-fixes",
+        "engine-fixes",
+        "ledger-ui",
+        "states-ui"
+      ],
+      "write_paths": [],
+      "read_paths": []
+    }
+  ]
+}

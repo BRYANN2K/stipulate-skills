@@ -1,0 +1,422 @@
+<title>Stip Ledger States</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one pane per state, played live as in the desktop app; a toggle shows today's pane. Dark, like Claude Code. */
+:root{
+  --ink:#0f1012; --panel:#17181b; --group:#1c1d21; --raise:#26272c; --line:#2c2d33; --muted:#8b8d96; --fg:#e8e6e1;
+  --claude:#d97757; --ok:#6fbf73; --run:#8fb3ff; --warn:#e3b55b; --bad:#e06c6c; --pend:#9a8cff;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--ink);color:var(--fg);font-family:var(--sans);margin:0}
+.wrap{max-width:900px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;gap:18px}
+h1{font-family:var(--mono);font-size:clamp(20px,3vw,24px);margin:0}
+h1 b{color:var(--claude)}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.lead{margin:0;color:var(--muted);line-height:1.5;max-width:70ch}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 13px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--ink);border-color:var(--fg);font-weight:600}
+.segc{display:inline-flex;background:#232429;border-radius:9px;padding:2px;gap:2px}
+.segc button{font:inherit;font-size:13px;border:0;background:none;color:var(--muted);border-radius:7px;padding:3px 12px;cursor:pointer}
+.segc button[aria-pressed="true"]{background:#3a3b42;color:var(--fg);font-weight:600}
+button:focus-visible{outline:2px solid var(--claude);outline-offset:2px}
+.note{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.today{font:inherit;font-size:13px;background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.pane.old{opacity:.95}
+.head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.head .sp{flex:1}
+.pill{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--raise);color:var(--fg);border-radius:8px;padding:4px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer;transition:transform 100ms ease-out,background-color 150ms ease}
+.pill:active,.ib:active,.tab:active{transform:scale(.97)}
+.pill.primary{background:var(--fg);color:var(--ink);border-color:var(--fg);font-weight:600}
+.pill.ghost{background:none;border-color:transparent;color:var(--muted)}
+.picker{max-width:min(60%,28ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib{font:inherit;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--raise);color:var(--fg);cursor:pointer;display:grid;place-items:center;transition:transform 100ms ease-out}
+
+.rail{display:flex;flex-wrap:wrap;align-items:center;row-gap:6px}
+.st{font-size:12.5px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;transition:color 160ms ease,background-color 160ms ease,border-color 160ms ease}
+.st.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+.st.now{color:var(--ink);background:var(--run);border-color:var(--run);font-weight:600}
+.seam{width:14px;height:2px;margin:0 3px;background:repeating-linear-gradient(90deg,#4a4c55 0 3px,transparent 3px 6px);position:relative;overflow:hidden}
+.seam::after{content:"";position:absolute;inset:0;background:var(--ok);transform:scaleX(0);transform-origin:left;transition:transform 220ms var(--ease-out)}
+.seam.sewn::after{transform:scaleX(1)}
+
+.group{border-radius:12px;padding:12px 14px;display:grid;gap:10px;background:var(--group)}
+.group.attn{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 55%,transparent)}
+.group.focus{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fg) 30%,transparent)}
+.group h3{margin:0;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.group h3 span{font-weight:400;color:var(--muted)}
+.group p{margin:0;line-height:1.5}
+.small{font-size:12.5px;color:var(--muted);line-height:1.45}
+.mono{font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--ok)} .run{color:var(--run)} .warn{color:var(--warn)} .bad{color:var(--bad)} .pend{color:var(--pend)} .eff{color:var(--claude)}
+.cta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.rows{display:grid;gap:12px}
+.r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;transition:opacity 200ms ease,transform 220ms var(--ease-out)}
+.r.enter{opacity:0;transform:translateY(4px)}
+.r .who{display:grid;gap:3px;min-width:0}
+.r .who b{font-weight:600}
+.r .who small{color:var(--muted)}
+.lines{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.lines li{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:10px;align-items:start;transition:opacity 200ms ease,transform 220ms var(--ease-out)}
+.lines li.enter{opacity:0;transform:translateY(4px)}
+.lines .k{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.lines .v{line-height:1.45;min-width:0}
+.lines .v small{display:block;color:var(--muted);font-size:12px}
+.trail{display:flex;gap:4px;align-items:center;min-height:18px;overflow:hidden}
+.step{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:5px;background:#26272d;color:var(--fg);transition:opacity 300ms ease}
+.step.new{animation:stepin 160ms var(--ease-out)}
+@keyframes stepin{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.fold{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 220ms var(--ease-out),opacity 180ms ease}
+.fold>*{overflow:hidden;min-height:0}
+.fold.open{grid-template-rows:1fr;opacity:1}
+.ruler{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:12px}
+.mark{display:grid;justify-items:center;gap:2px;min-width:30px}
+.mark i{font-style:normal;font-size:15px;line-height:1}
+.mark small{color:var(--muted);font-size:10.5px}
+.mark .open{color:#5c5e66} .mark .pass{color:var(--ok)} .mark .fail{color:var(--bad)} .mark .doc{color:var(--pend)}
+.mark.live i{animation:breathe 1s ease-in-out infinite alternate}
+@keyframes breathe{from{opacity:.35}to{opacity:1}}
+.diff{display:grid;gap:4px;font-family:var(--mono);font-size:12px}
+.diff span{transition:color 400ms ease,font-weight 400ms ease}
+.defs{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.defs dt{color:var(--muted);font-size:12.5px}
+.defs dd{margin:0;font-size:13px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{color:var(--muted);font-weight:500;text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:5px 6px;border-bottom:1px solid #222328}
+.tblwrap{overflow-x:auto}
+.seal{font-family:var(--mono);font-size:13px}
+.prompt{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:12.5px;color:var(--muted);min-height:38px}
+.prompt b{color:var(--fg);font-weight:500}
+.caret{display:inline-block;width:7px;height:14px;background:var(--fg);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.sel{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--raise);color:var(--fg);border-radius:8px;padding:3px 8px;white-space:nowrap;cursor:pointer}
+.sel.inh{color:var(--muted);border-style:dashed}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center}
+.srow .who{display:grid;gap:1px;min-width:0}
+.srow .who b{font-weight:600}
+.srow .who small{color:var(--muted);font-size:12px}
+.stepper{display:inline-flex;gap:6px;align-items:center}
+.stepper .ib{width:24px;height:24px}
+.flash{animation:flash 600ms ease-out}
+@keyframes flash{from{background:#3a3b42}to{background:transparent}}
+svg text{font-family:var(--mono)}
+.edge{transition:stroke 220ms ease}
+.node{transition:fill 220ms ease,stroke 220ms ease}
+@media (max-width:640px){ .srow{grid-template-columns:1fr 1fr} .srow .who{grid-column:1 / -1} }
+@media (prefers-reduced-motion:reduce){ .r,.lines li,.fold,.seam::after,.st,.pill,.ib{transition:none} .step.new,.mark.live i,.caret,.flash{animation:none} }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1><b>◆</b> Stip Ledger states</h1>
+    <span class="segc" role="group" aria-label="Motion" id="mset"><button type="button" data-m="auto" aria-pressed="true">Auto</button><button type="button" data-m="calm" aria-pressed="false">Calm</button><button type="button" data-m="off" aria-pressed="false">Off</button></span>
+  </div>
+  <p class="lead">The /stip pane in the Claude desktop app, one state per tab, played as it would happen. Example data from Nimbus. Motion plays once per event; Calm keeps state changes and drops in-between frames; Off is used when the system asks for reduced motion.</p>
+  <div class="tabs" role="tablist" aria-label="States" id="tabs"></div>
+  <div class="bar"><p class="note" id="caption"></p><span class="cta"><button class="today" type="button" id="toggle">Show today's pane</button><button class="pill ghost" type="button" id="replay">Replay</button></span></div>
+  <div id="view"></div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MODE = reduce ? 'off' : 'auto';
+  var STATES = [
+    {id:'setup',   label:'Setup',      caption:'Shown by /stip in a project without .workflow/. Today the command does not exist there.'},
+    {id:'start',   label:'New change', caption:'Shown when Stip is set up and no change is open.'},
+    {id:'explore', label:'Explore',    caption:'The pane follows proposal.md as the coordinator writes it.'},
+    {id:'validate',label:'Validate',   caption:'A contract waits for your approval. Press Approve.'},
+    {id:'apply',   label:'Apply',      caption:'Workers build. Work that waits for your review moves to the top.'},
+    {id:'check',   label:'Check',      caption:'The independent review records proof for each criterion.'},
+    {id:'docs',    label:'Docs',       caption:'The docs task runs; the criterion it covers turns green when it is accepted.'},
+    {id:'archive', label:'Archive',    caption:'The change folds into one line with its commit, then the summary stays readable.'},
+    {id:'settings',label:'Settings',   caption:'Models by role. Changing a value marks the draft; Save writes it.'}
+  ];
+  var PHASES = ['Explore','Validate','Apply','Check','Docs','Archive'];
+  var current = 'setup', showToday = false, timers = [];
+  var view = document.getElementById('view'), cap = document.getElementById('caption'), tabs = document.getElementById('tabs');
+
+  /* ---------- helpers ---------- */
+  function later(fn, ms){ var t = setTimeout(fn, ms); timers.push(t); return t; }
+  function every(fn, ms){ var t = setInterval(fn, ms); timers.push(t); return t; }
+  function clear(){ timers.forEach(function(t){ clearTimeout(t); clearInterval(t); }); timers = []; }
+  function $(sel, root){ return (root || view).querySelector(sel); }
+  function el(html){ var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function fmt(n){ return Math.floor(n/60) + 'm' + String(n%60).padStart(2,'0') + 's'; }
+  function slow(ms){ return MODE === 'calm' ? ms * 1.8 : ms; }
+  function show(node, parent, before){
+    if (MODE === 'auto'){ node.classList.add('enter'); }
+    before ? parent.insertBefore(node, before) : parent.appendChild(node);
+    if (MODE === 'auto'){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ node.classList.remove('enter'); }); }); }
+  }
+  function head(change, opts){
+    opts = opts || {};
+    return '<div class="head">' + (change ? '<button class="pill picker" type="button">' + change + ' ▾</button><button class="pill" type="button" aria-label="Start a new change" title="Starts /stip-explore in your prompt">+ New</button>' : '<b>◆ Stip</b><span class="small">' + (opts.project || 'nimbus') + '</span>') +
+      '<span class="sp"></span>' + (opts.noTabs ? '' : '<span class="segc" role="group" aria-label="View"><button type="button" aria-pressed="' + (opts.settings ? 'false' : 'true') + '">Plan</button><button type="button" aria-pressed="' + (opts.settings ? 'true' : 'false') + '">Settings</button></span>') + '</div>';
+  }
+  function rail(nowIndex){
+    var h = '<div class="rail" aria-label="Lifecycle">';
+    PHASES.forEach(function(p, i){
+      var cls = i < nowIndex ? 'done' : (i === nowIndex ? 'now' : '');
+      h += '<span class="st ' + cls + '" data-i="' + i + '">' + (i < nowIndex ? '✓ ' : '') + p + '</span>';
+      if (i < PHASES.length - 1) h += '<span class="seam' + (i < nowIndex - 1 ? ' sewn' : '') + '" data-s="' + i + '"></span>';
+    });
+    return h + '</div>';
+  }
+  function sewTo(i){
+    var seam = $('.seam[data-s="' + (i - 1) + '"]'); var prev = $('.st[data-i="' + (i - 1) + '"]'); var next = $('.st[data-i="' + i + '"]');
+    if (!seam || !prev || !next) return;
+    prev.className = 'st done'; prev.textContent = '✓ ' + PHASES[i - 1];
+    if (MODE === 'auto') { seam.classList.add('sewn'); later(function(){ next.className = 'st now'; }, 220); }
+    else { seam.classList.add('sewn'); next.className = 'st now'; }
+  }
+  function worker(id, model, eff, start, steps, onDone, doneAfter){
+    var r = el('<div class="r"><div class="who"><b>' + id + '</b><small>' + model + ', <span class="eff">' + eff + '</span>, <span class="run" data-act>starting</span>, <span class="clock run" data-clock>' + fmt(start) + '</span></small><div class="trail" data-trail aria-hidden="true"></div></div><button class="ib" type="button" aria-label="Details for ' + id + '">›</button></div>');
+    var t = start, i = 0;
+    function step(){
+      if (i >= steps.length) return;
+      var s = steps[i++]; r.querySelector('[data-act]').textContent = s[1];
+      var tr = r.querySelector('[data-trail]'); var chip = document.createElement('span');
+      chip.className = 'step' + (MODE === 'auto' ? ' new' : ''); chip.textContent = s[0]; tr.appendChild(chip);
+      var k = tr.children; for (var j = 0; j < k.length; j++) k[j].style.opacity = String(Math.max(.35, 1 - (k.length - 1 - j) * .15));
+      if (k.length > 6) tr.removeChild(k[0]);
+    }
+    if (MODE === 'off'){ for (var n = 0; n < Math.min(4, steps.length); n++) step(); return r; }
+    every(function(){ t++; r.querySelector('[data-clock]').textContent = fmt(t); }, 1000);
+    step(); every(step, slow(1100));
+    if (onDone) later(onDone, slow(doneAfter || 7000));
+    return r;
+  }
+  function plain(id, sub){ return el('<div class="r"><div class="who"><b>' + id + '</b><small>' + sub + '</small></div><button class="ib" type="button" aria-label="Details for ' + id + '">›</button></div>'); }
+  function ruler(states, live){
+    var h = '<div class="ruler" aria-label="Acceptance criteria">';
+    states.forEach(function(s, i){
+      var g = s === 'pass' ? '✓' : s === 'fail' ? '✗' : s === 'doc' ? '◌' : '·';
+      h += '<span class="mark' + (live === i && MODE !== 'off' ? ' live' : '') + '" data-ac="' + i + '"><i class="' + (s === 'open' ? 'open' : s) + '">' + g + '</i><small>AC-' + (i + 1) + '</small></span>';
+    });
+    return h + '</div>';
+  }
+
+  /* ---------- today's panes (static) ---------- */
+  var TODAY = {
+    setup:   '<div class="pane old"><p class="small mono">❯ /stip<br>⎿ Unknown command: /stip</p></div>',
+    start:   '<div class="pane old"><div class="head"><button class="pill" type="button">Select a change ▾</button><span class="sp"></span><button class="pill primary" type="button">Plan ▾</button><button class="pill" type="button">Settings</button></div><p class="small">1 archived</p><p class="small">refreshed 0s ago</p></div>',
+    explore: '<div class="pane old"><div class="head"><button class="pill" type="button">upload-read-timeout ▴</button><span class="small">○ draft</span><span class="sp"></span><button class="pill" type="button">Plan ▾</button><button class="pill" type="button">Settings</button></div><p class="small">● upload-read-timeout · exploring · ○ not approved · Upload…</p><p class="small">1 archived</p><div class="cta"><button class="pill" type="button">Explore</button><button class="pill" type="button">Validate</button><button class="pill" type="button">Apply</button><button class="pill" type="button">Check</button><button class="pill" type="button">Docs</button><button class="pill" type="button">Archive</button></div><p class="small">No execution plan (schema v1): workers are unavailable.</p></div>',
+    validate:'<div class="pane old"><p class="small">draft · awaiting approval · Approve · digest 7c1e90ab</p><p class="small">○ read-timeout · ready<br>○ wiring · waiting on read-timeout<br>· verify · waiting on wiring</p><p class="small">Criteria 6 · 0 verified · 0 failed [Show]</p></div>',
+    apply:   '<div class="pane old"><p class="small">◆ read-timeout · Opus 5.5 · awaiting review · View result · Accept · Correct<br>· wiring · waiting on read-timeout<br>· verify · waiting on wiring</p><p class="small">Criteria 6 · 0 verified · 0 failed [Show]</p></div>',
+    check:   '<div class="pane old"><p class="small">▶ verify · Fable 5.1 · running · Bash · 3m12s · Cancel</p><p class="small">Criteria 6 · 0 verified · 0 failed [Show]</p></div>',
+    docs:    '<div class="pane old"><p class="small">▶ docs · Haiku 5.5 · running · 1m10s · Cancel</p><p class="small">Criteria 6 · 5 verified · 0 failed [Show]</p></div>',
+    archive: '<div class="pane old"><p class="small">The band disappears. The pane shows "1 archived" and no summary.</p></div>',
+    settings:'<div class="pane old"><p class="small">Scope: [ personal ] [ project ] [ local ]<br>/Users/user/Documents/Projects/nimbus/.workflow/config.json<br>Profile: defaults ▾<br>Model: claude-opus-5-5 ▾ · Full model id: claude-… (Enter to set)<br>Effort: high ▾ · Isolate writers: true ▾<br>Max workers (1-8): 3 [ - ] [ + ]<br>Apply gate: (unset) ▾<br>[ Save ] [ Discard / reload ]</p></div>'
+  };
+
+  /* ---------- live scenes ---------- */
+  var SCENES = {
+    setup: function(){
+      view.innerHTML = '<div class="pane">' + head(null, {project:'~/Documents/Projects/atlas', noTabs:true}) +
+        '<div class="group focus"><h3>Stip isn\'t set up here yet</h3><p>Set up writes a <span class="mono">.workflow/</span> folder: a short project map, your settings, and room for changes and accepted specs. Nothing else in the project is touched.</p><div class="cta"><button class="pill primary" type="button" data-go>Set up Stip</button><span class="small">starts <span class="mono">/stip-bootstrap</span> in your prompt</span></div></div>' +
+        '<div class="group"><h3>Found in this project <span data-scan>scanning</span></h3><ul class="lines" data-found></ul></div>' +
+        '<div class="prompt" data-prompt aria-label="Prompt">Type / for commands</div></div>';
+      var items = [['Code','Python 3.12, tests with pytest'],['Git','clean working tree, branch main'],['Rules','AGENTS.md is kept as it is'],['CI','none found']];
+      var list = $('[data-found]');
+      items.forEach(function(it, i){ later(function(){ show(el('<li><span class="k">' + it[0] + '</span><span class="v">' + it[1] + '</span></li>'), list); if (i === items.length - 1) $('[data-scan]').textContent = items.length + ' found'; }, MODE === 'off' ? 0 : slow(250 + i * 220)); });
+      $('[data-go]').addEventListener('click', function(){ typeInto($('[data-prompt]'), '/stip-bootstrap'); });
+    },
+    start: function(){
+      view.innerHTML = '<div class="pane">' + head(null, {}) +
+        '<div class="group focus"><h3>Start a change</h3><p class="small">Describe the change in your prompt, or pick a follow-up.</p><div class="cta"><button class="pill primary" type="button" data-new>Describe a change</button><span class="small">starts <span class="mono">/stip-explore</span> in your prompt</span></div></div>' +
+        '<div class="group"><h3>Follow-ups from earlier reviews <span>3</span></h3><div class="rows" data-fu></div></div>' +
+        '<div class="group"><h3>Accepted specs <span>1</span></h3><div class="r"><div class="who"><b>presigned-uploads-quotas</b><small>14 criteria, archived today, commit c0e4c6c</small></div><button class="ib" type="button" aria-label="Open spec">›</button></div></div>' +
+        '<div class="prompt" data-prompt aria-label="Prompt">Type / for commands</div></div>';
+      var fu = [['Upload read timeout','stalled uploads hold the bucket lock'],['Reply to uploads under an existing object','the connection closes without a reply'],['JSON errors for over-long requests','414 and 431 come back as plain pages']];
+      var box = $('[data-fu]');
+      fu.forEach(function(f, i){
+        later(function(){
+          var r = el('<div class="r"><div class="who"><b>' + f[0] + '</b><small>from presigned-uploads-quotas: ' + f[1] + '</small></div><button class="pill" type="button">Start change</button></div>');
+          r.querySelector('button').addEventListener('click', function(){ typeInto($('[data-prompt]'), '/stip-explore ' + f[0].toLowerCase()); });
+          show(r, box);
+        }, MODE === 'off' ? 0 : slow(200 + i * 160));
+      });
+      $('[data-new]').addEventListener('click', function(){ typeInto($('[data-prompt]'), '/stip-explore '); });
+    },
+    explore: function(){
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(0) +
+        '<div class="group"><h3>Problem <span>proposal.md</span></h3><p>A stalled upload holds its bucket\'s write lock until the client disconnects, blocking other writes to that bucket.</p></div>' +
+        '<div class="group"><h3>Findings <span data-fn>0</span></h3><ul class="lines" data-findings></ul></div>' +
+        '<div class="group"><h3>Research <span data-rn>1 running</span></h3><div class="rows" data-research></div></div>' +
+        '<div class="fold" data-decwrap><div class="group attn"><h3>Decisions for you <span>3 open</span></h3><ul class="lines"><li><span class="k">1</span><span class="v">Read timeout per request<small>Recommended: 30 s, configurable</small></span></li><li><span class="k">2</span><span class="v">Reply when it fires<small>Recommended: 408 and release the lock</small></span></li><li><span class="k">3</span><span class="v">Limit concurrent uploads per bucket<small>Recommended: out of scope for now</small></span></li></ul><p class="small">Answer in your prompt.</p></div></div></div>';
+      var F = [['Confirmed','No socket timeout in nimbus/api.py'],['Confirmed','The bucket lock is held for the whole body read'],['Open','Default timeout of the standard library server']];
+      var fl = $('[data-findings]');
+      F.forEach(function(f, i){ later(function(){ show(el('<li><span class="k ' + (f[0] === 'Confirmed' ? 'ok' : '') + '">' + f[0] + '</span><span class="v">' + f[1] + '</span></li>'), fl); $('[data-fn]').textContent = String(i + 1); }, MODE === 'off' ? 0 : slow(400 + i * 900)); });
+      var research = worker('Slow-client timeouts', 'Sonnet 5.5', '○ low', 38,
+        [['Search','Searching the web'],['Fetch','Reading nginx docs'],['Fetch','Reading Go net/http docs'],['Write','Writing findings']],
+        function(){ clear(); $('[data-research]').innerHTML = ''; show(plain('Slow-client timeouts', 'Sonnet 5.5, <span class="eff">○ low</span>, <span class="ok">answered</span>, 1m02s'), $('[data-research]')); $('[data-rn]').textContent = '1 answered'; $('[data-decwrap]').classList.add('open'); }, 5200);
+      $('[data-research]').appendChild(research);
+      if (MODE === 'off'){ $('[data-decwrap]').classList.add('open'); }
+    },
+    validate: function(){
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(1) +
+        '<div class="group focus"><h3>Ready for your approval <span class="mono" data-dg>7c1e90ab</span></h3><p>6 criteria and 4 tasks. Two workers can run at the same time.</p><div class="cta" data-act><button class="pill primary" type="button" data-approve>Approve contract</button><button class="pill" type="button">Open spec.md</button></div></div>' +
+        '<div class="group"><h3>Changed since the last version</h3><div class="diff" data-diff><span>  AC-1 Stalled upload released after the timeout</span><span data-chg>± AC-2 408 reply and lock released</span><span data-chg>± AC-6 Timeout logged once per connection</span><span class="small">− task limit-uploads, now out of scope</span></div></div>' +
+        '<div class="group"><h3>Plan and assignees</h3>' + graph({ 'read-timeout':'planned','wiring':'planned','verify':'planned','docs':'planned' }) + '<p class="small">Opus 5.5 <span class="eff">○ low</span>, Fable 5.1 <span class="eff">◐ medium</span>, Haiku 5.5 <span class="eff">● high</span></p></div></div>';
+      var chg = view.querySelectorAll('[data-chg]');
+      function tone(c, w){ chg.forEach(function(s){ s.style.color = c; s.style.fontWeight = w; }); }
+      if (MODE === 'auto'){ tone('#ffffff','700'); later(function(){ tone('#e8e6e1','700'); }, 400); later(function(){ tone('#c9c6bf','400'); }, 800); }
+      else tone('#c9c6bf','400');
+      $('[data-approve]').addEventListener('click', function(){
+        var box = $('[data-act]');
+        var frames = ['[ approve v3 ]', '[  ·  v3  ]', '⟦ v3 ⟧'];
+        var done = function(){ box.innerHTML = '<span class="seal ok">⟦v3⟧ sealed</span><span class="small">approved by you, 7c1e90ab</span>'; later(function(){ sewTo(2); }, MODE === 'auto' ? 300 : 0); };
+        if (MODE !== 'auto'){ done(); return; }
+        box.innerHTML = '<span class="seal">' + frames[0] + '</span>';
+        later(function(){ box.innerHTML = '<span class="seal">' + frames[1] + '</span>'; }, 50);
+        later(function(){ box.innerHTML = '<span class="seal">' + frames[2] + '</span>'; }, 100);
+        later(done, 150);
+      });
+    },
+    apply: function(){
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(2) +
+        '<div class="fold" data-waitwrap><div class="group attn"><h3>Waiting for you <span>1</span></h3><div class="r"><div class="who"><b>read-timeout returned</b><small>2 files, 9 tests added, <span class="ok">suite passes</span></small></div><div class="cta"><button class="pill primary" type="button" data-accept>Accept</button><button class="pill" type="button">Correct</button><button class="ib" type="button" aria-label="View result">▤</button></div></div></div></div>' +
+        '<div class="group"><h3>Tasks</h3><div class="rows" data-rows></div></div>' +
+        '<div class="group"><h3>Plan</h3>' + graph({ 'read-timeout':'running','wiring':'planned','verify':'planned','docs':'planned' }) + '</div>' +
+        '<div class="group"><h3>Criteria <span>0 of 6</span></h3>' + ruler(['open','open','open','open','open','open']) + '</div></div>';
+      var rows = $('[data-rows]'), wait = $('[data-waitwrap]');
+      var planned = plain('wiring, verify, docs', 'planned: Opus 5.5 <span class="eff">○ low</span>, Fable 5.1 <span class="eff">◐ medium</span>, Haiku 5.5 <span class="eff">● high</span>; waiting on read-timeout');
+      var accepted = false;
+      function accept(){
+        if (accepted) return; accepted = true; clear(); wait.classList.remove('open');
+        rows.innerHTML = '';
+        rows.appendChild(plain('read-timeout', 'Opus 5.5, <span class="eff">○ low</span>, <span class="ok">integrated</span>, 2m19s'));
+        setNode('read-timeout','integrated'); later(function(){ setNode('wiring','running'); setEdge('read-timeout','wiring','integrated'); }, MODE === 'auto' ? 60 : 0);
+        show(worker('wiring', 'Opus 5.5', '○ low', 0, [['Read','Reading cli.py'],['Edit','Editing cli.py'],['Edit','Editing api.py'],['Bash','Running tests']]), rows);
+        rows.appendChild(plain('verify, docs', 'planned: Fable 5.1 <span class="eff">◐ medium</span>, Haiku 5.5 <span class="eff">● high</span>; waiting on wiring'));
+      }
+      var w = worker('read-timeout', 'Opus 5.5', '○ low', 128,
+        [['Read','Reading api.py'],['Read','Reading storage.py'],['Edit','Editing api.py'],['Edit','Editing api.py'],['Write','Writing test_timeout.py'],['Bash','Running tests'],['Bash','Running tests']],
+        function(){ clear(); w.style.opacity = '0'; later(function(){ if (w.parentNode) w.remove(); }, MODE === 'auto' ? 200 : 0); setNode('read-timeout','pending'); wait.classList.add('open'); later(accept, 3600); }, 7600);
+      rows.appendChild(w); rows.appendChild(planned);
+      if (MODE === 'off'){ wait.classList.add('open'); }
+      $('[data-accept]').addEventListener('click', accept);
+    },
+    check: function(){
+      var st = ['open','open','open','open','open','doc'];
+      var proofs = ['Slow client sent 1 KiB then stopped; 408 after 30.0 s','Second PUT succeeded 0.2 s after the timeout','serve --read-timeout 5 fired at 5.0 s','200 uploads, no timeouts','Timeout logged once per connection'];
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(3) +
+        '<div class="group"><h3>Independent review</h3><div class="rows" data-rev></div></div>' +
+        '<div class="group"><h3>Criteria <span data-cn>0 of 6</span></h3><div data-ruler>' + ruler(st, 0) + '</div><ul class="lines" data-ev></ul></div></div>';
+      var n = 0;
+      $('[data-rev]').appendChild(worker('verify', 'Fable 5.1', '◐ medium', 41, [['Bash','Starting nimbus serve'],['Bash','Sending a slow upload'],['Bash','Waiting for the timeout'],['Bash','Sending a second PUT'],['Read','Reading the server log']]));
+      function verdict(i){
+        st[i] = 'pass'; n++;
+        $('[data-ruler]').innerHTML = ruler(st, i + 1 < 5 ? i + 1 : -1);
+        $('[data-cn]').textContent = n + ' of 6';
+        show(el('<li><span class="k ok">AC-' + (i + 1) + ' ✓</span><span class="v">' + proofs[i] + '</span></li>'), $('[data-ev]'));
+        if (i === 4){ show(el('<li><span class="k pend">AC-6 ◌</span><span class="v">README documents it<small>waiting on docs</small></span></li>'), $('[data-ev]')); }
+      }
+      if (MODE === 'off'){ for (var i = 0; i < 5; i++) verdict(i); return; }
+      for (var j = 0; j < 5; j++) (function(k){ later(function(){ verdict(k); }, slow(1600 + k * 1500)); })(j);
+    },
+    docs: function(){
+      var st = ['pass','pass','pass','pass','pass','doc'];
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(4) +
+        '<div class="group"><h3>Documentation</h3><div class="rows" data-doc></div><p class="small">Edits <span class="mono">README.md</span> and <span class="mono">docs/operations.md</span></p></div>' +
+        '<div class="group"><h3>Criteria <span data-cn>5 of 6</span></h3><div data-ruler>' + ruler(st, 5) + '</div><p class="small" data-open>AC-6: README documents the read timeout and the 408 reply, waiting on docs</p></div></div>';
+      var d = worker('docs', 'Haiku 5.5', '● high', 52, [['Read','Reading README.md'],['Edit','Editing README.md'],['Edit','Editing docs/operations.md'],['Read','Checking the examples']],
+        function(){ clear(); var box = $('[data-doc]'); box.innerHTML = ''; box.appendChild(plain('docs', 'Haiku 5.5, <span class="eff">● high</span>, <span class="ok">accepted</span>, 1m58s')); st[5] = 'pass'; $('[data-ruler]').innerHTML = ruler(st, -1); $('[data-cn]').textContent = '6 of 6'; $('[data-open]').textContent = 'All criteria passed.'; later(function(){ sewTo(5); }, MODE === 'auto' ? 250 : 0); }, 5200);
+      $('[data-doc]').appendChild(d);
+    },
+    archive: function(){
+      var full = '<div class="group" data-card><h3>upload-read-timeout <span>Archive</span></h3><p class="small">6 of 6 criteria passed</p><p class="small">4 tasks, one needed a correction</p><p class="small">Opus 5.5, Fable 5.1, Haiku 5.5</p></div>';
+      var summary = '<div class="group"><h3>Archived <span class="mono">commit 4f2a9c1</span></h3><dl class="defs"><dt>Criteria</dt><dd>6 of 6 passed</dd><dt>Tasks</dt><dd>4, one needed a correction</dd><dt>Time</dt><dd>38 min from explore to archive</dd></dl></div>' +
+        '<div class="group"><h3>Models used</h3><div class="tblwrap"><table class="tbl"><thead><tr><th>Task</th><th>Model</th><th>Effort</th><th>Attempts</th></tr></thead><tbody><tr><td>read-timeout</td><td>Opus 5.5</td><td class="eff">○ low</td><td>1</td></tr><tr><td>wiring</td><td>Opus 5.5</td><td class="eff">○ low</td><td>2</td></tr><tr><td>verify</td><td>Fable 5.1</td><td class="eff">◐ medium</td><td>1</td></tr><tr><td>docs</td><td>Haiku 5.5</td><td class="eff">● high</td><td>1</td></tr></tbody></table></div></div>' +
+        '<div class="group"><h3>Follow-ups <span>from the review</span></h3><ul class="lines"><li><span class="k">1</span><span class="v">Limit concurrent uploads per bucket</span></li><li><span class="k">2</span><span class="v">TLS before other teams use the API</span></li></ul></div>' +
+        '<div class="cta"><button class="pill primary" type="button">Start next change</button><button class="pill" type="button">Open the archive</button></div>';
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout') + rail(5) + '<div data-a>' + full + '</div></div>';
+      var a = $('[data-a]');
+      function fold(){
+        var lines = a.querySelectorAll('[data-card] p');
+        var k = lines.length;
+        function step(){
+          if (k > 0){ lines[--k].remove(); later(step, 50); return; }
+          a.innerHTML = '<div class="r"><div class="who"><b class="ok">✓ upload-read-timeout</b><small>archived, commit 4f2a9c1</small></div><span></span></div>';
+          later(function(){ var s = document.createElement('div'); s.style.display = 'grid'; s.style.gap = '14px'; s.innerHTML = summary; show(s, a); }, MODE === 'auto' ? 500 : 0);
+        }
+        step();
+      }
+      if (MODE === 'auto') later(fold, 900); else { a.innerHTML = '<div class="r"><div class="who"><b class="ok">✓ upload-read-timeout</b><small>archived, commit 4f2a9c1</small></div><span></span></div><div style="display:grid;gap:14px">' + summary + '</div>'; }
+    },
+    settings: function(){
+      var roles = [['Defaults','every role unless set','Opus 5.5','○ low','own worktree',false],['security, backend, api','in plan, inherited','Opus 5.5','○ low','own worktree',true],['verification','in plan','Fable 5.1','◐ medium','shared',false],['documentation','in plan','Haiku 5.5','● high','own worktree',false],['research','helpers','Sonnet 5.5','○ low','shared',false]];
+      var rows = roles.map(function(r){
+        return '<div class="srow"><div class="who"><b>' + r[0] + '</b><small>' + r[1] + '</small></div>' +
+          '<button class="sel' + (r[5] ? ' inh' : '') + '" type="button">' + r[2] + ' ▾</button>' +
+          '<button class="sel' + (r[5] ? ' inh' : '') + '" type="button" data-eff><span class="eff">' + r[3].split(' ')[0] + '</span> ' + r[3].split(' ')[1] + ' ▾</button>' +
+          '<button class="sel inh" type="button">' + r[4] + ' ▾</button></div>';
+      }).join('');
+      view.innerHTML = '<div class="pane">' + head('upload-read-timeout', {settings:true}) +
+        '<div class="cta"><span class="segc" role="group" aria-label="Scope"><button type="button" aria-pressed="false">Personal</button><button type="button" aria-pressed="true">Project</button><button type="button" aria-pressed="false">Local</button></span><span class="small mono">~/…/nimbus/.workflow/config.json</span></div>' +
+        '<div class="group"><h3>Models by role <span>5 roles in plan</span></h3><div class="srow"><div class="who"><b>Orchestrator</b><small>this session, change with /model and /effort</small></div><span class="sel inh">Opus 5.5</span><span class="sel inh"><span class="eff">●</span> high</span><span></span></div>' + rows +
+        '<div class="cta"><button class="pill ghost" type="button">Other roles (9)</button><button class="pill" type="button">+ Add role</button></div></div>' +
+        '<div class="group"><h3>Limits and guards</h3><div class="srow" style="grid-template-columns:minmax(0,1fr) auto"><div class="who"><b>Workers</b><small>at once, across changes</small></div><span class="stepper"><button class="ib" type="button" aria-label="Fewer workers">−</button><b data-w>3</b><button class="ib" type="button" aria-label="More workers" data-more>+</button></span></div><div class="srow" style="grid-template-columns:minmax(0,1fr) auto"><div class="who"><b>Apply gate</b><small>edits before approval</small></div><button class="sel" type="button">block ▾</button></div></div>' +
+        '<div class="cta"><button class="pill primary" type="button" data-save>Save</button><button class="pill" type="button">Discard</button><span class="small" data-status>Saved</span></div></div>';
+      var count = 3;
+      function dirty(){ $('[data-status]').textContent = 'Unsaved, 1 change'; $('[data-status]').className = 'small warn'; }
+      $('[data-more]').addEventListener('click', function(e){ count = Math.min(8, count + 1); $('[data-w]').textContent = String(count); if (MODE === 'auto'){ var b = $('[data-w]'); b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); } dirty(); });
+      view.querySelectorAll('[data-eff]').forEach(function(b){ b.addEventListener('click', function(){ if (MODE === 'auto'){ b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); } dirty(); }); });
+      $('[data-save]').addEventListener('click', function(){ $('[data-status]').textContent = 'Saved'; $('[data-status]').className = 'small ok'; });
+      if (MODE !== 'off') later(function(){ $('[data-more]').click(); }, 1400);
+    }
+  };
+
+  /* ---------- graph (desktop SVG) ---------- */
+  var NODES = [['read-timeout',6,96],['wiring',118,72],['verify',206,72],['docs',294,56]];
+  var COLOR = { planned:['#202127','#5a5c66','#e8e6e1'], running:['#1d2433','#8fb3ff','#dbe5ff'], pending:['#2b2617','#e3b55b','#f3e2b8'], integrated:['#1f2b20','#6fbf73','#cfe9d0'] };
+  function graph(state){
+    var h = '<svg viewBox="0 0 360 52" width="100%" role="img" aria-label="read-timeout, then wiring, then verify, then docs"><g fill="none" stroke-width="1.6">';
+    for (var i = 0; i < NODES.length - 1; i++){ var a = NODES[i], b = NODES[i + 1]; h += '<path class="edge" data-e="' + a[0] + '>' + b[0] + '" d="M' + (a[1] + a[2]) + ' 26 L' + b[1] + ' 26" stroke="#5a5c66"' + (i === NODES.length - 2 ? ' stroke-dasharray="4 4"' : '') + '/>'; }
+    h += '</g><g font-size="11">';
+    NODES.forEach(function(n){ var c = COLOR[state[n[0]] || 'planned']; h += '<rect class="node" data-n="' + n[0] + '" x="' + n[1] + '" y="14" width="' + (n[2] - 12) + '" height="24" rx="6" fill="' + c[0] + '" stroke="' + c[1] + '"/><text data-t="' + n[0] + '" x="' + (n[1] + (n[2] - 12) / 2) + '" y="30" text-anchor="middle" fill="' + c[2] + '">' + n[0] + '</text>'; });
+    return h + '</g></svg>';
+  }
+  function setNode(id, s){ var r = $('[data-n="' + id + '"]'), t = $('[data-t="' + id + '"]'); if (!r) return; var c = COLOR[s]; r.setAttribute('fill', c[0]); r.setAttribute('stroke', c[1]); t.setAttribute('fill', c[2]); }
+  function setEdge(a, b, s){ var e = $('[data-e="' + a + '>' + b + '"]'); if (e) e.setAttribute('stroke', COLOR[s][1]); }
+
+  /* ---------- prompt typing ---------- */
+  function typeInto(box, text){
+    if (MODE !== 'auto'){ box.innerHTML = '<b>' + text + '</b><span class="caret"></span>'; return; }
+    var i = 0; box.innerHTML = '<b></b><span class="caret"></span>'; var b = box.querySelector('b');
+    (function next(){ b.textContent = text.slice(0, ++i); if (i < text.length) later(next, 28); })();
+  }
+
+  /* ---------- wiring ---------- */
+  STATES.forEach(function(s){ var t = document.createElement('button'); t.className = 'tab'; t.type = 'button'; t.setAttribute('role','tab'); t.dataset.id = s.id; t.textContent = s.label; t.addEventListener('click', function(){ go(s.id); }); tabs.appendChild(t); });
+  function go(id){
+    current = id; clear();
+    tabs.querySelectorAll('.tab').forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.id === id)); });
+    var st = STATES.filter(function(s){ return s.id === id; })[0];
+    cap.textContent = showToday ? 'Today\'s pane for this state.' : st.caption;
+    document.getElementById('toggle').textContent = showToday ? 'Show the new pane' : 'Show today\'s pane';
+    document.getElementById('replay').hidden = showToday;
+    if (showToday){ view.innerHTML = TODAY[id]; return; }
+    SCENES[id]();
+  }
+  document.getElementById('toggle').addEventListener('click', function(){ showToday = !showToday; go(current); });
+  document.getElementById('replay').addEventListener('click', function(){ go(current); });
+  document.querySelectorAll('#mset button').forEach(function(b){
+    b.addEventListener('click', function(){ MODE = b.dataset.m; document.querySelectorAll('#mset button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); }); go(current); });
+    b.setAttribute('aria-pressed', String(b.dataset.m === MODE));
+  });
+  go('setup');
+})();
+</script>

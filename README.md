@@ -143,11 +143,11 @@ In Claude Code, the `stipulate` mod brings the same orchestration to the termina
 /plugin install stipulate --marketplace BRYANN2K/stipulate-skills
 ```
 
-Answer `y` to add the marketplace, then pick a scope. The desktop Code tab was observed loading a project-scope install; user-scope loading follows the mod API reference and has not yet been exercised. `npx github:BRYANN2K/stipulate-skills --agent claude-code` prints the same line.
+Answer `y` to add the marketplace, then pick a scope. `npx github:BRYANN2K/stipulate-skills --agent claude-code` prints the same line. The desktop Code tab was observed loading a project-scope install; user-scope loading follows the mod API reference and has not yet been exercised. In the desktop app, send a first message before using `/stip`, and bump the plugin version (or reinstall) to see an update.
 
-- **A band above the prompt.** It shows the bound change, its stage, approval and workers, with **Approve**, **Panel** and **Settings**.
-- **A `/stip` pane.** It shows stages, the plan with per-task actions, criteria you can open, research helpers, and a change picker.
-- **Workers per role.** Choose their model and effort in `/stip-settings`; the coordinator keeps the session's `/model` and `/effort`.
+- **A band above the prompt.** It shows the bound change, its stage and progress, approval and non-zero counts, with **Approve** (only when approvable), **Plan** and **Settings** (hotkeys `a`, `p`, `s`).
+- **A `/stip` pane.** One view per lifecycle moment, from setup to archive: a change picker with **+ New**, the stages, tasks with their model, effort and live steps, the plan graph, and a ruler of criteria you can open.
+- **Workers per role.** Choose their model and effort in `/stip-settings`, along with limits, the apply gate and motion (`auto`, `calm`, `off`); the coordinator keeps the session's `/model` and `/effort`.
 - **Enforced boundaries.** Workers are denied edits outside their owned paths and lifecycle commands. Approval comes only from you, and source edits wait for approval by default.
 - **Parallel writers.** They run in isolated Git worktrees and are integrated all-or-nothing, with a conflict report when needed.
 
