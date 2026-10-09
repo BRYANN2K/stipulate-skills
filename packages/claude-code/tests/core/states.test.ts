@@ -5,6 +5,7 @@ import { describe, expect, test } from 'claude-code/testing'
 import { stepPhrase } from '../../hooks/core/snapshot.ts'
 import {
   archiveSummary,
+  exploreTitle,
   problemSection,
   contractDiff,
   approvedContract,
@@ -18,15 +19,15 @@ import {
   withProof,
 } from '../../hooks/core/ledger.ts'
 import { effective, validateClient } from '../../hooks/core/settings.ts'
-import { ROOT, TASKS, World, delegateAndLaunch, install, parse } from './harness.ts'
+import { ROOT, TASKS, World, delegateAndLaunch, install, interfaceOf, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const start = async ($: any) => $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
 const call = ($: any, tool: string, args: Record<string, unknown> = {}) => $.tool.call({ tool, ...args } as never)
 const status = async ($: any) => parse(await call($, P + 'stip_status'))
-const action = async ($: any, a: Record<string, unknown>) =>
-  JSON.parse(String((await $.command.run({ command: 'stip-action', args: JSON.stringify(a), origin: { kind: 'plugin', name: 'stipulate' } } as never)).text))
-const snapshotOf = async ($: any) => (await action($, { action: 'refresh' })).value
+type Press = ReturnType<typeof interfaceOf>
+/** The snapshot after the pane's Refresh (a forced refresh, served through `request`). */
+const snapshotOf = async ($: any, press: Press) => (await press($, 'refresh'))!.value
 const edit = ($: any, text: string, inputText: string) =>
   $.prompt.edit({ origin: { kind: 'composer' }, text, cursor: text.length, start: text.length, end: text.length, inputText } as never)
 
@@ -261,18 +262,18 @@ describe('Setup state (AC-35)', () => {
     w.files.set(`${ROOT}/AGENTS.md`, '# rules')
     w.files.set(`${ROOT}/.github/workflows/ci.yml`, 'on: push')
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
-    expect(w.registeredCommands.sort()).toEqual(['stip', 'stip-action'])
+    expect(w.registeredCommands.sort()).toEqual(['stip'])
     expect(w.registeredTools).toEqual([])
-    const snap = await snapshotOf($)
+    const snap = await snapshotOf($, press)
     expect(snap.changeId).toBe(null)
     expect(snap.setup).toEqual({ project: ROOT, code: 'Python', tests: 'pytest', git: { repo: true, branch: 'main', clean: true }, rules: ['AGENTS.md'], ci: '.github/workflows' })
     // No guard: an edit anywhere goes through.
     expect((await call($, 'Write', { file_path: `${ROOT}/src/a.py`, content: 'x' })).deny).toBeUndefined()
-    // Set up fills /stip-bootstrap; engine actions are refused.
-    expect((await action($, { action: 'setup' })).value).toMatchObject({ prompt_filled: true })
+    // Set up fills /stip-bootstrap; nothing runs the engine.
+    expect((await press($, 'setup'))!.value).toMatchObject({ prompt_filled: true })
     expect(w.prompts).toEqual(['/stip-bootstrap'])
-    expect(await action($, { action: 'approve', change_id: 'demo', digest: 'x' })).toMatchObject({ ok: false, error: expect.stringMatching(/not set up/) })
     expect(w.calls).toEqual([])
     // No provenance baseline is taken before Stip is set up.
     expect(w.store.baselines).toBeUndefined()
@@ -281,12 +282,13 @@ describe('Setup state (AC-35)', () => {
   test('a Bash call that creates .workflow/ activates Stip in the session', async ($, on) => {
     const w = bare(new World())
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     expect(w.registeredTools).toEqual([])
     w.bashEffect = () => w.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify({ schema_version: 1, extensions: {} }))
     await call($, 'Bash', { command: 'python3 workflow.py init' })
     expect(w.registeredTools).toContain('stip_status')
-    expect((await snapshotOf($)).setup).toBe(null)
+    expect((await snapshotOf($, press)).setup).toBe(null)
   })
 })
 
@@ -303,6 +305,7 @@ describe('New change state (AC-35, AC-37)', () => {
     const w = new World()
     archive(w)
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const snap = (await status($)).snapshot
     expect(snap.start.followUps).toEqual([
@@ -314,16 +317,23 @@ describe('New change state (AC-35, AC-37)', () => {
       { id: 'core', criteria: 1, archivedAt: null, commit: null },
     ])
     // AC-37: safe while a change is open; the binding stays.
-    expect((await action($, { action: 'new' })).value).toMatchObject({ prompt_filled: true })
+    expect((await press($, 'new'))!.value).toMatchObject({ prompt_filled: true })
     expect(w.prompts.at(-1)).toBe('/stip-explore ')
+    expect((await status($)).bound).toBe('demo')
+    // No change open: the follow-ups are offered (Start change fills /stip-explore <title>).
+    w.hasChange = false
+    w.files.delete(`${ROOT}/.workflow/changes/demo/state.json`)
+    w.files.delete(`${ROOT}/.workflow/changes/demo/spec.md`)
+    expect((await snapshotOf($, press)).changeId).toBe(null)
     // A draft in the prompt is never overwritten.
     w.draft = 'half a thought'
-    expect((await action($, { action: 'new-from', title: 'Upload read timeout' })).value).toMatchObject({ prompt_filled: false, send_this: '/stip-explore Upload read timeout' })
+    expect((await press($, 'new-from:Upload read timeout'))!.value).toMatchObject({ prompt_filled: false, send_this: '/stip-explore Upload read timeout' })
     w.draft = ''
-    await action($, { action: 'new-from', title: '  Upload  read\ntimeout ' })
+    await press($, 'new-from:Upload read timeout')
     expect(w.prompts.at(-1)).toBe('/stip-explore Upload read timeout')
-    expect((await status($)).bound).toBe('demo')
-    expect(await action($, { action: 'new-from', title: '' })).toMatchObject({ ok: false })
+    // A title is taken on one line; an empty one is refused.
+    expect(exploreTitle('  Upload  read\ntimeout ')).toBe('Upload read timeout')
+    expect(() => exploreTitle('')).toThrow(/title is required/)
   })
 })
 
@@ -346,9 +356,10 @@ describe('Explore, Validate, Apply and Check states (AC-35)', () => {
     w.approvalCurrent = false
     w.phase = 'draft'
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     expect((await status($)).snapshot.contractDiff).toBe(null)
-    await action($, { action: 'approve', change_id: 'demo', digest: 'ab12cd34' })
+    expect((await press($, `approve:${w.contractDigest.slice(0, 12)}`))!.ok).toBe(true)
     let diff = (await status($)).snapshot.contractDiff
     expect(diff).toMatchObject({ since: w.contractDigest, criteria: [], addedTasks: [], changedTasks: [], removedTasks: [] })
     // Revised contract: AC-2 reworded, AC-3 added, task ui removed.
@@ -366,6 +377,7 @@ describe('Explore, Validate, Apply and Check states (AC-35)', () => {
     w.tasks = w.tasks.map(t => (t.id === 'verify' ? { ...t, depends_on: [] } : t))
     w.syncChange()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const agent = (await delegateAndLaunch($, w, 'core')).agent_id as string
     for (let i = 1; i <= 7; i++) await call($, 'Read', { file_path: `${ROOT}/src/core/f${i}.ts`, agentId: agent })
@@ -375,14 +387,14 @@ describe('Explore, Validate, Apply and Check states (AC-35)', () => {
     expect(core.steps.every((s: any) => s.tool === 'Read' && typeof s.at === 'number')).toBe(true)
     // The published snapshot follows each call without a refresh.
     await call($, 'Bash', { command: 'pytest -q', agentId: agent })
-    const held = await snapshotOf($)
+    const held = await snapshotOf($, press)
     expect(held.workers.find((x: any) => x.taskId === 'core').steps.at(-1)).toMatchObject({ tool: 'Bash', activity: 'Running tests' })
 
     // Check: the verify worker names one criterion at a time.
     const verifier = (await delegateAndLaunch($, w, 'verify')).agent_id as string
     expect((await status($)).snapshot.check).toMatchObject({ reviewer: 'verify', criterion: null })
     await call($, 'Bash', { command: 'pytest -k "AC-2" tests/', agentId: verifier })
-    expect((await snapshotOf($)).check).toMatchObject({ reviewer: 'verify', criterion: 'AC-2' })
+    expect((await snapshotOf($, press)).check).toMatchObject({ reviewer: 'verify', criterion: 'AC-2' })
     // Recorded proof: the check report in state.json, else evidence.md.
     w.lifecycleExtra = { check: { at: '2026-10-08T12:00:00+00:00', report: { criteria: [{ id: 'AC-1', status: 'passed', evidence: 'core tests pass' }, { id: 'AC-2', status: 'pending-docs', evidence: 'README' }] } } }
     w.files.set(`${ROOT}/.workflow/changes/demo/evidence.md`, '# Evidence\n\n- AC-1: passed — core tests pass\n')
@@ -400,6 +412,7 @@ describe('Archive state (AC-35)', () => {
   test('the bound change just archived gets a summary; auto-binding waits for a new change', async ($, on) => {
     const w = new World()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     expect((await status($)).bound).toBe('demo')
     // The engine archives demo: its folder moves under archive/ and the commit lands.
@@ -413,7 +426,7 @@ describe('Archive state (AC-35)', () => {
     w.hasChange = false
     w.files.delete(`${ROOT}/.workflow/changes/demo/state.json`)
     w.files.delete(`${ROOT}/.workflow/changes/demo/spec.md`)
-    let snap = await snapshotOf($)
+    let snap = await snapshotOf($, press)
     expect(snap.changeId).toBe(null)
     expect(snap.archived).toMatchObject({
       changeId: 'demo',
@@ -427,7 +440,7 @@ describe('Archive state (AC-35)', () => {
     })
     // A change opened after the archive is auto-bound, and the summary gives way.
     w.files.set(`${ROOT}/.workflow/changes/next-one/state.json`, JSON.stringify({ schema_version: 2, id: 'next-one', phase: 'exploring' }))
-    snap = await snapshotOf($)
+    snap = await snapshotOf($, press)
     expect(snap.changeId).toBe('next-one')
     expect(snap.archived).toBe(null)
   })
@@ -438,55 +451,46 @@ describe('Motion and typing (AC-36)', () => {
     const w = new World()
     w.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify({ orchestration: { clients: { 'claude-code': { ui: { motion: 'calm' } } } } }))
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     expect((await status($)).snapshot.ui).toEqual({ motion: 'calm', typing: false })
-    const view = (await action($, { action: 'settings-load' })).value
-    const saved = await action($, { action: 'settings-save', scope: 'local', value: { ui: { motion: 'off' } }, revision: view.revision })
-    expect(saved.ok).toBe(true)
-    expect((await snapshotOf($)).ui.motion).toBe('off')
-    expect(await action($, { action: 'settings-save', scope: 'local', value: { ui: { motion: 'fast' } }, revision: saved.value.revision })).toMatchObject({ ok: false, error: expect.stringMatching(/ui.motion/) })
+    // The settings tab's Motion picker, saved (settings-load, then settings-save through `request`).
+    const tab = await ($ as any).ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'Pane', requestId: 'stipulate', props: { title: 'Stip · Settings', isFocused: true, bodyColumns: 105, placement: 'dock', scroll: { offset: 0, bodyRows: 80 }, view: {} }, viewport: { columns: 200, rows: 60, isFullscreen: true } })
+    await tab.select({ key: 'motion', value: 'off' })
+    await tab.press({ key: 'settings-save' })
+    await tab.unmount()
+    expect((await snapshotOf($, press)).ui.motion).toBe('off')
   })
 
   test('typing is true while the person edits the prompt, false after a pause or an empty box', async ($, on) => {
     const w = new World()
     const clock = install(on, w)
+    const press = interfaceOf(on)
     await start($)
     await edit($, '', 'h')
-    expect((await snapshotOf($)).ui.typing).toBe(true)
+    expect((await snapshotOf($, press)).ui.typing).toBe(true)
     await clock.advance(1_000)
     await edit($, 'h', 'i')
     await clock.advance(1_000)
     // 1 s after the last edit: still typing.
-    expect((await snapshotOf($)).ui.typing).toBe(true)
+    expect((await snapshotOf($, press)).ui.typing).toBe(true)
     await clock.advance(1_000)
-    expect((await snapshotOf($)).ui.typing).toBe(false)
+    expect((await snapshotOf($, press)).ui.typing).toBe(false)
     await edit($, '', 'x')
-    expect((await snapshotOf($)).ui.typing).toBe(true)
+    expect((await snapshotOf($, press)).ui.typing).toBe(true)
     await ($ as any).prompt.edit({ origin: { kind: 'composer' }, text: 'x', cursor: 1, start: 0, end: 1, inputText: '' } as never)
-    expect((await snapshotOf($)).ui.typing).toBe(false)
+    expect((await snapshotOf($, press)).ui.typing).toBe(false)
   })
 })
 
 describe('Interface actions without a transcript row', () => {
-  test('/stip-action is hidden from the typeahead and /help, still served when typed', async ($, on) => {
+  test('an action runs through the request state: the reply is kept under its id', async ($, on) => {
     const w = new World()
     install(on, w)
-    on('command.describe', ($: any, e: any) => ({ description: e.description, argumentHint: e.argumentHint, isHidden: e.isHidden }) as never)
+    const press = interfaceOf(on)
     await start($)
-    const described = await ($ as any).command.describe({ command: 'stip-action', description: 'x', isHidden: false, immediate: true, provider: { plugin: 'stipulate', tier: 'user' } })
-    expect(described.isHidden).toBe(true)
-    const other = await ($ as any).command.describe({ command: 'stip-bind', description: 'x', isHidden: false, immediate: false, provider: { plugin: 'stipulate', tier: 'user' } })
-    expect(other.isHidden).toBe(false)
-    expect(await action($, { action: 'new' })).toMatchObject({ ok: true })
-  })
-
-  test('/stip-action runs through the request state: the reply is kept under its id', async ($, on) => {
-    const w = new World()
-    install(on, w)
-    await start($)
-    expect(await action($, { action: 'new' })).toMatchObject({ ok: true, action: 'new', value: { prompt_filled: true } })
+    expect(await press($, 'new')).toMatchObject({ ok: true, action: 'new', value: { prompt_filled: true } })
     expect(w.prompts.at(-1)).toBe('/stip-explore ')
-    expect(await action($, { action: 'nope' })).toMatchObject({ ok: false, error: 'Unknown action nope' })
   })
 
   test('another plugin cannot write the request state (only Stip itself sends actions)', { plugins: [PROBE] }, async ($, on) => {
@@ -497,12 +501,15 @@ describe('Interface actions without a transcript row', () => {
     expect(w.engineCalls('approve')).toEqual([])
   })
 
-  test('in Setup only setup and refresh are served', async ($, on) => {
+  test('in Setup only setup and refresh are offered and served', async ($, on) => {
     const w = bare(new World())
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
-    expect(await action($, { action: 'new' })).toMatchObject({ ok: false, error: expect.stringMatching(/not set up/) })
-    expect(await action($, { action: 'setup' })).toMatchObject({ ok: true })
+    // The Setup pane offers no engine action to press (the core would refuse one: not set up).
+    await expect(press($, 'new')).rejects.toThrow(/no Button/)
+    expect(await press($, 'refresh')).toMatchObject({ ok: true })
+    expect(await press($, 'setup')).toMatchObject({ ok: true })
     expect(w.prompts).toEqual(['/stip-bootstrap'])
   })
 })

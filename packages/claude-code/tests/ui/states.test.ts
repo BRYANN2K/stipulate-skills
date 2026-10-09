@@ -40,7 +40,22 @@ const tool = ($: any, name: string, args: Record<string, unknown> = {}) => $.too
 const delegate = async ($: any, task: string) => launch($, JSON.parse(String((await tool($, 'stip_delegate', { change_id: 'demo', task_id: task })).result)))
 const finish = ($: any, agentId: string, answer = 'Done; tests pass.') => $.turn.complete({ answer, durationMs: 5, isAborted: false, turnId: 't', agentId, reason: 'answer' } as never)
 const accept = ($: any, task: string) => tool($, 'stip_contribution', { change_id: 'demo', task_id: task, decision: 'accepted', reason: 'Checked the work myself.' })
-const refresh = ($: any) => $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'refresh' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
+/**
+ * The pane's Refresh, as the person presses it (a forced refresh served through the core's
+ * `request`), on a surface where the test holds no pane of its own.
+ */
+const refresh = async ($: any) => {
+  for (const surface of ['mobile', 'desktop', 'terminal']) {
+    const p = await pane($, surface, 105).catch(() => null)
+    if (!p) continue
+    await p.press({ key: 'refresh' })
+    await p.unmount()
+    return
+  }
+  throw new Error('no surface free to press Refresh on')
+}
+/** The snapshot the core holds, as stip_status reports it. */
+const held = async ($: any) => JSON.parse(String((await tool($, 'stip_status')).result)).snapshot
 /** A lifecycle step the coordinator runs (a Bash call, as a session does). */
 const step = async ($: any, w: World, change: () => void) => {
   w.bashEffect = change
@@ -244,7 +259,7 @@ describe('every state as the preview draws it (AC-35)', () => {
   test('Setup: no band, no tools; Set up puts /stip-bootstrap in the prompt with the ✎ marker', async ($, on) => {
     const { w, clock } = world(on, bare)
     await start($)
-    expect(w.registeredCommands.sort()).toEqual(['stip', 'stip-action'])
+    expect(w.registeredCommands.sort()).toEqual(['stip'])
     const band = await $.ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 6, bodyColumns: 110, scroll: { offset: 0, bodyRows: 5 }, view: {} }, viewport: VIEWPORT })
     expect(await band.find({ key: 'stip-band' })).toBeUndefined()
     await band.unmount()
@@ -297,7 +312,7 @@ describe('+ New (AC-37)', () => {
       expect(title.indexOf('"key":"picker"')).toBeLessThan(title.indexOf('"key":"new"'))
       await p.press({ key: 'new' })
       expect(w.prompts.at(-1)).toBe('/stip-explore ')
-      expect((await refresh($)).text).toContain('"changeId":"demo"')
+      expect((await held($)).changeId).toBe('demo')
       await clock.advance(1_000)
       expect(await text(p, 'handoff')).toBe('✎ /stip-explore  in your prompt, press Enter')
       // The marker goes after a while.
@@ -609,7 +624,8 @@ describe('motion (AC-36)', () => {
     expect(await text(s, 'status')).toBe('Unsaved · 1 change')
     await s.press({ key: 'settings-save' })
     expect(JSON.parse(w.files.get(`${ROOT}/.workflow/config.json`)!).orchestration.clients['claude-code'].ui).toEqual({ motion: 'calm' })
-    expect((await refresh($)).text).toContain('"motion":"calm"')
+    await refresh($)
+    expect((await held($)).ui.motion).toBe('calm')
     await s.unmount()
   })
 
@@ -639,7 +655,7 @@ describe('ASCII renders at 80 columns (terminal)', () => {
 })
 
 describe('attempt 2: actions without transcript, step phrases, problem items, setup header', () => {
-  test('presses act through the core\'s request state, not a slash command; a typed /stip-action still works', async ($, on) => {
+  test('presses act through the core\'s request state, not a slash command', async ($, on) => {
     const { w } = world(on)
     const requests: string[] = []
     on('state.set', { plugin: 'stipulate', key: 'request' }, ($, e: any, next) => (requests.push(String(e.value?.action?.action)), next(e)))
@@ -654,14 +670,13 @@ describe('attempt 2: actions without transcript, step phrases, problem items, se
     await p.press({ key: 'accept:core' })
     expect(w.latest('core')!.acceptance).toBe('accepted')
     expect(requests).toContain('accept')
-    expect(commands.filter(c => c === 'stip-action')).toEqual([])
+    expect(commands).toEqual([])
     // A refusal comes back with the same reply shape (toasted).
     w.failOn = 'review'
     await p.press({ key: 'accept:ui' })
     expect(w.said().some(t => /^Refused · /.test(t))).toBe(true)
     await p.unmount()
-    const typed = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'refresh' }), origin: { kind: 'composer' } } as never)
-    expect(JSON.parse(String(typed.text)).ok).toBe(true)
+    expect(commands).toEqual([])
   })
 
   test('the trail reads as phrases, older ones dropped first, never cut mid-word', async ($, on) => {

@@ -355,7 +355,7 @@ export type StipSnapshot = {
   /**
    * False when the worker registry is still tied to a previously approved contract (after a revised
    * contract was re-approved while workers were active): dispatch is refused until it is rebased.
-   * The pane offers "Rebase registry" (`stip-action` `{ action: 'rebase', change_id }`).
+   * The pane offers "Rebase registry" (the `{ action: 'rebase', change_id }` action).
    */
   registryCurrent: boolean
   /** Tasks with worker records that the approved plan no longer has (retired by the next rebase). */
@@ -471,10 +471,10 @@ export type StipBinding = {
 }
 
 /**
- * The interface's actions, run through the core with
- *   $.command.run({ command: 'stip-action', args: JSON.stringify(action) })
- * (a `$` cannot cross module files). The command answers `{ text }` holding
- * StipActionReply as JSON; the snapshot and settings state update on their own.
+ * The interface's actions, run through the core by writing `{ id, action }` to
+ * PluginState.stipulate.request (a `$` cannot cross module files; only Stip writes its own state).
+ * The core serves it before the write resolves and keeps StipActionReply in `reply` under the same
+ * id; the snapshot and settings state update on their own.
  */
 export type StipAction =
   | { action: 'refresh' }

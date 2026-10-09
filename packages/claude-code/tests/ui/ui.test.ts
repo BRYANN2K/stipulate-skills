@@ -214,6 +214,18 @@ describe('pane (AC-17)', () => {
     await ui.unmount()
   })
 
+  test('mobile details name /stip-correct for a reason of your own (AC-39)', async ($, on) => {
+    const { w } = world(on)
+    await start($)
+    await delegate($, 'core')
+    await finish($, 'agent-1', 'answer')
+    const ui = await pane($, 'mobile')
+    await ui.press({ key: 'details:core' })
+    expect((await ui.find({ key: 'reason-hint-core' }))?.text).toBe('Correct sends a fixed reason; type /stip-correct <task> <reason> for your own.')
+    expect(w.latest('core')!.attempt).toBe(1)
+    await ui.unmount()
+  })
+
   test('View result appends the captured answer as a notice', async ($, on) => {
     world(on)
     const session = mock.session(on)
@@ -248,6 +260,30 @@ describe('status line and toasts (AC-18)', () => {
     expect(w.toasts.some(t => /^Approval of demo stale · contract changed$/.test(t))).toBe(true)
     expect(seen.status.at(-1)).toContain('approval stale')
     expect(w.toasts.every(short)).toBe(true)
+  })
+
+  test('a new terminal width refits the status line once, at whole words (AC-41)', async ($, on) => {
+    const { seen } = world(on)
+    await start($)
+    await delegate($, 'core')
+    const full = 'demo · applying · 1 running'
+    const draw = async (columns: number) => {
+      const ui = await $.ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'AbovePrompt', props: { ...BAND_PROPS, bodyColumns: columns }, viewport: { ...VIEWPORT, columns } })
+      await ui.unmount()
+    }
+    await draw(140)
+    expect(seen.status.at(-1)).toBe(full)
+    await draw(40)
+    const narrow = seen.status.at(-1)!
+    expect(narrow.length).toBeLessThanOrEqual(40 - 17)
+    expect(full.startsWith(narrow)).toBe(true)
+    expect(full.slice(narrow.length)).toMatch(/^( ·|$)/)
+    // The same width again: nothing re-sent.
+    const sent = seen.status.length
+    await draw(40)
+    expect(seen.status.length).toBe(sent)
+    await draw(140)
+    expect(seen.status.at(-1)).toBe(full)
   })
 
   test('the status line is cleared when nothing is bound', async ($, on) => {
@@ -1119,25 +1155,6 @@ describe('attempt 13: roles and the orchestrator in settings', () => {
       expect(await roleKeys(ui)).toContain('cloud')
       await ui.unmount()
     })
-})
-
-describe('action rows', () => {
-  test('a /stip-action output row draws as one short line', async ($, on) => {
-    world(on)
-    await start($)
-    const rows: [string, string, string][] = [
-      ['{"action":"accept","change_id":"demo","task_id":"core"}', '{"ok":false,"error":"Only a returned native contribution can be reviewed."}', 'stip: refused: Only a returned native contribution can be reviewed.'],
-      ['{"action":"approve","change_id":"demo","digest":"38f287d1aaaa"}', '{"ok":true,"action":"approve","value":{"phase":"approved","approval":{"contract_digest":"38f287d1","by":"user","recorded_at":"2026-10-08T10:00:00Z"}}}', 'stip: approved 38f287d1'],
-      ['{"action":"accept","change_id":"demo","task_id":"core"}', 'stipulate: {"ok":true,"action":"accept","value":{}}', 'stip: accept core done'],
-      ['{"action":"refresh"}', '{"ok":true,"action":"refresh","value":{"changeId":"demo"', 'stip: refreshed'],
-    ]
-    for (const surface of SURFACES)
-      for (const [args, text, expected] of rows) {
-        const ui = await $.ui.mount({ plugin: 'stipulate', surface, component: 'CommandOutput', props: { command: 'stip-action', args, text, isErrored: false } })
-        expect((await ui.drawn()) as unknown).toMatchObject({ type: 'Text', children: [expected] })
-        await ui.unmount()
-      }
-  })
 })
 
 describe('refresh (AC-21)', () => {

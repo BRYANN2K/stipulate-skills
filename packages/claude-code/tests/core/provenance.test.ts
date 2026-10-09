@@ -4,7 +4,7 @@ import { describe, expect, test } from 'claude-code/testing'
 import type { Register } from 'claude-code'
 
 import { applyGate, mainBash, normalizeCommand, workerBash } from '../../hooks/core/guards.ts'
-import { DIGEST, ROOT, World, delegateAndLaunch, install, parse } from './harness.ts'
+import { DIGEST, ROOT, World, delegateAndLaunch, install, interfaceOf, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 
@@ -208,13 +208,14 @@ describe('approval provenance (AC-14 backstop)', () => {
   test('/stip-approve and the approve action refuse an approval that is already the person\'s', async ($, on) => {
     const w = new World()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const shown = await $.command.run({ command: 'stip-approve', args: 'demo', origin: { kind: 'composer' } } as never)
     expect(shown.text).toMatch(/already approved by you/)
     const confirmed = await $.command.run({ command: 'stip-approve', args: `demo confirm ${DIGEST.slice(0, 12)}`, origin: { kind: 'composer' } } as never)
     expect(confirmed.text).toMatch(/already approved by you/)
-    const action = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'approve', change_id: 'demo', digest: DIGEST.slice(0, 12) }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(action.text!).ok).toBe(false)
+    // The interface offers no Approve for it.
+    await expect(press($, `approve:${DIGEST.slice(0, 12)}`)).rejects.toThrow(/no Button/)
     expect(w.engineCalls('approve')).toHaveLength(0)
     expect(w.engineCalls('validate')).toHaveLength(0)
   })

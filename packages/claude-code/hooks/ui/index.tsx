@@ -9,7 +9,7 @@ import type { StipBinding, StipSnapshot } from '../../types'
 import { registerActions } from './actions.ts'
 import { registerBand } from './band.tsx'
 import * as motion from './motion.ts'
-import { SECTION_ID, fitStatus, uiToast, compactReply, contextText, statusText, statusUpdate, transitions, viewWidth, waitingTransitions } from './model.ts'
+import { SECTION_ID, fitStatus, uiToast, contextText, statusText, statusUpdate, transitions, viewWidth, waitingTransitions } from './model.ts'
 import { registerPane } from './pane.tsx'
 import { registerSettings } from './settings.tsx'
 
@@ -72,19 +72,6 @@ export const registerUi: Register = (on, options) => {
       $.ui.status(fitStatus(statusText(await read($, snapshotAtom)), viewWidth.columns))
     } catch {}
     return started
-  })
-
-  // A typed /stip-action (the person's fallback; the interface itself sends no command) draws as one
-  // short line instead of the JSON reply, as the
-  // plugin's own tree (a rewritten text could still be drawn whole by a surface).
-  on('ui.render', { component: 'CommandOutput', props: { command: 'stip-action' } }, ($, e) => {
-    const { Text } = $.ui.resolve(e)
-    const text = compactReply(e.props.args, e.props.text)
-    return (
-      <Text dimColor={!/refused/.test(text)} color={/refused/.test(text) ? 'error' : undefined} wrap="truncate-end">
-        {text}
-      </Text>
-    )
   })
 
   // AC-19: one short session section, last, only while a change is bound.

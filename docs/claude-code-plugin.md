@@ -33,7 +33,6 @@ Known limits of the desktop app (Claude.app), observed during qualification:
 - **Install required.** The plugin must be installed; project scope works. `--plugin-dir` and `CLAUDE_CODE_PLUGIN_DIRS` do not reach the desktop app.
 - **Updates need a version bump.** The desktop app loads the plugin from its plugin cache. An updated mod shows only after its version in `packages/claude-code/.claude-plugin/plugin.json` changes, or after a reinstall.
 - **Per project.** With a project-scope install, `/stip` exists only in conversations opened on that project; elsewhere the app answers "/stip isn't a command here." Install at user scope to have it in every project.
-- **`stip-action` listed.** The desktop command menu still lists `stip-action` (the terminal hides it).
 
 ## Use
 
@@ -66,7 +65,7 @@ The pane has two tabs, **Plan** (titled `Stip`) and **Settings** (titled `Stip �
 The Plan tab opens with a header and a stage strip:
 
 - **Header:** the change picker (the change name with `▾`), **+ New** (hotkey `n`), the approval badge, and the Plan / Settings tabs. The picker lists in-flight changes first, then the others, then finished ones and the archived count; selecting one binds it. **+ New** puts `/stip-explore` in your prompt and keeps the current change bound.
-- **Stages:** Explore, Validate, Apply, Check, Docs, Archive. Done stages are green with `✓`, the current one is filled, the rest are dim. A stage in trouble shows `!` in the error color.
+- **Stages:** Explore, Validate, Apply, Check, Docs, Archive. In the terminal, done stages are green with `✓`, the current one is filled, and the rest are dim. In the desktop app the strip is plain text with no chips: done stages are green with `✓`, the current stage is bold in the accent color with a `●` mark, and later stages are dim. A stage in trouble shows `!` in the error color.
 
 When a button puts a command in your prompt, a `✎ <command>` line confirms it: press Enter to send it. If your prompt already holds a draft, the draft is left as it is and the command is given in a notice instead.
 
@@ -120,8 +119,9 @@ Motion plays once per event: a phase change, the approval seal, a verdict on a c
 | `/stip-approve [change-id]` | Validate the change and show its criteria, plan size and **contract digest**. Approve by typing `/stip-approve <change-id> confirm <first 12 characters of the digest>`. The confirmation must be typed at the prompt. |
 | `/stip-bind [change-id]` | Bind the session to a change. Without an argument, list the bound change and the open changes. |
 | `/stip-resync` | Show workflow files changed outside this session (known-good → found). `/stip-resync confirm`, typed by you, adopts them as the known-good state. Approvals still need your own record. |
+| `/stip-correct <task-id> <reason>` | Ask for a correction of a returned task, in your own words. The reason must be 8 or more characters and say what must change. |
 
-`/stip-action` is a fallback you can still type (for example, a correction with your own reason where the surface has no input field). It is hidden from the terminal's command menu and `/help`; the desktop command menu still lists it. It accepts only actions from you or the Stip interface.
+`/stip-correct` works only in a bound project, not during setup. Only you can type it at the prompt: the model and other plugins or triggers are refused. The task's latest attempt must be returned and awaiting acceptance, or rejected, or the task must be awaiting integration. The band and the pane do not need this command.
 
 ### Tools for the coordinator
 
@@ -153,7 +153,7 @@ The registry then follows the agent: `running`, `waiting` (permission request), 
 
 ### Status line, toasts and context
 
-A status line entry summarises the bound change. Short toasts (at most 60 characters, repeated ones coalesced) report worker returns and failures, permission waits, stale or revoked approval, restored state, tampering and rebase needs.
+A status line entry summarises the bound change. It is refitted to the terminal width whenever the width changes, so it does not end mid-word after a resize. Short toasts (at most 60 characters, repeated ones coalesced) report worker returns and failures, permission waits, stale or revoked approval, restored state, tampering and rebase needs.
 
 While a change is bound, a short section is added to the model's context: the change, phase, approval state, ready and running tasks, results awaiting review, and the rule that approval is your action. Nothing is added when no change is bound.
 
@@ -360,7 +360,7 @@ Recorded in the evidence of the Ledger change (`stip-ledger-ui`); the evidence d
 - The desktop app showed the Plan tab live (picker, **+ New**, stages, Tasks, SVG plan graph, criteria ruler) and the band. The desktop Settings tab is covered by render tests only.
 - A live correction refreshed non-owned files in its worktree; a reused change id had its stale records set aside once, with no restore loop; debug logs held no `no handler` or `hook failed` lines after band and pane presses.
 
-Known open point: at 40 to 50 columns the host cuts the status line; this is recorded as a follow-up.
+The status line is refitted on terminal width changes; it was verified live at 40 and 140 columns.
 
 Not yet exercised: `/plugin install` from the published GitHub marketplace.
 

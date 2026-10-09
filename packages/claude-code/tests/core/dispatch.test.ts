@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { ROOT, World, delegateAndLaunch, install, launch, parse } from './harness.ts'
+import { ROOT, World, delegateAndLaunch, install, interfaceOf, launch, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const start = async ($: any) => $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
@@ -13,7 +13,7 @@ describe('tools', () => {
     install(on, w)
     await start($)
     expect(w.registeredTools).toEqual(['stip_status', 'stip_research', 'stip_plan', 'stip_delegate', 'stip_interrupt', 'stip_contribution', 'stip_result'])
-    expect(w.registeredCommands).toEqual(['stip-approve', 'stip-resync', 'stip-bind', 'stip-action', 'stip', 'stip-settings'])
+    expect(w.registeredCommands).toEqual(['stip-approve', 'stip-resync', 'stip-bind', 'stip-correct', 'stip', 'stip-settings'])
     expect(w.registeredAgents.map(a => a.name)).toContain('backend')
     expect(w.registeredAgents.map(a => a.name)).toContain('helper-research')
   })
@@ -160,9 +160,9 @@ describe('dispatch (AC-8)', () => {
   test('the interface reserves and puts the launch instruction in the prompt box', async ($, on) => {
     const w = new World()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
-    const r = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'delegate', change_id: 'demo', task_id: 'core' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(r.text!).ok).toBe(true)
+    expect((await press($, 'delegate:core'))!.ok).toBe(true)
     expect(w.prompts.at(-1)).toContain('subagent_type "stipulate:backend" and description "stip demo/core#1"')
   })
 })

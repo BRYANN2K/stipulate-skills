@@ -113,21 +113,37 @@ describe('settings through the interface action', () => {
   test('saves a scope with the current revision and refuses a stale one or an invalid value', async ($, on) => {
     const w = new World()
     install(on, w)
+    const replies: Record<string, any>[] = []
+    on('state.set', { plugin: 'stipulate', key: 'reply' }, ($, e: any, next) => (replies.push(e.value.reply), next(e)))
+    on('ui.open', () => ({ value: { isPlaced: true } }) as never)
     await $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
-    const act = async (a: unknown) => JSON.parse((await $.command.run({ command: 'stip-action', args: JSON.stringify(a), origin: { kind: 'plugin', name: 'stipulate' } } as never)).text!)
-    const loaded = await act({ action: 'settings-load' })
-    expect(loaded.ok).toBe(true)
+    // The settings tab loads the scope it shows (settings-load) and saves it (settings-save).
+    await $.command.run({ command: 'stip-settings', args: '', origin: { kind: 'composer' } } as never)
+    const tab = await ($ as any).ui.mount({ plugin: 'stipulate', surface: 'terminal', component: 'Pane', requestId: 'stipulate', props: { title: 'Stip · Settings', isFocused: true, bodyColumns: 105, placement: 'dock', scroll: { offset: 0, bodyRows: 80 }, view: {} }, viewport: { columns: 200, rows: 60, isFullscreen: true } })
+    await tab.press({ key: 'scope:local' })
+    const loaded = replies.at(-1)!
+    expect(loaded).toMatchObject({ ok: true, action: 'settings-load' })
     expect(loaded.value.paths.personal).toBe('/home/u/.claude/stipulate.json')
-    const bad = await act({ action: 'settings-save', scope: 'local', value: { roles: { backend: { effort: 'huge' } } }, revision: loaded.value.revision })
-    expect(bad.ok).toBe(false)
-    expect(bad.error).toMatch(/effort must be/)
-    const stale = await act({ action: 'settings-save', scope: 'local', value: {}, revision: 'stale' })
-    expect(stale.error).toMatch(/changed elsewhere/)
-    const saved = await act({ action: 'settings-save', scope: 'local', value: { roles: { backend: { model: 'opus' } } }, revision: loaded.value.revision })
+    // An invalid value never reaches a save: the tab validates its draft first (as the core does).
+    expect(() => validateClient({ roles: { backend: { effort: 'huge' } } })).toThrow(/effort must be/)
+    // Changed elsewhere after the tab loaded it: the save is refused.
+    w.settingsStale = true
+    await tab.press({ key: 'sopen:inherited' })
+    await tab.select({ key: 'm:role:backend', value: 'claude-opus-5-5' })
+    await tab.press({ key: 'settings-save' })
+    expect(replies.at(-1)).toMatchObject({ ok: false, error: expect.stringMatching(/changed elsewhere/) })
+    // Reloaded, the same change saves.
+    w.settingsStale = false
+    await tab.press({ key: 'settings-discard' })
+    if (!(await tab.find({ key: 'm:role:backend' }))) await tab.press({ key: 'sopen:inherited' })
+    await tab.select({ key: 'm:role:backend', value: 'claude-opus-5-5' })
+    await tab.press({ key: 'settings-save' })
+    const saved = replies.filter(r => r.action === 'settings-save').at(-1)!
     expect(saved.ok).toBe(true)
-    expect(JSON.parse(w.files.get(`${ROOT}/.workflow/local.json`)!).orchestration.clients['claude-code'].roles.backend.model).toBe('opus')
-    expect(saved.value.effective.client.roles.backend.model).toBe('opus')
+    await tab.unmount()
+    expect(JSON.parse(w.files.get(`${ROOT}/.workflow/local.json`)!).orchestration.clients['claude-code'].roles.backend.model).toBe('claude-opus-5-5')
+    expect(saved.value.effective.client.roles.backend.model).toBe('claude-opus-5-5')
     // Agent types are re-registered with the new profile.
-    expect(w.registeredAgents.filter(a => a.name === 'backend').at(-1)!.model).toBe('opus')
+    expect(w.registeredAgents.filter(a => a.name === 'backend').at(-1)!.model).toBe('claude-opus-5-5')
   })
 })

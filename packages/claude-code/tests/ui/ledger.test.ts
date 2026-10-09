@@ -278,9 +278,19 @@ describe('pane (AC-27)', () => {
       const texts = paint(chips, 105).lines.join('\n')
       for (const name of ['✓ Explore', '✓ Validate', 'Apply', 'Check', 'Docs', 'Archive']) expect(texts).toContain(name)
       expect(texts).not.toContain('Bootstrap')
-      // Current stage filled; later ones dim.
       const all = JSON.stringify(chips)
-      expect(all).toMatch(/"backgroundColor":"suggestion"[^}]*\}?[^\]]*Apply/)
+      if (surface === 'terminal') {
+        // Current stage filled; later ones dim.
+        expect(all).toMatch(/"backgroundColor":"suggestion"[^}]*\}?[^\]]*Apply/)
+      } else {
+        // AC-40: plain text on the desktop, no chip: ✓ green, ● the current one bold in the accent, later ones dim.
+        expect(all).not.toContain('backgroundColor')
+        expect(all).not.toContain('borderStyle')
+        expect(texts).toContain('● Apply')
+        expect(JSON.stringify(await p.find({ key: 'stage-Validate' }))).toContain('{"color":"success"},"children":["✓ Validate"]')
+        expect(JSON.stringify(await p.find({ key: 'stage-Apply' }))).toContain('{"color":"suggestion","bold":true},"children":["● Apply"]')
+        expect(JSON.stringify(await p.find({ key: 'stage-Check' }))).toContain('{"dimColor":true},"children":["Check"]')
+      }
       await p.unmount()
     }
   })

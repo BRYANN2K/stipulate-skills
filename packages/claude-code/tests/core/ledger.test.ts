@@ -5,7 +5,7 @@ import { describe, expect, test } from 'claude-code/testing'
 import { rebaseSummary } from '../../hooks/core/index.ts'
 import { activityOf, graphOf } from '../../hooks/core/snapshot.ts'
 import { TOASTS, TOAST_MAX, noticeText } from '../../hooks/core/notify.ts'
-import { ROOT, World, delegateAndLaunch, install, launch, parse } from './harness.ts'
+import { ROOT, World, delegateAndLaunch, install, interfaceOf, launch, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const start = async ($: any) => $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
@@ -134,6 +134,7 @@ describe('retired tasks keep their integrated files (AC-34)', () => {
     const w = new World()
     configure(w, { max_workers: 3, max_shared_writers: 2 })
     const clock = install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const agent = (await delegateAndLaunch($, w, 'ui')).agent_id as string
     expect(w.latest('ui')!.isolated).toBe(true)
@@ -143,8 +144,8 @@ describe('retired tasks keep their integrated files (AC-34)', () => {
     // The revised plan drops ui; its integrated file stays in the main checkout.
     w.tasks = w.tasks.filter(t => t.id !== 'ui').map(t => ({ ...t, depends_on: t.depends_on.filter(d => d !== 'ui') }))
     w.syncChange()
-    const act = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'rebase', change_id: 'demo' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    const value = JSON.parse(act.text!).value
+    await press($, 'refresh')
+    const value = (await press($, 'rebase'))!.value
     expect(value).toMatchObject({ done: true, retired: ['ui'], retiredIntegratedPaths: { ui: ['src/ui/a.ts'] } })
     expect(w.notices().some(n => /these files remain in the checkout .*ui: src\/ui\/a\.ts/.test(n))).toBe(true)
     const s = await status($)

@@ -4,7 +4,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { cleanLabel, fallbackLabel, parseCriteria, parseEvidence } from '../../hooks/core/criteria.ts'
 import { COALESCE_MS, TOAST_MAX, coalesce, toastText } from '../../hooks/core/notify.ts'
-import { ROOT, World, install, launch, parse } from './harness.ts'
+import { ROOT, World, install, interfaceOf, launch, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const start = async ($: any) => $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
@@ -124,6 +124,7 @@ describe('change picker', () => {
     w.files.set(`${ROOT}/.workflow/changes/other/proposal.md`, '# Other work\n')
     w.files.set(`${ROOT}/.workflow/archive/old-one/state.json`, JSON.stringify({ phase: 'archived' }))
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     await $.command.run({ command: 'stip-bind', args: 'demo', origin: { kind: 'composer' } } as never)
     let snap = await status($)
@@ -132,8 +133,9 @@ describe('change picker', () => {
       { id: 'demo', phase: 'applying', title: 'Demo feature', approval: 'approved', activeWorkers: 0, inFlight: false, finished: false, bound: true },
       { id: 'other', phase: 'draft', title: 'Other work', approval: 'none', activeWorkers: 0, inFlight: false, finished: false, bound: false },
     ])
-    const r = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'bind', change_id: 'other' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(r.text!).value.changeId).toBe('other')
+    // The pane's change picker: open it, pick the change.
+    await press($, 'picker')
+    expect((await press($, 'bind:other'))!.value.changeId).toBe('other')
     snap = parse(await call($, P + 'stip_status')).snapshot
     expect(snap.changeId).toBe('other')
     expect(snap.changes.find((c: any) => c.id === 'other').bound).toBe(true)

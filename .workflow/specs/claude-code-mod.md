@@ -68,3 +68,9 @@ Provide a Claude Code function-hook plugin (`packages/claude-code/`, plugin name
 - AC-36: Motion plays once per event (phase change, approval seal, verdict, hand-off, unblocked tasks, changed criteria, archive fold, outdated evidence); only a running clock and the criterion under review repeat while work runs; nothing animates while the person is typing. A `motion` setting (auto, calm, off; default auto) is honoured everywhere; calm drops in-between frames, off shows final states. Terminal motion stays within the host redraw limit.
 - AC-37: A `+ New` control next to the change picker (terminal hotkey `n`) starts `/stip-explore` in the person's prompt without closing the current change.
 - AC-38: Section titles read "Tasks", "Models used" and "Models by role"; no "Who runs what" remains in the mod or its docs. Criteria are shown as a ruler of glyphs with AC labels (`✓` passed, `✗` failed, `◌` pending-docs, `·` open), not as colored cells. UI copy has no em dashes.
+
+### Desktop polish
+
+- AC-39: The mod registers no `stip-action` command in any state (setup or bound); every band and pane action still works through mod state; `/stip-correct <task-id> <reason>` requests a correction of a returned task with the person's reason (at least 8 characters), is refused for the model and for non-person origins, and the pane's Correct hint names it.
+- AC-40: In the desktop pane the stage strip draws no bordered or filled chip: done stages green with ✓, the current stage bold in the accent color with `●`, later stages dim; the terminal strip is unchanged.
+- AC-41: When the band is drawn at a terminal width different from the last one, the status line is refitted to that width, so it never ends mid-word at 40, 50, 80 or 140 columns, including after a resize.

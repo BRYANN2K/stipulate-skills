@@ -282,35 +282,6 @@ export function waitingTransitions(prev: Record<string, StipBinding> | null | un
   return out
 }
 
-/** One short line for a /stip-action output row in place of its JSON reply (drawing only). */
-export function compactReply(args: string, text: string): string {
-  let action = 'action'
-  let digest = ''
-  try {
-    const a = JSON.parse(args) as { action?: unknown; digest?: unknown; task_id?: unknown }
-    action = String(a.action ?? action)
-    digest = typeof a.digest === 'string' ? a.digest : ''
-    if (typeof a.task_id === 'string') action = `${action} ${a.task_id}`
-  } catch {}
-  // The reply may arrive with text around it (a plugin's name, markdown): read the JSON inside.
-  const from = text.indexOf('{')
-  const to = text.lastIndexOf('}')
-  let reply: { ok?: boolean; error?: string } | null = null
-  try {
-    if (from >= 0 && to > from) reply = JSON.parse(text.slice(from, to + 1))
-  } catch {}
-  if (!reply) {
-    const ok = /"ok"\s*:\s*(true|false)/.exec(text)?.[1]
-    const error = /"error"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(text)?.[1]
-    if (ok === undefined) return text.length > 160 ? `stip: ${action}` : text
-    reply = { ok: ok === 'true', ...(error ? { error } : {}) }
-  }
-  if (!reply.ok) return `stip: refused: ${fit(String(reply.error ?? 'unknown error').split('\n')[0]!, 200)}`
-  if (action === 'approve') return `stip: approved ${digest.slice(0, 8)}`.trimEnd()
-  if (action === 'refresh') return 'stip: refreshed'
-  return `stip: ${action} done`
-}
-
 // --- Band (AC-16 redesign): segments that always fit, dropped by priority ---
 
 export type BandTone = 'mark' | 'change' | 'plain' | 'dim' | 'success' | 'warning' | 'error' | 'accent'

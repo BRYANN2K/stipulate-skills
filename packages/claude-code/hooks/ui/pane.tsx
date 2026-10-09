@@ -496,7 +496,7 @@ export const registerPane: Register = on => {
       </Box>
     )
 
-    // --- The rail: done green, current filled, the rest dim; a seam fills as a stage is reached ---
+    // --- The rail: done green, current lit (filled on the terminal), the rest dim; a seam fills as a stage is reached ---
     const marks = changeId ? stagesOf(snapshot) : []
     const markOf = (name: string) => marks.find(m => m.name === name)?.mark ?? '○'
     const phaseEv = changeId ? motion.at('phase', `${changeId}:${railAt}`, now) : null
@@ -542,12 +542,12 @@ export const registerPane: Register = on => {
                 <Text {...look}>{text}</Text>
               </Box>
             )
+          // AC-40: off the terminal, plain text marks a position (a filled chip read as a selected button).
+          const plain: Tone = current ? { color: attention ? 'error' : 'suggestion', bold: true } : look
           return (
             <Box key={`stage-${name}`} flexDirection="row" gap={1} alignItems="center">
               {seamEl}
-              <Box key={`chip-${name}`} borderStyle="round" borderDimColor={!current && i >= railAt} {...(current ? { borderColor: look.backgroundColor } : i < railAt ? { borderColor: attention ? 'error' : 'success' } : {})} paddingX={1}>
-                <Text {...look}>{text.trim()}</Text>
-              </Box>
+              <Text {...plain}>{current ? `● ${name}` : text}</Text>
             </Box>
           )
         })}
@@ -698,7 +698,7 @@ export const registerPane: Register = on => {
           {correctable && Input ? (
             <Input key={`reason:${t.id}`} label="Correction reason" placeholder="What must change (8+ characters)" submitLabel="Request correction" onSubmit={viaHook} />
           ) : null}
-          {correctable && !Input ? line(`reason-hint-${t.id}`, 'Correct sends a fixed reason; type /stip-action for your own.', { dimColor: true }, 'wrap') : null}
+          {correctable && !Input ? line(`reason-hint-${t.id}`, 'Correct sends a fixed reason; type /stip-correct <task> <reason> for your own.', { dimColor: true }, 'wrap') : null}
         </Box>
       )
     }

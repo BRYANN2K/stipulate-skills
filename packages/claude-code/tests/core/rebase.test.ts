@@ -2,7 +2,7 @@
 // every Bash call of the session; reconcile leaves other sessions' jobs alone.
 import { describe, expect, test } from 'claude-code/testing'
 
-import { DIGEST, ROOT, World, delegateAndLaunch, install, parse } from './harness.ts'
+import { DIGEST, ROOT, World, delegateAndLaunch, install, interfaceOf, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const D2 = 'cd34ef56ab12'.padEnd(64, '1')
@@ -53,6 +53,7 @@ describe('re-approval and the worker registry', () => {
   test('active workers block the rebase: the reply says so, and it is offered from the pane once they are done', async ($, on) => {
     const w = new World()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const worker = (await delegateAndLaunch($, w, 'core')).agent_id as string
     revise(w)
@@ -62,8 +63,7 @@ describe('re-approval and the worker registry', () => {
     expect((parse(await call($, P + 'stip_status'))).snapshot.registryCurrent).toBe(false)
     await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't', agentId: worker, reason: 'answer' } as never)
     expect(w.toasts.some(t => t === 'Workers done · rebase registry in /stip')).toBe(true)
-    const act = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'rebase', change_id: 'demo' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(act.text!)).toMatchObject({ ok: true, value: { needed: true, done: true } })
+    expect(await press($, 'rebase')).toMatchObject({ ok: true, value: { needed: true, done: true } })
     expect(w.registryDigest).toBe(D2)
     expect(w.engineCalls('rebase').at(-1)).toContain('rebased by the person from the pane')
   })
@@ -166,6 +166,7 @@ describe('plan-aware rebase (attempt 9)', () => {
   test('orphaned tasks alone make the registry stale; the pane rebase retires them and reports it', async ($, on) => {
     const w = new World()
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
     const agent = (await delegateAndLaunch($, w, 'ui')).agent_id as string
     await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't', agentId: agent, reason: 'answer' } as never)
@@ -173,8 +174,8 @@ describe('plan-aware rebase (attempt 9)', () => {
     w.syncChange()
     const refused = await call($, P + 'stip_delegate', { change_id: 'demo', task_id: 'core' })
     expect(String(refused.deny)).toMatch(/Rebase registry in the \/stip pane/)
-    const act = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'rebase', change_id: 'demo' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(act.text!).value).toMatchObject({ needed: true, done: true, retired: ['ui'], reopened: [] })
+    await press($, 'refresh')
+    expect((await press($, 'rebase'))!.value).toMatchObject({ needed: true, done: true, retired: ['ui'], reopened: [] })
     expect(w.toasts).toContain('Registry rebased')
     expect((await delegateAndLaunch($, w, 'core')).status).toBe('running')
   })

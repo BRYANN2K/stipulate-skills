@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "docs",
+      "role": "documentation",
+      "phase": "docs",
+      "objective": "Document /stip-correct, the removal of stip-action and the desktop stage strip.",
+      "criteria": [
+        "AC-25"
+      ],
+      "depends_on": [
+        "verify"
+      ],
+      "write_paths": [
+        "README.md",
+        "docs/claude-code-plugin.md"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "polish",
+      "role": "frontend",
+      "phase": "apply",
+      "objective": "Remove the stip-action command in favour of /stip-correct and the mod-state request path, draw the desktop stage strip as plain text, and refit the status line on width changes; update the tests.",
+      "criteria": [
+        "AC-39",
+        "AC-40",
+        "AC-41"
+      ],
+      "depends_on": [],
+      "write_paths": [
+        "packages/claude-code/hooks",
+        "packages/claude-code/tests",
+        "packages/claude-code/types"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "verify",
+      "role": "verification",
+      "phase": "check",
+      "objective": "Independently verify every criterion against the integrated candidate.",
+      "criteria": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-2",
+        "AC-20",
+        "AC-21",
+        "AC-22",
+        "AC-23",
+        "AC-24",
+        "AC-26",
+        "AC-27",
+        "AC-28",
+        "AC-29",
+        "AC-3",
+        "AC-30",
+        "AC-31",
+        "AC-32",
+        "AC-33",
+        "AC-34",
+        "AC-35",
+        "AC-36",
+        "AC-37",
+        "AC-38",
+        "AC-39",
+        "AC-4",
+        "AC-40",
+        "AC-41",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "depends_on": [
+        "polish"
+      ],
+      "write_paths": [],
+      "read_paths": []
+    }
+  ]
+}

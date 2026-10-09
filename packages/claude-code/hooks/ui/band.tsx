@@ -8,7 +8,7 @@ import { atom, read } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import * as motion from './motion.ts'
-import { PANE_ID, SETTINGS_TITLE, viewWidth, bandSegments, buttonsCells, canApprove, pendingTickets, viaHook, type BandSegment, type BandTone } from './model.ts'
+import { PANE_ID, SETTINGS_TITLE, viewWidth, bandSegments, fitStatus, statusText, buttonsCells, canApprove, pendingTickets, viaHook, type BandSegment, type BandTone } from './model.ts'
 
 const snapshotAtom = atom({ plugin: 'stipulate', key: 'snapshot' } as const, null)
 const ticketsAtom = atom({ plugin: 'stipulate', key: 'tickets' } as const, {})
@@ -70,8 +70,12 @@ export function bandLayout(segsFor: (room: number) => BandSegment[], changeId: s
 export const registerBand: Register = on => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.surface !== 'terminal' && e.surface !== 'desktop') return next(e)
-    // The status line has no width of its own: remember the terminal's for it.
-    if (e.surface === 'terminal' && e.viewport?.columns) viewWidth.columns = e.viewport.columns
+    // The status line has no width of its own: remember the terminal's for it, and refit the line
+    // once when that width changes (AC-41: a resize never leaves it cut mid-word).
+    if (e.surface === 'terminal' && e.viewport?.columns && e.viewport.columns !== viewWidth.columns) {
+      viewWidth.columns = e.viewport.columns
+      $.ui.status(fitStatus(statusText(await read($, snapshotAtom)), viewWidth.columns))
+    }
     if (e.props.hasSurvey) return next(e)
     const snapshot = await read($, snapshotAtom)
     if (!snapshot?.changeId) return next(e)

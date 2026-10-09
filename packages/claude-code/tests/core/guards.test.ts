@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { DIGEST, ROOT, World, delegateAndLaunch, install, parse } from './harness.ts'
+import { DIGEST, ROOT, World, delegateAndLaunch, install, interfaceOf, parse } from './harness.ts'
 
 const P = 'mcp__stipulate__'
 const start = async ($: any) => $.session.start({ cwd: ROOT, surface: null, isInteractive: true })
@@ -176,18 +176,21 @@ describe('approval (AC-14)', () => {
     await start($)
     const r = await $.command.run({ command: 'stip-approve', args: 'demo confirm ab12cd34ef56', origin: { kind: 'peer' } } as never)
     expect(r.text).toMatch(/typed by the person/)
-    const a = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'approve', change_id: 'demo', digest: 'ab12cd34ef56' }), origin: { kind: 'scheduled-trigger' } } as never)
-    expect(JSON.parse(a.text!).ok).toBe(false)
+    // The interface's own actions go through Stip's `request` state, which only Stip writes
+    // (states.test.ts); the one typed action command, /stip-correct, is the person's too.
+    const c = await $.command.run({ command: 'stip-correct', args: 'core redo it with the edge cases', origin: { kind: 'scheduled-trigger' } } as never)
+    expect(c.text).toMatch(/typed by the person/)
     expect(w.engineCalls('approve')).toHaveLength(0)
+    expect(w.engineCalls('review')).toHaveLength(0)
   })
 
-  test('the interface approves through /stip-action with the digest it showed', async ($, on) => {
+  test('the interface approves through the request state with the digest it showed', async ($, on) => {
     const w = new World()
     w.approvalCurrent = false
     install(on, w)
+    const press = interfaceOf(on)
     await start($)
-    const a = await $.command.run({ command: 'stip-action', args: JSON.stringify({ action: 'approve', change_id: 'demo', digest: 'ab12cd34ef56' }), origin: { kind: 'plugin', name: 'stipulate' } } as never)
-    expect(JSON.parse(a.text!).ok).toBe(true)
+    expect((await press($, 'approve:ab12cd34ef56'))!.ok).toBe(true)
     expect(w.approvalCurrent).toBe(true)
   })
 })
@@ -209,5 +212,53 @@ describe('fail closed (AC-15)', () => {
     await start($)
     w.throwOn.add('session.cwd')
     expect(denied(await call($, 'Edit', edit('src/core/a.ts')))).toMatch(/stipulate: apply gate\/approval guard failed/)
+  })
+})
+
+describe('/stip-correct (AC-39)', () => {
+  const correct = ($: any, args: string, origin: Record<string, unknown> = { kind: 'composer' }) => $.command.run({ command: 'stip-correct', args, origin } as never)
+  const returnedCore = async ($: any, w: World) => {
+    const agent = (await delegateAndLaunch($, w, 'core')).agent_id as string
+    await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't', agentId: agent, reason: 'answer' } as never)
+  }
+
+  test('rejects the returned attempt with the person\'s reason and reserves its correction, in one plain line', async ($, on) => {
+    const w = new World()
+    install(on, w)
+    await start($)
+    await returnedCore($, w)
+    const r = await correct($, 'core Handle the empty cache case')
+    expect(r.text).toMatch(/^Correction of core requested/)
+    expect(() => JSON.parse(String(r.text))).toThrow()
+    const review = w.engineCalls('review').at(-1)!
+    expect(review[review.indexOf('--decision') + 1]).toBe('rejected')
+    expect(review[review.indexOf('--reason') + 1]).toBe('Handle the empty cache case')
+    expect(w.engineCalls('reserve').at(-1)).toContain('--correction')
+    expect(w.prompts.at(-1)).toMatch(/^Launch the reserved Stipulate worker/)
+  })
+
+  test('a reason under 8 characters, or a task with nothing returned, is refused', async ($, on) => {
+    const w = new World()
+    install(on, w)
+    await start($)
+    expect((await correct($, 'core')).text).toMatch(/8\+ characters/)
+    expect((await correct($, 'ui redo the layout please')).text).toMatch(/no returned attempt/)
+    await returnedCore($, w)
+    expect((await correct($, 'core short')).text).toMatch(/8\+ characters/)
+    expect(w.engineCalls('review')).toHaveLength(0)
+    expect(w.latest('core')!.attempt).toBe(1)
+  })
+
+  test('the model and other origins cannot request a correction', async ($, on) => {
+    const w = new World()
+    install(on, w)
+    await start($)
+    await returnedCore($, w)
+    expect(denied(await call($, 'Skill', { skill: 'stip-correct', args: 'core Handle the empty cache case' }))).toMatch(/approval guard/)
+    for (const kind of ['scheduled-trigger', 'peer'])
+      expect((await correct($, 'core Handle the empty cache case', { kind })).text).toMatch(/typed by the person/)
+    expect((await correct($, 'core Handle the empty cache case', { kind: 'plugin', name: 'stipulate' })).text).toMatch(/typed by the person/)
+    expect(w.engineCalls('review')).toHaveLength(0)
+    expect(w.latest('core')!.attempt).toBe(1)
   })
 })

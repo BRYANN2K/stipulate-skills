@@ -57,6 +57,8 @@ export class World {
   /** The current contract's digest, and the one the worker registry is tied to. */
   contractDigest = DIGEST
   registryDigest = DIGEST
+  /** A settings save finds the scope files changed since they were loaded (another writer). */
+  settingsStale = false
   rebases: Record<string, unknown>[] = []
   retiredJobs: FakeJob[] = []
   /** The approved plan's tasks (a revision may add, change or remove tasks). */
@@ -492,7 +494,7 @@ export function install(on0: On, world: World): MockClock {
     if (argv[0] === 'python3' && argv[1] === '-c') {
       const req = JSON.parse(e.init?.stdin ?? '{}')
       world.ran.push('save-settings')
-      if (req.revision === 'stale') return value({ exitCode: 1, stdout: '', stderr: JSON.stringify({ error: 'Settings changed elsewhere; reload before saving.' }), isStdoutTruncated: false, isStderrTruncated: false })
+      if (req.revision === 'stale' || world.settingsStale) return value({ exitCode: 1, stdout: '', stderr: JSON.stringify({ error: 'Settings changed elsewhere; reload before saving.' }), isStdoutTruncated: false, isStderrTruncated: false })
       world.files.set(req.dest, req.text)
       return value({ exitCode: 0, stdout: JSON.stringify({ saved: true }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
     }
@@ -600,3 +602,31 @@ export async function delegateAndLaunch($: any, w: World, task: string, extra: R
 }
 
 export const parse = (r: { result?: unknown }) => JSON.parse(String(r.result))
+
+/**
+ * The interface's request path as a test drives it. A test's `$` cannot write Stip's `request`
+ * state (only its owner does), so the action is sent by a press on the /stip pane, as the person's
+ * press sends it, and the core's reply is read as `reply` is written. Call once per test, before
+ * `start`; the returned function presses `key` and answers that press's reply (null: none was sent).
+ */
+export function interfaceOf(on: On) {
+  const replies: Record<string, any>[] = []
+  on('state.set', { plugin: 'stipulate', key: 'reply' }, ($, e, next) => (replies.push((e.value as { reply: Record<string, any> }).reply), next(e)))
+  return async ($: any, key: string, title = 'Stip') => {
+    const seen = replies.length
+    const pane = await $.ui.mount({
+      plugin: 'stipulate',
+      surface: 'terminal',
+      component: 'Pane',
+      requestId: 'stipulate',
+      props: { title, isFocused: true, bodyColumns: 105, placement: 'dock', scroll: { offset: 0, bodyRows: 80 }, view: {} },
+      viewport: { columns: 200, rows: 60, isFullscreen: true },
+    })
+    try {
+      await pane.press({ key })
+    } finally {
+      await pane.unmount()
+    }
+    return replies.length > seen ? replies.at(-1)! : null
+  }
+}

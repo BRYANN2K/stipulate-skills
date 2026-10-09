@@ -2351,7 +2351,7 @@ function summary(job: Record<string, any> | undefined) {
   return Object.fromEntries(keep.filter(k => job[k] !== undefined).map(k => [k, job[k]]))
 }
 
-// --- Interface actions (/stip-action, called by the UI through $.command.run) ---
+// --- Interface actions (written by the UI to the `request` state, served by the hook below) ---
 
 async function act($: Dollar, a: Record<string, unknown>): Promise<unknown> {
   const reason = typeof a.reason === 'string' ? a.reason : ''
@@ -2423,6 +2423,14 @@ async function serveAction($: Dollar, a: Record<string, unknown>): Promise<Recor
 }
 
 let requestSeq = 0
+
+/** One action through the `request` state, as the interface sends it (the reply read back under its id). */
+async function requested($: Dollar, a: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const id = `cmd-${++requestSeq}`
+  await update($, requestAtom, () => ({ id, action: a as never }))
+  const got = await read($, replyAtom)
+  return got?.id === id ? (got.reply as Record<string, unknown>) : await serveAction($, a)
+}
 
 /** Actions a project without .workflow/ serves (Setup state): nothing that runs the engine. */
 const SETUP_ACTIONS = ['setup', 'refresh']
@@ -2677,8 +2685,8 @@ async function guardMain($: Dollar, e: { tool: string } & Record<string, unknown
     const why = mainBash(e.command)
     return why ? { deny: why } : {}
   }
-  if ((e.tool === 'Skill' || String(e.tool) === 'SlashCommand') && /stip-(approve|action)\b/.test(JSON.stringify(e)))
-    return { deny: deny('approval', '/stip-approve and /stip-action are the person\'s commands, not the model\'s') }
+  if ((e.tool === 'Skill' || String(e.tool) === 'SlashCommand') && /stip-(approve|correct)\b/.test(JSON.stringify(e)))
+    return { deny: deny('approval', '/stip-approve and /stip-correct are the person\'s commands, not the model\'s') }
   const target = writeTarget(e)
   if (target === null) return {}
   const real = await placed($, absolute(await $.session.cwd(), target))
@@ -2911,7 +2919,7 @@ async function activate($: Dollar) {
   await $.command.register({ name: 'stip-approve', description: 'Approve the bound Stipulate contract (shows its digest first)', argumentHint: '[change-id] [confirm <digest>]' })
   await $.command.register({ name: 'stip-resync', description: 'Review and adopt workflow changes made outside this Claude Code session', argumentHint: '[confirm]' })
   await $.command.register({ name: 'stip-bind', description: 'Bind this session to a Stipulate change', argumentHint: '[change-id]' })
-  await $.command.register({ name: 'stip-action', description: 'Stipulate interface action (JSON; used by the band and pane)', argumentHint: '{"action": ...}', immediate: true })
+  await $.command.register({ name: 'stip-correct', description: 'Ask for a correction of a returned task, with your reason', argumentHint: '<task-id> <reason>' })
   await loadSettings($)
   await rebuildWorkers($)
   await registerAgentTypes($).catch(err => log($, `agent types: ${errorText(err)}`))
@@ -2939,12 +2947,11 @@ async function activate($: Dollar) {
 }
 
 /**
- * Setup state (AC-35): a project without .workflow/. Only a read-only /stip and the interface's
- * action command are registered (Set up fills /stip-bootstrap); no tools, guards or engine calls.
+ * Setup state (AC-35): a project without .workflow/. Only a read-only /stip is registered (Set up,
+ * served through `request`, fills /stip-bootstrap); no tools, guards or engine calls.
  */
 async function enterSetup($: Dollar) {
   await $.command.register({ name: 'stip', description: 'Open the Stip pane: set up Stip in this project' })
-  await $.command.register({ name: 'stip-action', description: 'Stipulate interface action (JSON; used by the band and pane)', argumentHint: '{"action": ...}', immediate: true })
   await loadSettings($).catch(err => log($, `settings: ${errorText(err)}`))
   await update($, snapshotAtom, () => null)
   await refresh($, { force: true })
@@ -3176,26 +3183,33 @@ export const registerCore: Register = on => {
     }
   })
 
-  on('command.run', { command: 'stip-action' }, async ($, e) => {
-    const fromUs = e.origin.kind === 'plugin' && (e.origin as { name?: string }).name === PLUGIN
-    const byPerson = fromUs || e.origin.kind === 'composer' || e.origin.kind === 'bridge'
-    if (!byPerson) return { text: JSON.stringify({ ok: false, error: 'Interface actions come from the person or the Stipulate interface.' }) }
-    let a: Record<string, unknown>
-    try {
-      a = JSON.parse(e.args) as Record<string, unknown>
-    } catch (err) {
-      return { text: JSON.stringify({ ok: false, error: errorText(err) }) }
+  // AC-39: a correction with the person's own reason (the pane's Correct button sends a fixed one
+  // where it draws no field). The same actions the pane sends, through `request`.
+  on('command.run', { command: 'stip-correct' }, async ($, e) => {
+    if (e.origin.kind !== 'composer' && e.origin.kind !== 'bridge') return { text: 'A correction must be typed by the person at the prompt.' }
+    const m = /^(\S+)\s+([\s\S]*)$/.exec(e.args.trim())
+    const taskId = m?.[1] ?? e.args.trim()
+    const reason = (m?.[2] ?? '').trim()
+    if (!taskId) return { text: 'Name the task and what must change: /stip-correct <task-id> <reason>.' }
+    if (reason.length < 8) return { text: `Say what must change (8+ characters): /stip-correct ${taskId} <reason>.` }
+    const changeId = await boundChange($)
+    if (!changeId) return { text: 'No change is bound. Run /stip-bind <change-id> first.' }
+    const task = (await read($, snapshotAtom))?.tasks.find(t => t.id === taskId)
+    if (!task) return { text: `${changeId} has no task ${taskId}.` }
+    const w = task.latest
+    if (!((w && ((w.status === 'returned' && w.acceptance === 'pending') || w.acceptance === 'rejected')) || task.awaitingIntegration))
+      return { text: `${taskId} has no returned attempt to correct.` }
+    if (w && w.status === 'returned' && w.acceptance === 'pending') {
+      const rejected = await requested($, { action: 'reject', change_id: changeId, task_id: taskId, reason })
+      if (!rejected.ok) return { text: `Correction refused: ${String(rejected.error)}` }
     }
-    // The same path the interface takes (a `request` write served by the hook below).
-    const id = `cmd-${++requestSeq}`
-    await update($, requestAtom, () => ({ id, action: a as never }))
-    const got = await read($, replyAtom)
-    return { text: JSON.stringify(got?.id === id ? got.reply : await serveAction($, a)) }
+    const started = await requested($, { action: 'delegate', change_id: changeId, task_id: taskId, instructions: `Correction requested: ${reason}`, correction: true })
+    if (!started.ok) return { text: `Correction refused: ${String(started.error)}` }
+    const v = (started.value ?? {}) as { prompt_filled?: boolean; send_this?: unknown }
+    if (v.prompt_filled === true) return { text: `Correction of ${taskId} requested: send the launch instruction now in your prompt.` }
+    if (typeof v.send_this === 'string') return { text: `Correction of ${taskId} requested. To launch it, send: ${v.send_this}` }
+    return { text: `Correction of ${taskId} requested.` }
   })
-
-  // /stip-action stays typeable (a fallback, and the person's own reasons) but is left out of the
-  // typeahead and /help: the interface sends its actions through `request` instead.
-  on('command.describe', { command: 'stip-action' }, ($, e, next) => next({ ...e, isHidden: true }))
 
   // Interface actions without a transcript row: the UI writes `request` (only this plugin writes its
   // own state, never the model); the action runs before that write resolves and `reply` holds the outcome.
