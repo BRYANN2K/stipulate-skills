@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="assets/banner.svg" alt="Stipulate Skills — From intent to evidence. A spec-driven workflow for AI-assisted development." width="100%">
+<img src="assets/banner.png" alt="stip, spec-driven development: from intent to evidence. The workflow stages Explore, Validate, Apply, Check, Docs and Archive, next to a crew of pixel crabs: orchestrator, research, build, security, review and docs." width="100%">
 
 <br>
 
-[![Core skills](https://img.shields.io/badge/core_skills-7-00BFA6?style=flat-square)](#the-seven-skills)
-[![Domain extensions](https://img.shields.io/badge/domain_extensions-28-102A36?style=flat-square)](#bring-the-right-expertise)
+[![Core skills](https://img.shields.io/badge/core_skills-7-A98BF5?style=flat-square)](#the-seven-skills)
+[![Domain extensions](https://img.shields.io/badge/domain_extensions-28-1D2027?style=flat-square)](#bring-the-right-expertise)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square)](#quick-start)
 [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 [![X — @bryann2k_dev](https://img.shields.io/badge/%40bryann2k__dev-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/bryann2k_dev)
@@ -99,7 +99,7 @@ The `$stip-*` examples are **Codex chat prompts**, not terminal commands. Use `/
 
 ## How it works
 
-<img src="assets/workflow.svg" alt="Bootstrap once, then explore with relevant extensions, validate with user approval, apply, check, document, and archive with a local commit." width="100%">
+<img src="assets/workflow.png" alt="Bootstrap once, then explore with only the extensions the change needs, validate with your approval, apply with workers in isolated worktrees, check with a separate reviewer, document, and archive with the accepted spec and one local commit." width="100%">
 
 **You own the agreement; the agent carries out the approved work.** During validation, read the Markdown spec, edit it directly or ask for revisions, and explicitly approve its current version. Implementation follows that contract.
 
@@ -158,6 +158,16 @@ Answer `y` to add the marketplace, then pick a scope. The desktop Code tab was o
 - **Workers per role.** Choose their model and effort in `/stip-settings`, along with limits, the apply gate and motion (`auto`, `calm`, `off`); the coordinator keeps the session's `/model` and `/effort`.
 - **Enforced boundaries.** Workers are denied edits outside their owned paths and lifecycle commands. Approval comes only from you, and source edits wait for approval by default.
 - **Parallel writers.** They run in isolated Git worktrees and are integrated all-or-nothing, with a conflict report when needed.
+
+### See it work
+
+One small change in a real Claude Code terminal session, from the first conversation to the archive commit.
+
+| 1. Explore | 2. Validate |
+| --- | --- |
+| <img src="assets/screenshots/claude-code-1-explore.jpg" alt="Stip pane in Explore: the change greet-shout with its cli-tooling extension chip, the problem and five recorded decisions, next to the conversation with the orchestrator." width="440"> | <img src="assets/screenshots/claude-code-2-validate.jpg" alt="Stip pane in Validate: Ready for your approval with the contract digest, 11 criteria and 5 tasks, the Approve contract button, and the plan graph of three writers feeding verify and docs." width="440"> |
+| **3. Apply** | **4. Archive** |
+| <img src="assets/screenshots/claude-code-3-apply.jpg" alt="Stip pane in Apply: two Haiku workers running in isolated worktrees with their live steps, a third task ready to delegate, the plan graph and the criteria ruler at 0 of 11." width="440"> | <img src="assets/screenshots/claude-code-4-archive.jpg" alt="Stip pane in Archive: every stage done, 11 of 11 criteria passed, 5 tasks with no correction, 6 minutes from explore to archive, the models used per task and the archive commit." width="440"> |
 
 The guards are coordination inside Claude Code, not an operating-system sandbox: Bash keeps your file access. The mod API is early access. The mod was qualified on Claude Code 2.1.293, 2.1.294 and 2.1.296, so re-qualify after an update.
 
