@@ -24,7 +24,7 @@ for (let i = 0; i < args.length; i++) {
     }
     if (!count) fail('--agent requires at least one client ID');
   } else if (arg === '--help' || arg === '-h') {
-    console.log('Stip installer: [--agent opencode codex claude-code] [--global] [--yes] [--dry-run] [--no-opencode-plugin]\nDefault: OpenCode v2, project-local. Installs seven skills, OpenCode commands and the native Stipulate plugin. Use --no-opencode-plugin for skills and commands only. With claude-code, prints the Claude Code mod install line: /plugin install stipulate --marketplace BRYANN2K/stipulate-skills (typed in a Claude Code terminal session).');
+    console.log('Stip installer: [--agent opencode codex claude-code] [--global] [--yes] [--dry-run] [--no-opencode-plugin]\nDefault: OpenCode v2, project-local. Installs seven skills, OpenCode commands and the native Stipulate plugin. Use --no-opencode-plugin for skills and commands only. With claude-code, also installs the Claude Code mod by running: claude plugin install stipulate --marketplace BRYANN2K/stipulate-skills --scope project (--scope user with --global). Without a claude CLI on the PATH, prints the /plugin install line to type in a Claude Code session.');
     process.exit(0);
   } else fail(`Unknown option: ${arg}`);
 }
@@ -35,8 +35,12 @@ const commandDir = global
   : join(process.cwd(), '.opencode', 'commands');
 const helper = join(root, 'scripts', 'install_opencode_commands.py');
 const claudeCodeInstall = '/plugin install stipulate --marketplace BRYANN2K/stipulate-skills';
-const claudeCodeHint = selected.includes('claude-code')
-  ? { install: claudeCodeInstall, where: 'Type it at the prompt of a Claude Code terminal session (answer y to add the marketplace, then pick a scope); this launcher does not run it.' }
+// STIP_CLAUDE_BIN overrides the claude executable (used by tests).
+const claudeBin = process.env.STIP_CLAUDE_BIN || 'claude';
+const claudeScope = global ? 'user' : 'project';
+const claudeArgv = ['plugin', 'install', 'stipulate', '--marketplace', 'BRYANN2K/stipulate-skills', '--scope', claudeScope];
+const claudeCode = selected.includes('claude-code')
+  ? { command: ['claude', ...claudeArgv], scope: claudeScope, fallback: claudeCodeInstall }
   : null;
 function fail(message) { console.error(message); process.exit(1); }
 function run(cmd, argv) {
@@ -55,7 +59,7 @@ if (selected.includes('opencode') && plugin) {
   } catch (error) { fail(error.message); }
 }
 if (dry) {
-  console.log(JSON.stringify({ agents: selected, scope: global ? 'global' : 'project', skills: 7, extensions: 28, commands: selected.includes('opencode') ? commandDir : null, plugin: pluginPreview, claudeCode: claudeCodeHint }, null, 2));
+  console.log(JSON.stringify({ agents: selected, scope: global ? 'global' : 'project', skills: 7, extensions: 28, commands: selected.includes('opencode') ? commandDir : null, plugin: pluginPreview, claudeCode }, null, 2));
   process.exit(0);
 }
 // Copy resources so installations do not depend on npm's temporary package cache.
@@ -73,4 +77,12 @@ if (selected.includes('opencode')) {
     ? 'Stip installed: seven skills, slash commands, native subagents, sidebar and /stip-settings. In an already open OpenCode v2 session, run /restart; restart the CLI if the UI plugin has not loaded.'
     : 'Stip skills and commands installed. In an already open OpenCode session, run /restart to reload /stip-* commands.');
 } else console.log('Stip skills installed.');
-if (claudeCodeHint) console.log(`Claude Code mod (approval gates, guards, band and pane): type this at the prompt of a Claude Code terminal session; this launcher does not run it:\n  ${claudeCodeInstall}`);
+if (claudeCode) {
+  const result = spawnSync(claudeBin, claudeArgv, { stdio: 'inherit', shell: false });
+  if (result.error?.code === 'ENOENT') {
+    console.log(`Claude Code was not found on the PATH, so the Stip mod was not installed. Type this at the prompt of a Claude Code session:\n  ${claudeCodeInstall}`);
+  } else if (result.error || result.status !== 0) {
+    console.error(`Claude Code mod install failed (${result.error ? result.error.message : `exit ${result.status ?? result.signal}`}). Skills are installed; rerun: claude ${claudeArgv.join(' ')}`);
+    process.exit(result.status || 1);
+  } else console.log(`Stip mod installed for Claude Code: /stip is available in Claude Code sessions opened ${global ? 'in every project' : 'in this project'}.`);
+}

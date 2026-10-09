@@ -45,7 +45,7 @@ Provide a Claude Code function-hook plugin (`packages/claude-code/`, plugin name
 
 ### Distribution and quality
 
-- AC-22: `.claude-plugin/marketplace.json` lists the mod; `claude plugin validate packages/claude-code` reports no refusal; the launcher prints the install line for `--agent claude-code`; `build_skills.py` keeps the mod's bundled `workflow.py` in sync and `--check` detects drift.
+- AC-22: `.claude-plugin/marketplace.json` lists the mod; `claude plugin validate packages/claude-code` reports no refusal; `build_skills.py` keeps the mod's bundled `workflow.py` in sync and `--check` detects drift.
 - AC-23: `claude plugin test packages/claude-code` covers gates, guards (including fail-closed), registry transitions and settings resolution; engine `runtime` subcommands have unittest coverage including conflict and failure paths.
 - AC-24: A real Claude Code session in a sandbox project completes explore → user approval via button → two isolated parallel writers → integration → independent verification → docs → archive, with visual inspection of band and pane in the terminal.
 - AC-26: `check` accepts a report where every criterion covered only by docs-phase tasks is `pending-docs` and every other criterion is `passed`; the change becomes `checked`. `docs` and `archive` then refuse until those criteria are recorded `passed` with evidence. A criterion covered by any apply or check task cannot be `pending-docs`.
@@ -74,3 +74,8 @@ Provide a Claude Code function-hook plugin (`packages/claude-code/`, plugin name
 - AC-39: The mod registers no `stip-action` command in any state (setup or bound); every band and pane action still works through mod state; `/stip-correct <task-id> <reason>` requests a correction of a returned task with the person's reason (at least 8 characters), is refused for the model and for non-person origins, and the pane's Correct hint names it.
 - AC-40: In the desktop pane the stage strip draws no bordered or filled chip: done stages green with ✓, the current stage bold in the accent color with `●`, later stages dim; the terminal strip is unchanged.
 - AC-41: When the band is drawn at a terminal width different from the last one, the status line is refitted to that width, so it never ends mid-word at 40, 50, 80 or 140 columns, including after a resize.
+
+### npx install for Claude Code
+
+- AC-42: `npx github:BRYANN2K/stipulate-skills --agent claude-code` installs the mod itself by running `claude plugin install stipulate --marketplace BRYANN2K/stipulate-skills --scope project` in the current directory (`--scope user` with `--global`), with no prompt, after the skills; it reports the outcome and exits non-zero if the install fails.
+- AC-43: Without a `claude` CLI on the PATH, the launcher installs the skills, prints the `/plugin install` line with a note that Claude Code was not found, and exits 0; `--dry-run` shows the exact `claude plugin install` command and changes nothing; other agents' installs are unchanged.

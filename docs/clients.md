@@ -10,7 +10,7 @@ From the target project, install for Codex, Claude Code, and OpenCode together:
 npx github:BRYANN2K/stipulate-skills --agent codex claude-code opencode
 ```
 
-The launcher installs the native plugin when OpenCode is selected; use `--no-opencode-plugin` for skills and commands only. [Installer reference](installation.md) covers requirements, scopes, updates, and removal.
+The launcher installs the native plugin when OpenCode is selected; use `--no-opencode-plugin` for skills and commands only. When `claude-code` is selected, it also runs `claude plugin install stipulate` for the Claude Code mod, at project scope (user scope with `--global`), and prints the `/plugin install` line instead if the `claude` CLI is not on the PATH. [Installer reference](installation.md) covers requirements, scopes, updates, and removal.
 
 The shared Agent Skills format also supports Grok Build: it discovers the shared `.agents/skills` directory. The published skills CLI tested during this integration rejected `--agent grok`, even though the upstream source already lists that adapter. Do not require that flag until the installed CLI supports it.
 

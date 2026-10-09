@@ -137,13 +137,21 @@ The plugin uses OpenCode subagents. Codex uses its own native agent files, and s
 
 ## Claude Code mod
 
-In Claude Code, the `stipulate` mod brings the same orchestration to the terminal and the desktop Code tab. Type this at the prompt of a Claude Code terminal session:
+In Claude Code, the `stipulate` mod brings the same orchestration to the terminal and the desktop Code tab. The simplest way to install it is one command in your project folder:
+
+```sh
+npx github:BRYANN2K/stipulate-skills --agent claude-code
+```
+
+This installs the skills and the mod for the current project. Add `--global` to install the mod for every project, and `--dry-run` to see the exact command first. If the `claude` CLI is not on your PATH, the launcher prints the install line below instead.
+
+Alternatively, type this at the prompt of a Claude Code terminal session:
 
 ```text
 /plugin install stipulate --marketplace BRYANN2K/stipulate-skills
 ```
 
-Answer `y` to add the marketplace, then pick a scope. `npx github:BRYANN2K/stipulate-skills --agent claude-code` prints the same line. The desktop Code tab was observed loading a project-scope install; user-scope loading follows the mod API reference and has not yet been exercised. In the desktop app, `/stip` is available in the projects where the plugin is installed; bump the plugin version (or reinstall) to see an update.
+Answer `y` to add the marketplace, then pick a scope. The desktop Code tab was observed loading a project-scope install; user-scope loading follows the mod API reference and has not yet been exercised. In the desktop app, `/stip` is available in the projects where the plugin is installed; bump the plugin version (or reinstall) to see an update.
 
 - **A band above the prompt.** It shows the bound change, its stage and progress, approval and non-zero counts, with **Approve** (only when approvable), **Plan** and **Settings** (hotkeys `a`, `p`, `s`).
 - **A `/stip` pane.** One view per lifecycle moment, from setup to archive: a change picker with **+ New**, the stages, tasks with their model, effort and live steps, the plan graph, and a ruler of criteria you can open.
