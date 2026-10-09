@@ -1,6 +1,6 @@
 # Launch thread for X
 
-Post 1 carries the native video and no link: links in the first post reduce reach on X. Pin post 2 as the first reply. Each post stays under 280 characters (X counts a link as 23).
+Four posts. Post 1 carries the native video and no link: links in the first post reduce reach on X. Pin post 2 as the first reply. Each post stays under 280 characters (X counts a link as 23).
 
 Before posting:
 
@@ -25,29 +25,13 @@ How it works ↓
 
 ## 3/
 
-1. /stip-explore: you and the orchestrator settle the problem, the edge cases and which domain extensions apply (security, backend, CLI…). Nothing is coded yet.
+How it works: you talk the change through with an orchestrator, and it writes a spec with acceptance criteria. Nothing gets built until you press Approve, and the model can't press it for you.
 
 ## 4/
 
-2. /stip-validate writes the spec: scope, numbered acceptance criteria, and a task plan with an owner for each file. Only you can approve it, with a button. The model can't approve its own work.
+Then each task goes to a Claude model picked for the job, in its own git worktree and limited to its own files. A separate session checks every criterion, and the change ends as one local commit.
 
-## 5/
-
-3. Apply: each task goes to a worker with its own model and effort, for example Opus to build, Haiku to research, Sonnet for docs. Writers run in parallel git worktrees and can only touch the files they own.
-
-## 6/
-
-4. Check: a different session verifies every criterion against the integrated result and records pass, fail or unverified, with evidence. A failure goes back to the same task as a correction.
-
-## 7/
-
-5. Docs, then archive: the spec is promoted, the change is filed with who ran what on which model, and one scoped local commit is made. Nothing is pushed for you.
-
-## 8/
-
-The skills also work in Codex and OpenCode. The guards coordinate the agents; they are not a sandbox. Apache-2.0.
-
-Music: Better Days by Infraction
+Also works in Codex and OpenCode. Music: Better Days by Infraction
 
 ## After posting
 
