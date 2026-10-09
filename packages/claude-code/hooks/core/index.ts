@@ -54,11 +54,17 @@ import {
 } from './guards.ts'
 import {
   sha256,
+  EXTENSION_ID,
+  EXTENSION_SCRIPT,
   SAVE_SCRIPT,
   SCOPES,
   SettingsError,
+  disableRefusal,
   effective,
+  enabledOf,
+  extensionPath,
   personalPath,
+  projectExtensionsOf,
   resolveProfile,
   validateClient,
   viewOf,
@@ -1039,10 +1045,105 @@ async function rawScopes($: Dollar, paths: Record<StipScope, string>): Promise<R
   return raw
 }
 
+// --- Project extensions (AC-46..AC-49): read here; changed only by the person's press ---
+
+/** The changes not yet archived that select each extension, from their state.json (file reads only). */
+async function extensionUses($: Dollar): Promise<Record<string, string[]>> {
+  const { root } = await context($)
+  const dir = `${root}/.workflow/changes`
+  const uses: Record<string, string[]> = {}
+  if (!(await $.fs.exists(dir))) return uses
+  for (const entry of await $.fs.list(dir)) {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.name) || entry.isLink) continue
+    const s = await readJson($, `${dir}/${entry.name}/state.json`).catch(() => null)
+    if (!s || typeof s !== 'object' || s.phase === 'archived' || !Array.isArray(s.extensions)) continue
+    for (const id of s.extensions) if (typeof id === 'string') (uses[id] ??= []).push(entry.name)
+  }
+  return uses
+}
+
+/** `.workflow/config.json` as text ('' when missing) and parsed (null when unreadable). */
+async function projectConfig($: Dollar): Promise<{ path: string; text: string; doc: unknown }> {
+  const { root } = await context($)
+  const path = `${root}/.workflow/config.json`
+  const text = (await $.fs.exists(path)) ? ((await $.fs.read(path)) as string) : ''
+  let doc: unknown = null
+  try {
+    doc = text ? JSON.parse(text) : null
+  } catch {}
+  return { path, text, doc }
+}
+
+/** The project's extensions for the Settings tab, and the config revision a save is checked against. */
+async function projectExtensions($: Dollar): Promise<Pick<StipSettingsView, 'extensions' | 'configRevision'>> {
+  const { root } = await context($)
+  const config = await projectConfig($)
+  const dir = `${root}/.workflow/extensions`
+  const manifests: Record<string, unknown> = {}
+  if (await $.fs.exists(dir))
+    for (const entry of await $.fs.list(dir)) {
+      if (!EXTENSION_ID.test(entry.name) || entry.isLink) continue
+      manifests[entry.name] = await readJson($, `${dir}/${entry.name}/extension.json`).catch(() => null)
+    }
+  return { extensions: projectExtensionsOf(config.doc, manifests, await extensionUses($)), configRevision: await sha256(config.text) }
+}
+
+/**
+ * AC-46: the bound change's selection, replaced as a whole through the engine's `select` (which
+ * also withdraws the approval). Refused unless the change is exploring; the engine refuses an
+ * extension that is not enabled. Reached only from a person's press on the pane (AC-49).
+ */
+async function selectExtensions($: Dollar, changeId: string, extensions: unknown) {
+  if (!Array.isArray(extensions) || extensions.some(x => typeof x !== 'string' || !EXTENSION_ID.test(x)))
+    throw new EngineError('extensions must be a list of extension ids')
+  const ids = [...new Set(extensions as string[])]
+  const status = await engine($, ['status', changeId, '--compact'])
+  if (status.phase !== 'exploring')
+    throw new EngineError(`${changeId} is ${status.phase ?? 'not open'}: its extensions change only while it is exploring.`)
+  const result = await mutate($, ['select', changeId, ...ids.flatMap(id => ['--extension', id])])
+  await refresh($, { force: true }).catch(() => undefined)
+  return { change_id: changeId, phase: result.phase, extensions: Object.keys(result.extensions ?? {}) }
+}
+
+/**
+ * AC-47, AC-48: turns one project extension on or off in `.workflow/config.json` (only its `enabled`,
+ * and `path` when newly enabled). A disable a change not yet archived selects is refused before
+ * anything is written, naming it. Reached only from a person's press in Settings (AC-49).
+ */
+async function setExtension($: Dollar, id: string, enabled: unknown, revision: string): Promise<StipSettingsView> {
+  if (!EXTENSION_ID.test(id)) throw new SettingsError(`Invalid extension id ${id}`)
+  if (typeof enabled !== 'boolean') throw new SettingsError('enabled must be true or false')
+  const { root } = await context($)
+  const config = await projectConfig($)
+  if ((await sha256(config.text)) !== revision) throw new SettingsError('The project config changed elsewhere; reload before saving.')
+  const current = enabledOf(config.doc)[id] === true
+  if (enabled === current) return loadSettings($)
+  if (!enabled) {
+    const refusal = disableRefusal(id, (await extensionUses($))[id] ?? [])
+    if (refusal) throw new SettingsError(refusal)
+  } else {
+    const manifest = await readJson($, `${root}/${extensionPath(id)}/extension.json`).catch(() => null)
+    if (!manifest || manifest.id !== id) throw new SettingsError(`${id} has no extension.json naming it in .workflow/extensions/${id}/`)
+  }
+  const request = { lock: `${root}/.workflow/.lock`, config: config.path, changes: `${root}/.workflow/changes`, revision, id, enabled, path: extensionPath(id) }
+  const result = await $.process.run(['python3', '-c', EXTENSION_SCRIPT], { stdin: JSON.stringify(request), timeoutMs: 15_000 })
+  if (result.exitCode !== 0) {
+    let message = result.stderr.trim()
+    try {
+      const v = JSON.parse(message.split('\n').at(-1) ?? '') as { error?: string; users?: string[] }
+      message = Array.isArray(v.users) ? (disableRefusal(id, v.users) ?? message) : (v.error ?? message)
+    } catch {}
+    throw new SettingsError(message || 'The extension setting could not be saved')
+  }
+  const view = await loadSettings($)
+  await refresh($, { force: true }).catch(() => undefined)
+  return view
+}
+
 /** Reads the three scopes and publishes the settings view. */
 async function loadSettings($: Dollar): Promise<StipSettingsView> {
   const paths = await scopePaths($)
-  const view = await viewOf(await rawScopes($, paths), paths)
+  const view = { ...(await viewOf(await rawScopes($, paths), paths)), ...(await projectExtensions($).catch(() => ({}))) }
   await update($, settingsAtom, () => view)
   cachedGate = { ...cachedGate, mode: view.effective.applyGate }
   const motion = view.effective.motion
@@ -1483,6 +1584,9 @@ async function computeSnapshot($: Dollar, changeId: string | null): Promise<Stip
       check: changeId ? await checkFor($, changeId, snap).catch(() => snap.check) : snap.check,
       archived: !changeId && archived ? await archiveFor($, archived.id).catch(e => (log($, `archive summary: ${errorText(e)}`), null)) : null,
       ui: { motion: settings?.effective.motion ?? 'auto', typing },
+      enabledExtensions: await projectConfig($)
+        .then(c => Object.entries(enabledOf(c.doc)).filter(([, on]) => on).map(([id]) => id).sort())
+        .catch(() => []),
     }
   }
   const changes = briefs as StipChangeRef[]
@@ -2398,6 +2502,11 @@ async function act($: Dollar, a: Record<string, unknown>): Promise<unknown> {
       return loadSettings($)
     case 'settings-save':
       return saveSettings($, a.scope as StipScope, (a.value ?? {}) as StipClientSettings, str(a.revision, 'revision'))
+    // AC-46..AC-49: written to `request` only by the interface's press hook, after its person check.
+    case 'extensions-select':
+      return selectExtensions($, str(a.change_id, 'change_id'), a.extensions)
+    case 'extension-set':
+      return setExtension($, str(a.id, 'id'), a.enabled, typeof a.revision === 'string' ? a.revision : '')
     case 'setup':
       return fillPrompt($, '/stip-bootstrap')
     // AC-37: a new change starts in the person's prompt; the bound change stays open.

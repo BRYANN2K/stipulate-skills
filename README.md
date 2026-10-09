@@ -159,7 +159,15 @@ Answer `y` to add the marketplace, then pick a scope. The desktop Code tab was o
 - **Enforced boundaries.** Workers are denied edits outside their owned paths and lifecycle commands. Approval comes only from you, and source edits wait for approval by default.
 - **Parallel writers.** They run in isolated Git worktrees and are integrated all-or-nothing, with a conflict report when needed.
 
-The guards are coordination inside Claude Code, not an operating-system sandbox: Bash keeps your file access. The mod API is early access. The mod was qualified on Claude Code 2.1.293 and 2.1.294, so re-qualify after an update.
+The guards are coordination inside Claude Code, not an operating-system sandbox: Bash keeps your file access. The mod API is early access. The mod was qualified on Claude Code 2.1.293, 2.1.294 and 2.1.296, so re-qualify after an update.
+
+### Choose extensions for a change
+
+The pane's header shows the bound change's extensions as chips. While the change is exploring, `✕` removes one and `[ + extension ]` adds one of the project's enabled extensions; either press withdraws any approval. The Settings tab's **Extensions** card turns extensions on or off for the project; turning one off is refused while a change not yet archived has selected it.
+
+| Chips while exploring | Extensions card |
+| --- | --- |
+| <img src="docs/assets/claude-code-explore-extensions.png" alt="Claude Code terminal with the Stip pane in Explore: the header shows a cli-tooling chip with a remove button and an add extension button, and the band sits below the prompt." width="480"> | <img src="docs/assets/claude-code-settings-extensions.png" alt="Stip pane Settings tab with the cli-tooling chip under the header and the Extensions card: cli-tooling On, selected by greet-strip, and security-engineering Off." width="300"> |
 
 [Install, use, settings, limits and re-qualification →](docs/claude-code-plugin.md)
 

@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "docs",
+      "role": "documentation",
+      "phase": "docs",
+      "objective": "Document the extension chips and the Extensions card in the mod guide, and refresh README.md with new screenshots of the real pane on terminal and desktop.",
+      "criteria": [
+        "AC-25",
+        "AC-50"
+      ],
+      "depends_on": [
+        "verify"
+      ],
+      "write_paths": [
+        "README.md",
+        "docs/assets",
+        "docs/claude-code-plugin.md"
+      ],
+      "read_paths": []
+    },
+    {
+      "id": "extensions-ui",
+      "role": "frontend",
+      "phase": "apply",
+      "objective": "Show the change's selected extensions as header chips in the /stip pane (terminal and desktop) with a one-time light-up, let a person add or remove them while exploring through the engine's select, and add a project Extensions card to Settings that enables or disables extensions, refusing to disable one a live change uses; person presses only, with tests.",
+      "criteria": [
+        "AC-44",
+        "AC-45",
+        "AC-46",
+        "AC-47",
+        "AC-48",
+        "AC-49"
+      ],
+      "depends_on": [],
+      "write_paths": [
+        "packages/claude-code/hooks",
+        "packages/claude-code/tests",
+        "packages/claude-code/types/index.d.ts"
+      ],
+      "read_paths": [
+        ".workflow/extensions",
+        "scripts/workflow.py"
+      ]
+    },
+    {
+      "id": "verify",
+      "role": "verification",
+      "phase": "check",
+      "objective": "Independently verify every criterion against the integrated candidate.",
+      "criteria": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "AC-16",
+        "AC-17",
+        "AC-18",
+        "AC-19",
+        "AC-2",
+        "AC-20",
+        "AC-21",
+        "AC-22",
+        "AC-23",
+        "AC-24",
+        "AC-26",
+        "AC-27",
+        "AC-28",
+        "AC-29",
+        "AC-3",
+        "AC-30",
+        "AC-31",
+        "AC-32",
+        "AC-33",
+        "AC-34",
+        "AC-35",
+        "AC-36",
+        "AC-37",
+        "AC-38",
+        "AC-39",
+        "AC-4",
+        "AC-40",
+        "AC-41",
+        "AC-42",
+        "AC-43",
+        "AC-44",
+        "AC-45",
+        "AC-46",
+        "AC-47",
+        "AC-48",
+        "AC-49",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "depends_on": [
+        "extensions-ui"
+      ],
+      "write_paths": [],
+      "read_paths": []
+    }
+  ]
+}

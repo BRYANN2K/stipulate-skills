@@ -317,6 +317,7 @@ export function emptySnapshot(changes: StipChangeRef[], now: number, changeId: s
     tampered: [],
     restoreHeld: [],
     extensions: [],
+    enabledExtensions: [],
     tasks: [],
     workers: [],
     helpers: [],
@@ -399,6 +400,8 @@ export function buildSnapshot(input: {
     tampered: [],
     restoreHeld: [],
     extensions: Array.isArray(status.extensions) ? status.extensions : [],
+    // Filled from the project config by computeSnapshot.
+    enabledExtensions: [],
     tasks,
     workers,
     helpers: input.helpers.filter(h => h.change_id === changeId || h.change_id === null).map(h => helperOf(h, now, liveHelper(h))),

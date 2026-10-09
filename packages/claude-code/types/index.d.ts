@@ -369,7 +369,13 @@ export type StipSnapshot = {
    * kept changing them back: dispatch for the change is refused until /stip-resync.
    */
   restoreHeld: string[]
+  /** The bound change's selected extensions (the engine's `status`), in selection order. */
   extensions: string[]
+  /**
+   * The project's enabled extensions (`.workflow/config.json`, `extensions.<id>.enabled` true), by id:
+   * what the pane's `+ extension` control offers while the bound change is exploring (AC-46).
+   */
+  enabledExtensions: string[]
   tasks: StipTask[]
   workers: StipWorker[]
   helpers: StipHelper[]
@@ -446,6 +452,23 @@ export type StipSettingsView = {
   /** Optimistic revision over the three scope files; pass it back to saveSettings. */
   revision: string
   error: string | null
+  /** The project's extensions (AC-47): every folder in `.workflow/extensions/`, plus enabled ones without a folder. */
+  extensions?: StipProjectExtension[]
+  /** SHA-256 of `.workflow/config.json` as read ('' when missing); pass it back with `extension-set`. */
+  configRevision?: string
+}
+
+/** One project extension as the Settings tab lists it (AC-47, AC-48). */
+export type StipProjectExtension = {
+  id: string
+  /** extension.json's description, else null. */
+  description: string | null
+  /** `extensions.<id>.enabled` in `.workflow/config.json`. */
+  enabled: boolean
+  /** Its folder exists in `.workflow/extensions/` with a manifest naming this id. */
+  present: boolean
+  /** Changes not yet archived that select it (disabling it is refused while any does). */
+  selectedBy: string[]
 }
 
 /** What the core records for a spawned agent, keyed by agent id. */
@@ -490,6 +513,17 @@ export type StipAction =
   | { action: 'result'; helper_id: string }
   | { action: 'settings-load' }
   | { action: 'settings-save'; scope: StipScope; value: StipClientSettings; revision: string }
+  /**
+   * AC-46: runs the engine's `select <change> --extension …` with this whole selection; refused unless
+   * the change is exploring. Sent only from a person's press on the pane (AC-49).
+   */
+  | { action: 'extensions-select'; change_id: string; extensions: string[] }
+  /**
+   * AC-47, AC-48: sets `extensions.<id>.enabled` in `.workflow/config.json` (and its `path` when newly
+   * enabled), at `revision` (StipSettingsView.configRevision). Disabling one a change not yet archived
+   * selects is refused before anything is written. Sent only from a person's press in Settings (AC-49).
+   */
+  | { action: 'extension-set'; id: string; enabled: boolean; revision: string }
   /** Fills `/stip-bootstrap` in the prompt (Setup state). */
   | { action: 'setup' }
   /** Fills `/stip-explore ` in the prompt; the bound change stays open (AC-37). */

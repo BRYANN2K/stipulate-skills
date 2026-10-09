@@ -9,6 +9,7 @@
 // Widths (AC-30): every line is fitted to the cells it has, by priority, never cut mid-word.
 // Motion (AC-36): motion.ts says which frame each one-shot is on; this file draws it and arms the
 // next frame, repainting the terminal's clocks and the review pulse with `$.ui.blit` in between.
+// Extensions (AC-44..AC-46): the bound change's selected extensions as chips under the header.
 import { atom, read } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -27,6 +28,8 @@ import {
   buttonCells,
   buttonsCells,
   canApprove,
+  chipId,
+  chipsFit,
   counts,
   criterionUnderReview,
   decodeUi,
@@ -495,6 +498,70 @@ export const registerPane: Register = on => {
         {buttons('tabs', tabsFor(header.compact))}
       </Box>
     )
+
+    // --- Extension chips (AC-44..AC-46): the bound change's selection, under the header line ---
+    // While the change explores, a chip is a button that removes it and `+ extension` lists the
+    // enabled ones not selected (one press adds it); otherwise the chips are text. Chips are whole or
+    // collapsed into `+n`, never cut. One that just joined the selection lights up once (AC-45).
+    const exploring = changeId !== null && snapshot.phase === 'exploring'
+    const selected = changeId ? snapshot.extensions : []
+    const candidates = exploring ? (snapshot.enabledExtensions ?? []).filter(id => !selected.includes(id)) : []
+    // No chip is wider than the pane: a long id is shortened (the key keeps it whole).
+    const chipLabel = (id: string) => chipId(id, width - (exploring ? 4 : 2))
+    const chipText = (id: string) => `◇ ${chipLabel(id)}${exploring ? ' ✕' : ''}`
+    const addBtn: Btn = { key: 'ext-add', label: ui.extAdd ? '+ extension ▴' : '+ extension', dim: true }
+    const chipFit = chipsFit(selected.map(id => chipText(id).length), width, candidates.length ? buttonCells(addBtn.label) : 0)
+    const chip = (id: string) => {
+      const lit = motion.at('chip', `${changeId}:${id}`, now) !== null
+      const parts = [
+        <Text {...(lit ? { color: 'suggestion', bold: true } : { color: 'claude' })}>{lit ? '◆ ' : '◇ '}</Text>,
+        <Text {...(lit ? { color: 'suggestion', bold: true } : {})}>{chipLabel(id)}</Text>,
+        ...(exploring ? [<Text dimColor>{' ✕'}</Text>] : []),
+      ]
+      if (exploring)
+        return (
+          <Button key={`ext-remove:${id}`} plain onPress={viaHook}>
+            {parts}
+          </Button>
+        )
+      return (
+        <Box key={`ext-${id}`} flexShrink={0}>
+          <Text>{parts}</Text>
+        </Box>
+      )
+    }
+    // `+n` is the person's way to the chips that did not fit: pressed, every chip is listed, wrapping
+    // between whole chips (removable while exploring, to read otherwise); `▴` folds them back.
+    const more = (text: string) => button({ key: 'ext-more', label: text, plain: true, dim: true })
+    const showAll = ui.extAll && selected.length > 0
+    // The ids to add, whole: on one line while they all fit, else one per line (an id wider than the
+    // pane itself is the only one shortened).
+    const picks = candidates.map(id => ({ key: `ext-pick:${id}`, label: `+ ${id}`.length <= width ? `+ ${id}` : shortenWords(`+ ${id}`, width), plain: true as const }))
+    const chipsRow =
+      selected.length || candidates.length ? (
+        <Box key="ext-chips" flexDirection="column" width={width}>
+          {showAll ? (
+            <Box key="ext-row" flexDirection="row" flexWrap="wrap" columnGap={1}>
+              {selected.map(chip)}
+              {more('▴')}
+              {candidates.length ? button(addBtn) : null}
+            </Box>
+          ) : (
+            <Box key="ext-row" flexDirection="row" gap={1}>
+              {selected.slice(0, chipFit.shown).map(chip)}
+              {chipFit.more ? more(chipFit.more) : null}
+              {candidates.length && !chipFit.tailBelow ? button(addBtn) : null}
+            </Box>
+          )}
+          {!showAll && candidates.length && chipFit.tailBelow ? <Box key="ext-add-row">{button(addBtn)}</Box> : null}
+          {candidates.length && ui.extAdd ? (
+            <Box key="ext-pick" flexDirection={buttonsCells(picks) <= width ? 'row' : 'column'} columnGap={1}>
+              {picks.map(button)}
+            </Box>
+          ) : null}
+          {exploring && ui.extReply && ui.extReplyFor === JSON.stringify(selected) ? line('ext-reply', noEmDash(ui.extReply), { dimColor: true }, 'wrap') : null}
+        </Box>
+      ) : null
 
     // --- The rail: done green, current lit (filled on the terminal), the rest dim; a seam fills as a stage is reached ---
     const marks = changeId ? stagesOf(snapshot) : []
@@ -1101,7 +1168,6 @@ export const registerPane: Register = on => {
               )
             })()
           : null,
-        ex && ex.extensions.length ? line('extensions', `Extensions: ${ex.extensions.join(', ')}`, { dimColor: true }) : null,
       )
     } else if (shownView === 'validate') {
       const d8 = digest ? digest.slice(0, 8) : null
@@ -1289,6 +1355,7 @@ export const registerPane: Register = on => {
       <Box flexDirection="column" width={width} rowGap={0}>
         {head}
         {header.badgeBelow ? <Box key="badge-line">{badgeText}</Box> : null}
+        {chipsRow}
         {ui.picker ? pickerList(snapshot) : null}
         {handoffTop}
         {rail}

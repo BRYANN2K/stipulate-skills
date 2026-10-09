@@ -2,7 +2,7 @@
 
 The `stipulate` mod runs the Stip lifecycle natively in Claude Code. It adds tools for the coordinator, worker agent types per role, ownership and approval guards, a band above the prompt, a `/stip` pane, worker settings, a status line entry and toasts. Lifecycle and registry changes still go through the bundled engine (`packages/claude-code/assets/workflow.py`, a copy of `scripts/workflow.py`).
 
-The mod is built on Claude Code's function-hook plugin API ("mods"), which is **early access**. It was developed against build 2.1.293 and qualified on 2.1.293 and 2.1.294. A newer build can change the API: re-qualify before relying on it ([Re-qualify on a new build](#re-qualify-on-a-new-build)).
+The mod is built on Claude Code's function-hook plugin API ("mods"), which is **early access**. It was developed against build 2.1.293 and qualified on 2.1.293, 2.1.294 and 2.1.296. A newer build can change the API: re-qualify before relying on it ([Re-qualify on a new build](#re-qualify-on-a-new-build)).
 
 The seven `stip-*` skills remain the lifecycle interface. The mod adds enforcement and a live view; it does not add an eighth skill.
 
@@ -64,8 +64,21 @@ The pane has two tabs, **Plan** (titled `Stip`) and **Settings** (titled `Stip �
 
 The Plan tab opens with a header and a stage strip:
 
-- **Header:** the change picker (the change name with `▾`), **+ New** (hotkey `n`), the approval badge, and the Plan / Settings tabs. The picker lists in-flight changes first, then the others, then finished ones and the archived count; selecting one binds it. **+ New** puts `/stip-explore` in your prompt and keeps the current change bound.
+- **Header:** the change picker (the change name with `▾`), **+ New** (hotkey `n`), the approval badge, and the Plan / Settings tabs. The picker lists in-flight changes first, then the others, then finished ones and the archived count; selecting one binds it. **+ New** puts `/stip-explore` in your prompt and keeps the current change bound. Under it, the bound change's selected extensions appear as chips ([Extension chips](#extension-chips)).
 - **Stages:** Explore, Validate, Apply, Check, Docs, Archive. In the terminal, done stages are green with `✓`, the current one is filled, and the rest are dim. In the desktop app the strip is plain text with no chips: done stages are green with `✓`, the current stage is bold in the accent color with a `●` mark, and later stages are dim. A stage in trouble shows `!` in the error color.
+
+#### Extension chips
+
+In every bound view (the Plan tab in each state and the Settings tab, in the terminal and the desktop app), the header shows the extensions selected for the bound change, one chip each: `◇ <id>`. No chips appear when the change has none selected. A long id is shortened with `…`; when the chips do not fit, they collapse to `+n`, which expands the full list.
+
+While the change is **exploring**, the chips can be edited:
+
+- `✕` on a chip removes that extension from the change.
+- `[ + extension ]` lists the project's enabled extensions that the change has not selected yet; one press adds one.
+
+Each press runs the engine's `select` for the change, which withdraws any approval: the contract must be validated and approved again. Outside exploring, the chips are read-only.
+
+Selecting is per change. Enabling is per project and happens in the Settings tab's **Extensions** card ([Extensions](#extensions)): an extension must be enabled before a change can select it.
 
 When a button puts a command in your prompt, a `✎ <command>` line confirms it: press Enter to send it. If your prompt already holds a draft, the draft is left as it is and the command is given in a notice instead.
 
@@ -170,6 +183,7 @@ Open **`/stip-settings`**, the band's **Settings** (`s`) or the pane's Settings 
   - Phase overrides, **Other roles (N)** with **Show**, and **+ Add role** (lowercase hyphenated name; `discovery` and `coordinator` are reserved).
   - A row's `›` shows what it resolves to. On **Defaults** it lists the effective model, effort and isolation for every role, the limits, and **Add phase override…** (a role or all roles, then a phase). On a role it offers **Override `<role>` in a phase…**.
 - **Limits and guards:** **Workers** and **Parallel writers** steppers (1 to 8), the **Apply gate** (`off`, `warn`, `block`) and **Motion** (`Auto`, `Calm`, `Off`).
+- **Extensions** (project scope): every extension found in `.workflow/extensions/`, with its description and an **On**/**Off** button ([Extensions](#extensions)).
 - **Save** and **Discard**, with the save state (`Saved`, `Unsaved · N changes`) and validation messages.
 
 Model choices are `inherit`, Opus 5.5, Fable 5.1, Sonnet 5.5, Haiku 5.5, the `opus`, `sonnet`, `haiku` and `fable` aliases, or a custom model ID. Effort is `inherit`, `low`, `medium`, `high`, `xhigh` or `max`, shown with its mark ([Effort marks](#effort-marks)).
@@ -183,6 +197,16 @@ Running workers keep the model and effort recorded at launch. Edits apply to the
 - **auto** plays every frame of each one-shot event.
 - **calm** keeps the state changes but drops the in-between frames.
 - **off** shows final states only; the running clocks and the review pulse stop repeating too.
+
+### Extensions
+
+The **Extensions** card lists every extension found in `.workflow/extensions/`, with its description and an **On**/**Off** button. It always edits the project file, `.workflow/config.json`, whatever scope is selected above.
+
+- **On** makes the extension available to changes. It does not select it for any change; a change selects it while exploring ([Extension chips](#extension-chips)).
+- **Off** makes it unavailable. Turning off an extension that a change not yet archived has selected is refused, and the refusal names that change.
+- The button saves on press; **Save** and **Discard** do not apply to it. It edits only `extensions.<id>.enabled` (and `path` when the extension is newly enabled) and leaves the rest of the file byte-identical: layout, line endings and file mode.
+
+Only your presses change which extensions are enabled or selected; no mod tool the model can call does. This is coordination, not a sandbox: the model can still run the engine's `select` through Bash or edit `.workflow/config.json` directly, as the Stip skills do during explore and bootstrap ([Residuals](#residuals)).
 
 ### Scopes and files
 
@@ -342,6 +366,7 @@ These cases are documented limits, not guarantees:
 - Approvals present at the mod's first activation in a project are adopted as yours.
 - Integrated content from tasks that a revision later retires stays in the checkout. The rebase names those paths; review and revert them yourself if needed.
 - Two Stip sessions on the same project share a journal signed with a key kept in the plugin store, so each accepts the other's engine writes. It is not a boundary between sessions you run.
+- Extension selection and enablement are not guarded. The mod gives the model no tool for them, but the model can run `workflow.py select` through Bash or edit `.workflow/config.json`, as the Stip skills do.
 - `python3 -I`/`-E` ignore `PYTHONDONTWRITEBYTECODE`; integration skips the resulting bytecode.
 - The mod API is early access. The surfaces exercised are the terminal and the desktop Code tab; the IDE and mobile surfaces were not qualified.
 
@@ -359,6 +384,8 @@ Recorded in the evidence of the Ledger change (`stip-ledger-ui`); the evidence d
 - Live terminal sessions rendered every pane state (Setup, New change, Explore, Validate, Apply, Check, Docs, Archive, Settings) and the band at 140, 110, 80, 60, 50 and 40 columns without mid-word cuts. Motion was checked in `auto`, `calm` and `off`. **+ New** filled `/stip-explore` and kept the change bound.
 - The desktop app showed the Plan tab live (picker, **+ New**, stages, Tasks, SVG plan graph, criteria ruler) and the band. The desktop Settings tab is covered by render tests only.
 - A live correction refreshed non-owned files in its worktree; a reused change id had its stale records set aside once, with no restore loop; debug logs held no `no handler` or `hook failed` lines after band and pane presses.
+
+The extension chips and the Settings **Extensions** card (`extension-chips`) were qualified live on build 2.1.296.
 
 The status line is refitted on terminal width changes; it was verified live at 40 and 140 columns.
 

@@ -1,7 +1,7 @@
 // Stipulate interface: band (AC-16), /stip pane (AC-17), status line and toasts (AC-18),
 // context section (AC-19) and /stip-settings (AC-20). It reads PluginState['stipulate'] and acts
 // only through the core's `request` state (actions.ts); it never runs the engine itself while drawing (AC-21).
-import { atom, read } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { StipBinding, StipSnapshot } from '../../types'
@@ -9,11 +9,16 @@ import type { StipBinding, StipSnapshot } from '../../types'
 import { registerActions } from './actions.ts'
 import { registerBand } from './band.tsx'
 import * as motion from './motion.ts'
-import { SECTION_ID, fitStatus, uiToast, contextText, statusText, statusUpdate, transitions, viewWidth, waitingTransitions } from './model.ts'
+import { SECTION_ID, fitStatus, uiToast, contextText, patchUi, statusText, statusUpdate, transitions, viewWidth, waitingTransitions } from './model.ts'
 import { registerPane } from './pane.tsx'
 import { registerSettings } from './settings.tsx'
 
 const snapshotAtom = atom({ plugin: 'stipulate', key: 'snapshot' } as const, null)
+const uiAtom = atom({ plugin: 'stipulate', key: 'selectedTask' } as const, null)
+
+/** True when the extension controls' state no longer applies: another change, or no longer exploring. */
+export const leftExploring = (prev: StipSnapshot | null, next: StipSnapshot | null) =>
+  prev !== null && prev.phase === 'exploring' && (next === null || next.changeId !== prev.changeId || next.phase !== 'exploring')
 
 /** The commands of a project that uses Stip (in a project without .workflow/ the core registers a read-only /stip). */
 async function registerCommands($: EngineInterface) {
@@ -48,6 +53,9 @@ export const registerUi: Register = (on, options) => {
       if (prev?.setup && snap && !snap.setup) await registerCommands($).catch(() => undefined)
       const now = await $.clock.now()
       for (const text of transitions(prev, snap)) $.ui.toast(uiToast(text.split(' ')[0]!, text, now))
+      // The engine's reply and the open lists belong to that exploring change (AC-46): drop them.
+      if (leftExploring(prev, snap) || (prev && snap && prev.changeId !== snap.changeId))
+        await update($, uiAtom, raw => patchUi(raw, { extAdd: false, extAll: false, extReply: null, extReplyFor: null })).catch(() => undefined)
     }
     return done
   }).catch(($, e, next) => next(e))

@@ -787,7 +787,7 @@ describe('attempt 9: live review items', () => {
     expect(modelEffort('claude-haiku-5-5', 'inherit')).toBe('Haiku 5.5')
     expect(shortPath('/Users/u/Documents/Projects/nimbus/.workflow/config.json', '/Users/u')).toBe('~/…/.workflow/config.json')
     expect(shortPath('/Users/u/.claude/stipulate.json', '/Users/u')).toBe('~/.claude/stipulate.json')
-    expect(decodeUi(encodeUi({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a' }))).toEqual({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a' })
+    expect(decodeUi(encodeUi({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a', extAdd: true, extAll: true, extReply: 'Engine: ok', extReplyFor: '["a"]' }))).toEqual({ task: 'core', criteria: true, criterion: 'AC-2', picker: false, helper: null, retired: false, group: 'a', extAdd: true, extAll: true, extReply: 'Engine: ok', extReplyFor: '["a"]' })
     expect(decodeUi('core').task).toBe('core')
   })
 

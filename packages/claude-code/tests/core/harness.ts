@@ -3,6 +3,8 @@
 import { mock, type MockClock } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
+import { revisionOf, sha256 } from '../../hooks/core/settings.ts'
+
 export const ROOT = '/proj'
 export const DIGEST = 'ab12cd34ef56'.padEnd(64, '0')
 
@@ -69,6 +71,19 @@ export class World {
     return [...new Set(this.jobs.map(j => j.task_id).filter(id => !this.tasks.some(t => t.id === id)))].sort()
   }
   envSet: Record<string, string | undefined> = {}
+  /** The bound change's selected extensions (the engine's `status`, `select` replaces them). */
+  extensions: string[] = ['cli-tooling']
+  /** Runs inside the locked extension save, before its checks (another writer racing the press). */
+  beforeExtensionSave: (() => void) | null = null
+  /** Puts an extension folder (its extension.json) in .workflow/extensions/, enabled or not in the config. */
+  addExtension(id: string, description: string, enabled: boolean | null) {
+    this.files.set(`${ROOT}/.workflow/extensions/${id}/extension.json`, JSON.stringify({ schema_version: 1, id, description, explore: 'explore.md' }))
+    this.files.set(`${ROOT}/.workflow/extensions/${id}/explore.md`, '# explore\n')
+    if (enabled === null) return
+    const doc = JSON.parse(this.files.get(`${ROOT}/.workflow/config.json`) ?? '{"schema_version":1,"extensions":{}}')
+    doc.extensions[id] = { enabled, path: `.workflow/extensions/${id}` }
+    this.files.set(`${ROOT}/.workflow/config.json`, JSON.stringify(doc, null, 2) + '\n')
+  }
   /** Variables the session's environment starts with. */
   envVars: Record<string, string> = {}
   /** Whether this project already has a provenance baseline (false: first activation adopts). */
@@ -137,6 +152,7 @@ export class World {
       schema_version: 2,
       id: 'demo',
       ...this.lifecycleExtra,
+      extensions: this.extensions,
       phase: this.phase,
       ...(this.approvalCurrent ? { approval: { contract_digest: this.contractDigest, by: this.approvedBy, recorded_at: this.approvedAt } } : {}),
     })
@@ -200,11 +216,23 @@ export class World {
         schema_version: 2,
         id: 'demo',
         phase: this.phase,
-        extensions: ['cli-tooling'],
+        extensions: this.extensions,
         approval_current: this.approvalCurrent,
         contract_digest: this.contractDigest,
         plan: { version: 1, tasks: this.tasks },
       })
+    if (cmd === 'select') {
+      // As the engine: every id must be enabled in the config; the selection is replaced whole and
+      // the approval (with check and docs records) withdrawn, the change back to exploring.
+      const ids = [...new Set(args.flatMap((a, i) => (args[i - 1] === '--extension' ? [a] : [])))]
+      const doc = JSON.parse(this.files.get(`${ROOT}/.workflow/config.json`) ?? '{}')
+      for (const x of ids) if (doc.extensions?.[x]?.enabled !== true) return no(`Extension not enabled: ${x}`)
+      this.extensions = ids
+      this.approvalCurrent = false
+      this.phase = 'exploring'
+      done()
+      return ok({ phase: 'exploring', extensions: Object.fromEntries(ids.map(x => [x, { manifest: { id: x }, references: {} }])) })
+    }
     if (cmd === 'validate') return ok({ criteria: ['AC-1', 'AC-2'], contract_digest: this.contractDigest, phase: this.approvalCurrent ? this.phase : 'draft' })
     if (cmd === 'approve') {
       this.approvalCurrent = true
@@ -491,12 +519,47 @@ export function install(on0: On, world: World): MockClock {
   on('process.run', ($, e) => {
     world.activity++
     const argv = [...e.argv]
+    if (argv[0] === 'python3' && argv[1] === '-c' && JSON.parse(e.init?.stdin ?? '{}').config) {
+      // EXTENSION_SCRIPT, as it behaves under the lock (the script itself is checked with python3 apart).
+      const req = JSON.parse(e.init!.stdin!)
+      world.ran.push('set-extension')
+      world.beforeExtensionSave?.()
+      const fail = (body: Record<string, unknown>) => value({ exitCode: 1, stdout: '', stderr: JSON.stringify(body), isStdoutTruncated: false, isStderrTruncated: false })
+      return (async () => {
+        const text = world.files.get(req.config) ?? ''
+        if ((await sha256(text)) !== req.revision) return fail({ error: 'The project config changed elsewhere; reload before saving.' })
+        const doc = JSON.parse(text)
+        if (!req.enabled) {
+          const users = [...world.files.keys()]
+            .filter(f => f.startsWith(`${req.changes}/`) && f.endsWith('/state.json') && f.split('/').length === req.changes.split('/').length + 2)
+            .flatMap(f => {
+              const st = JSON.parse(world.files.get(f)!)
+              return st.phase !== 'archived' && (st.extensions ?? []).includes(req.id) ? [f.split('/').at(-2)!] : []
+            })
+            .sort()
+          if (users.length) return fail({ error: 'in use', users })
+        }
+        const entry = doc.extensions[req.id]
+        if (entry && typeof entry === 'object') {
+          entry.enabled = req.enabled
+          if (req.enabled && !('path' in entry)) entry.path = req.path
+        } else if (req.enabled) doc.extensions[req.id] = { enabled: true, path: req.path }
+        world.files.set(req.config, JSON.stringify(doc, null, 2) + '\n')
+        return value({ exitCode: 0, stdout: JSON.stringify({ saved: true }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+      })()
+    }
     if (argv[0] === 'python3' && argv[1] === '-c') {
       const req = JSON.parse(e.init?.stdin ?? '{}')
       world.ran.push('save-settings')
-      if (req.revision === 'stale' || world.settingsStale) return value({ exitCode: 1, stdout: '', stderr: JSON.stringify({ error: 'Settings changed elsewhere; reload before saving.' }), isStdoutTruncated: false, isStderrTruncated: false })
-      world.files.set(req.dest, req.text)
-      return value({ exitCode: 0, stdout: JSON.stringify({ saved: true }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+      const stale = () => value({ exitCode: 1, stdout: '', stderr: JSON.stringify({ error: 'Settings changed elsewhere; reload before saving.' }), isStdoutTruncated: false, isStderrTruncated: false })
+      if (req.revision === 'stale' || world.settingsStale) return stale()
+      // As SAVE_SCRIPT: the revision must be the one over the three scope files as they are now.
+      return (async () => {
+        const [personal, project, local] = (req.paths as string[]).map(f => world.files.get(f) ?? '')
+        if ((await revisionOf({ personal: personal!, project: project!, local: local! })) !== req.revision) return stale()
+        world.files.set(req.dest, req.text)
+        return value({ exitCode: 0, stdout: JSON.stringify({ saved: true }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false })
+      })()
     }
     if (argv[0] === 'mv') {
       // `mv -n src dest`: moves one file of the virtual file system (never over an existing one).

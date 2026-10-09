@@ -484,6 +484,9 @@ export type Draft = {
   showOther?: boolean
   /** The settings row whose details (effective resolution, phase overrides) are open; `inherited` opens the group. */
   open?: string | null
+  /** The Extensions card's last outcome (AC-47, AC-48): saved, or the refusal. */
+  extNotice?: string | null
+  extError?: string | null
 }
 
 /** Differences between a stored scope section and the draft, counted by leaf setting. */
@@ -778,9 +781,26 @@ export const CUSTOM_MODEL = '@custom'
 
 // --- Pane UI state, carried in the `selectedTask` string (no other key exists for it) ---
 
-/** `group`: the first member of the Tasks group whose members are listed. */
-export type PaneUi = { task: string | null; criteria: boolean; criterion: string | null; picker: boolean; helper: string | null; retired: boolean; group: string | null }
-const EMPTY_UI: PaneUi = { task: null, criteria: false, criterion: null, picker: false, helper: null, retired: false, group: null }
+/**
+ * `group`: the first member of the Tasks group whose members are listed. `extAdd`: the `+ extension`
+ * list is open; `extAll`: every chip is shown (the `+n` was pressed); `extReply`: the engine's reply
+ * to the last selection press, shown under the chips while the change explores and its selection is
+ * still `extReplyFor` (the selection as JSON).
+ */
+export type PaneUi = {
+  task: string | null
+  criteria: boolean
+  criterion: string | null
+  picker: boolean
+  helper: string | null
+  retired: boolean
+  group: string | null
+  extAdd: boolean
+  extAll: boolean
+  extReply: string | null
+  extReplyFor: string | null
+}
+const EMPTY_UI: PaneUi = { task: null, criteria: false, criterion: null, picker: false, helper: null, retired: false, group: null, extAdd: false, extAll: false, extReply: null, extReplyFor: null }
 
 /** Reads the pane's UI state; a plain task id (older form) is that task's open Details. */
 export function decodeUi(raw: string | null | undefined): PaneUi {
@@ -797,6 +817,10 @@ export function decodeUi(raw: string | null | undefined): PaneUi {
       helper: typeof v.helper === 'string' ? v.helper : null,
       retired: v.retired === true,
       group: typeof v.group === 'string' ? v.group : null,
+      extAdd: v.extAdd === true,
+      extAll: v.extAll === true,
+      extReply: typeof v.extReply === 'string' ? v.extReply : null,
+      extReplyFor: typeof v.extReplyFor === 'string' ? v.extReplyFor : null,
     }
   } catch {
     return { ...EMPTY_UI }
@@ -912,6 +936,38 @@ export const buttonCells = (label: string, plain = false) => (plain ? label.leng
 /** Cells of a row of buttons with a gap of one. */
 export const buttonsCells = (buttons: { label: string; plain?: boolean }[]) =>
   buttons.reduce((n, b) => n + buttonCells(b.label, b.plain), 0) + Math.max(0, buttons.length - 1)
+
+/**
+ * AC-44: how many of the extension chips (`cells` each, in order, a gap of one between them) fit in
+ * `room` beside a trailing control of `tail` cells (0: none), the rest collapsed into one `+n`. Chips
+ * are never cut or wrapped; when not even the control fits beside them, `tailBelow` puts it on the
+ * next line. `more` is the `+n` text, or null when every chip is shown.
+ */
+/**
+ * AC-44: an extension id as a chip shows it in `room` cells: whole when it fits, else shortened at a
+ * `-` with …, and cut with … only when even its first part is wider (ids have no length limit).
+ */
+export function chipId(id: string, room: number): string {
+  if (id.length <= room) return id
+  const short = shortenWords(id, room)
+  return short.length <= room ? short : `${id.slice(0, Math.max(1, room - 1))}…`
+}
+
+export function chipsFit(cells: number[], room: number, tail = 0): { shown: number; more: string | null; tailBelow: boolean } {
+  const fit = (withTail: boolean) => {
+    for (let shown = cells.length; shown >= 0; shown--) {
+      const hidden = cells.length - shown
+      const parts = [...cells.slice(0, shown), ...(hidden ? [`+${hidden}`.length] : []), ...(withTail && tail ? [tail] : [])]
+      const total = parts.reduce((n, w) => n + w, 0) + Math.max(0, parts.length - 1)
+      if (total <= room) return { shown, more: hidden ? `+${hidden}` : null }
+    }
+    return null
+  }
+  const beside = fit(true)
+  if (beside && (beside.shown > 0 || !cells.length)) return { ...beside, tailBelow: false }
+  const alone = fit(false) ?? { shown: 0, more: cells.length ? `+${cells.length}` : null }
+  return { ...alone, tailBelow: tail > 0 }
+}
 
 export type MetaKind = 'model' | 'effort' | 'state' | 'time'
 export type MetaPart = { kind: MetaKind; text: string }

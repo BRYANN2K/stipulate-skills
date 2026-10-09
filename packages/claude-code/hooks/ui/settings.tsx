@@ -3,12 +3,14 @@
 // role" card (the orchestrator, read-only; Defaults; one row per role in use with Model · Effort ·
 // Isolation pickers; roles that inherit everything on one dimmed row; other roles and Add role); a
 // "Limits and guards" card with the motion setting (AC-36); a save bar. A row's › opens its effective resolution and phase
-// overrides. Validated before save, saved with the optimistic revision (actions.ts).
+// overrides. Validated before save, saved with the optimistic revision (actions.ts). Then the project's
+// "Extensions" card (AC-47, AC-48): each extension of .workflow/extensions/ with its description and an
+// On/Off button that saves `extensions.<id>.enabled` at once, the person's press only (AC-49).
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import { APPLY_GATES, EFFORTS, PHASES, SCOPES, resolveProfile } from '../core/settings.ts'
-import type { StipEffectiveSettings, StipMotion, StipScope, StipSnapshot } from '../../types'
+import type { StipEffectiveSettings, StipMotion, StipProjectExtension, StipScope, StipSnapshot } from '../../types'
 import { MOTIONS } from '../core/ledger.ts'
 import { namesFit } from './graph.ts'
 import {
@@ -20,6 +22,9 @@ import {
   asDraft,
   buttonsCells,
   changeCount,
+  chipId,
+  chipsFit,
+  decodeUi,
   draftFrom,
   friendlyModel,
   phaseForRole,
@@ -42,6 +47,8 @@ import {
 const snapshotAtom = atom({ plugin: 'stipulate', key: 'snapshot' } as const, null)
 const settingsAtom = atom({ plugin: 'stipulate', key: 'settings' } as const, null)
 const draftAtom = atom({ plugin: 'stipulate', key: 'settingsDraft' } as const, null)
+// The pane's UI state (the Plan tab's): whether `+n` lists every chip.
+const uiAtom = atom({ plugin: 'stipulate', key: 'selectedTask' } as const, null)
 
 const UNSET = '@inherited'
 const LAYER: Record<Target['kind'], string> = { defaults: 'defaults', role: 'role', phase: 'phase', 'phase-role': 'phase-role' }
@@ -338,6 +345,33 @@ export const registerSettings: Register = on => {
     const pickerRoom = width - buttonsCells(tabs) - 1 - 6
     const pickerLabel = `${changeId ? shortenWords(changeId, Math.max(4, pickerRoom)) : 'no change'} ▾`
 
+    // --- The bound change's extension chips (AC-44), read-only here: they change on the Plan tab ---
+    // Never wider than the pane (a long id shortened); `+n` lists them all, `▴` folds them back.
+    const selected = changeId ? (snapshot?.extensions ?? []) : []
+    const allChips = decodeUi(await read($, uiAtom)).extAll
+    const chipLabel = (id: string) => chipId(id, width - 2)
+    const chipFit = chipsFit(selected.map(id => `◇ ${chipLabel(id)}`.length), width)
+    const chipView = (id: string) => (
+      <Box key={`ext-${id}`} flexShrink={0}>
+        <Text>
+          <Text color="claude">{'◇ '}</Text>
+          <Text>{chipLabel(id)}</Text>
+        </Text>
+      </Box>
+    )
+    const moreBtn = (label: string) => <Button key="ext-more" label={label} plain dimColor onPress={viaHook} />
+    const extChips = !selected.length ? null : allChips ? (
+      <Box key="ext-chips" flexDirection="row" flexWrap="wrap" columnGap={1} width={width}>
+        {selected.map(chipView)}
+        {moreBtn('▴')}
+      </Box>
+    ) : (
+      <Box key="ext-chips" flexDirection="row" gap={1} width={width}>
+        {selected.slice(0, chipFit.shown).map(chipView)}
+        {chipFit.more ? moreBtn(chipFit.more) : null}
+      </Box>
+    )
+
     // --- Scope chips and path ---
     const path = view?.paths[draft.scope] ?? ''
     const chipsW = SCOPES.reduce((n, sc) => n + SCOPE_LABEL[sc].length + 2, 0) + 2
@@ -388,6 +422,47 @@ export const registerSettings: Register = on => {
             ? { text: `Unsaved · ${changes} change${changes === 1 ? '' : 's'}`, color: 'warning' }
             : { text: 'Saved', dimColor: true }
 
+    // --- Project extensions (AC-47, AC-48): enabling offers one to changes; a change selects its own ---
+    const exts = view?.extensions ?? []
+    const extRow = (x: StipProjectExtension) => {
+      const btn = { label: x.enabled ? 'On' : 'Off' }
+      const room = inner - buttonsCells([btn]) - 1
+      const notes = [x.description ?? (x.present ? 'No description.' : 'No folder in .workflow/extensions/.'), x.selectedBy.length ? `Selected by ${x.selectedBy.join(', ')}.` : null].filter(Boolean).join(' ')
+      return (
+        <Box key={`ext-row-${x.id}`} flexDirection="column">
+          <Box key={`ext-line-${x.id}`} flexDirection="row" justifyContent="space-between">
+            <Box flexShrink={1}>
+              <Text bold {...(x.enabled ? {} : { dimColor: true })} wrap="truncate-end">
+                {shortenWords(x.id, Math.max(4, room))}
+              </Text>
+            </Box>
+            <Button key={`ext-toggle:${x.id}`} label={btn.label} {...(x.enabled ? { variant: 'primary' as const } : { dimColor: true })} onPress={viaHook} />
+          </Box>
+          <Text dimColor wrap="wrap">
+            {notes}
+          </Text>
+        </Box>
+      )
+    }
+    const extStatus = draft.extError ? { text: draft.extError, color: 'error' } : draft.extNotice ? { text: draft.extNotice, color: 'success' } : null
+    const extensionsCard = card('extensions', 'Extensions', exts.length ? `project · ${exts.filter(x => x.enabled).length} of ${exts.length} on` : 'project', [
+      ...(exts.length ? exts.map(extRow) : [<Text dimColor wrap="wrap">No extension in .workflow/extensions/ yet.</Text>]),
+      <Box key="ext-hint">
+        <Text dimColor wrap="wrap">
+          On makes an extension available to changes; each change selects its own while exploring. Saved on press.
+        </Text>
+      </Box>,
+      ...(extStatus
+        ? [
+            <Box key="ext-status">
+              <Text color={extStatus.color} wrap="wrap">
+                {extStatus.text}
+              </Text>
+            </Box>,
+          ]
+        : []),
+    ])
+
     const defaultsRow = rows.find(r => r.target.kind === 'defaults')!
     return (
       <Box flexDirection="column" width={width}>
@@ -399,6 +474,7 @@ export const registerSettings: Register = on => {
             ))}
           </Box>
         </Box>
+        {extChips}
         <Box key="scopes" flexDirection="row" flexWrap="wrap" columnGap={1}>
           {scopeChips}
           {pathRoom >= 12 ? (
@@ -499,6 +575,7 @@ export const registerSettings: Register = on => {
             Running workers keep the model and effort recorded when they started; changes apply to the next delegation.
           </Text>
         </Box>
+        {extensionsCard}
       </Box>
     )
   })

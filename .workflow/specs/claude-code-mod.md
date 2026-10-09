@@ -5,7 +5,7 @@ Provide a Claude Code function-hook plugin (`packages/claude-code/`, plugin name
 ## Scope
 
 - Engine: `workflow.py runtime …` subcommands owning dispatch gates, the worker registry, worktree isolation and integration.
-- Mod: tools, agent types, commands, guards, context injection, band, pane, status line, toasts, settings.
+- Mod: tools, agent types, commands, guards, context injection, band, pane (including the change's extension chips), status line, toasts, settings (including project extensions).
 - Distribution: repo-root marketplace file, launcher hint, documentation.
 
 ## Acceptance criteria
@@ -79,3 +79,13 @@ Provide a Claude Code function-hook plugin (`packages/claude-code/`, plugin name
 
 - AC-42: `npx github:BRYANN2K/stipulate-skills --agent claude-code` installs the mod itself by running `claude plugin install stipulate --marketplace BRYANN2K/stipulate-skills --scope project` in the current directory (`--scope user` with `--global`), with no prompt, after the skills; it reports the outcome and exits non-zero if the install fails.
 - AC-43: Without a `claude` CLI on the PATH, the launcher installs the skills, prints the `/plugin install` line with a note that Claude Code was not found, and exits 0; `--dry-run` shows the exact `claude plugin install` command and changes nothing; other agents' installs are unchanged.
+
+### Extensions in the pane and Settings
+
+- AC-44: In every bound view of the /stip pane, on terminal and desktop, the header shows the bound change's selected extensions as chips, one per extension, and nothing when none is selected; the dim `Extensions:` line at the bottom of the Explore view is gone. Chips never wrap mid-word and collapse to a `+n` count when they do not fit (render tests at 40, 80 and 140 columns and desktop narrow/wide).
+- AC-45: When an extension joins the selection, its chip lights up once, following the `motion` setting (auto, calm, off); nothing else in the header animates for it.
+- AC-46: While the bound change is exploring, a person's press on a chip removes that extension, and a `+ extension` control lists the project's enabled extensions not yet selected so one press adds it; each press runs the engine's `select` with the resulting selection and the pane shows the engine's reply. Outside exploring, chips and the control are read-only and a press does nothing.
+- AC-47: The Settings view has a project "Extensions" card listing every extension present in `.workflow/extensions/` with its description and an on/off control. Saving writes only `extensions.<id>.enabled` (and `path` for a newly enabled one) in `.workflow/config.json`, keeping every other key and value of the file unchanged.
+- AC-48: Disabling an extension that a change not yet archived has selected is refused before anything is written, and the refusal names that change.
+- AC-49: Selection changes (AC-46) and enable/disable (AC-47) happen only from a person's press on the band, pane or Settings; no mod tool callable by the model changes either, and a press arriving from a non-person origin is refused. Tests cover a model-originated attempt for both.
+- AC-50: `docs/claude-code-plugin.md` explains the chips, the difference between enabling an extension and selecting it for a change, and the refusal rule; README.md shows new screenshots of the real pane on terminal and desktop with chips and the Extensions card, taken from the built mod.

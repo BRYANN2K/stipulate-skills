@@ -319,3 +319,271 @@ finally:
     try: os.unlink(lock)
     except FileNotFoundError: pass
 `
+
+// --- Project extensions (AC-47, AC-48): `.workflow/config.json` `extensions.<id>`, nothing else ---
+
+/** An extension id as the engine accepts it (its `slug`). */
+export const EXTENSION_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/** Where a newly enabled extension's folder is recorded. */
+export const extensionPath = (id: string) => `.workflow/extensions/${id}`
+
+/** The enabled flags of a parsed config document, by id (an unreadable document enables nothing). */
+export function enabledOf(doc: unknown): Record<string, boolean> {
+  const out: Record<string, boolean> = {}
+  if (!isObject(doc) || !isObject(doc.extensions)) return out
+  for (const [id, entry] of Object.entries(doc.extensions)) out[id] = isObject(entry) && entry.enabled === true
+  return out
+}
+
+/**
+ * The Settings tab's list: every folder of `.workflow/extensions/` whose manifest names its own id,
+ * then configured ids without such a folder; each with its description, flag and the changes not
+ * yet archived that select it. Sorted by id.
+ */
+export function projectExtensionsOf(
+  doc: unknown,
+  manifests: Record<string, unknown>,
+  uses: Record<string, string[]>,
+): { id: string; description: string | null; enabled: boolean; present: boolean; selectedBy: string[] }[] {
+  const enabled = enabledOf(doc)
+  const present = Object.entries(manifests)
+    .filter(([id, m]) => EXTENSION_ID.test(id) && isObject(m) && m.id === id)
+    .map(([id]) => id)
+  const ids = [...new Set([...present, ...Object.keys(enabled).filter(id => EXTENSION_ID.test(id))])].sort()
+  return ids.map(id => {
+    const m = manifests[id]
+    const description = isObject(m) && typeof m.description === 'string' && m.description.trim() ? m.description.trim() : null
+    return { id, description, enabled: enabled[id] === true, present: present.includes(id), selectedBy: [...(uses[id] ?? [])].sort() }
+  })
+}
+
+/**
+ * The one refusal of AC-48: the changes not yet archived that select `id`, named; null when none.
+ * Checked before anything is written, and again under the lock by EXTENSION_SCRIPT.
+ */
+export function disableRefusal(id: string, users: string[]): string | null {
+  if (!users.length) return null
+  const list = [...users].sort()
+  return `${id} stays enabled: ${list.length === 1 ? 'change' : 'changes'} ${list.join(', ')} ${list.length === 1 ? 'selects' : 'select'} it. Remove it from ${list.length === 1 ? 'that change' : 'those changes'} while exploring, or archive ${list.length === 1 ? 'it' : 'them'}, first.`
+}
+
+/**
+ * Python run under the project lock (AC-47, AC-48): verify config.json is still the text the person
+ * saw, refuse a disable that a change not yet archived selects (re-read under the lock), then set
+ * only `extensions.<id>.enabled` (and `path` for a newly enabled one) and replace the file atomically.
+ * Every other key and value is kept, in order, and the file keeps its layout as far as `json` can
+ * write it: its indent (spaces or a tab, detected from the first indented line; one line stays one
+ * line), whether non-ASCII text is written raw or as \u escapes, and its final newline. Residual: a
+ * file mixing layouts is rewritten in the one detected, and spellings `json` normalizes (`\/`, `1E3`,
+ * escapes of ASCII characters, spaces before colons) come back in its standard form. Every failure
+ * is one line of JSON on stderr (`{"error": …}`), never a traceback.
+ */
+export const EXTENSION_SCRIPT = `
+import hashlib, json, os, sys, tempfile
+def out(error, **extra):
+    print(json.dumps({'error': error, **extra}), file=sys.stderr); sys.exit(1)
+try:
+    req = json.load(sys.stdin)
+    lock = req['lock']
+except Exception as e:
+    out('Invalid extension request: %s' % e)
+
+# A JSON reader that keeps where each value sits in the text, so the edit touches only those spans.
+WS = ' \\t\\r\\n'
+class Bad(Exception): pass
+def skip(t, i):
+    while i < len(t) and t[i] in WS: i += 1
+    return i
+def string_end(t, i):
+    i += 1
+    while i < len(t):
+        c = t[i]
+        if c == '\\\\': i += 2; continue
+        if c == '"': return i + 1
+        i += 1
+    raise Bad('unterminated string')
+def value(t, i):
+    i = skip(t, i)
+    if i >= len(t): raise Bad('unexpected end')
+    c = t[i]
+    if c == '{':
+        node = {'kind': 'object', 'start': i, 'members': []}
+        i = skip(t, i + 1)
+        if t[i:i + 1] == '}':
+            node['end'] = i + 1; return node
+        while True:
+            i = skip(t, i)
+            if t[i:i + 1] != '"': raise Bad('expected a key')
+            kend = string_end(t, i)
+            key = json.loads(t[i:kend])
+            kstart = i
+            i = skip(t, kend)
+            if t[i:i + 1] != ':': raise Bad('expected a colon')
+            v = value(t, i + 1)
+            node['members'].append({'key': key, 'kstart': kstart, 'kend': kend, 'value': v})
+            i = skip(t, v['end'])
+            if t[i:i + 1] == ',': i += 1; continue
+            if t[i:i + 1] == '}': node['end'] = i + 1; return node
+            raise Bad('expected , or }')
+    if c == '[':
+        i = skip(t, i + 1)
+        start = i - 1
+        if t[i:i + 1] == ']': return {'kind': 'array', 'start': start, 'end': i + 1}
+        while True:
+            v = value(t, i)
+            i = skip(t, v['end'])
+            if t[i:i + 1] == ',': i += 1; continue
+            if t[i:i + 1] == ']': return {'kind': 'array', 'start': start, 'end': i + 1}
+            raise Bad('expected , or ]')
+    if c == '"': return {'kind': 'string', 'start': i, 'end': string_end(t, i)}
+    j = i
+    while j < len(t) and t[j] not in WS + ',]}': j += 1
+    if j == i: raise Bad('unexpected character')
+    return {'kind': 'scalar', 'start': i, 'end': j}
+def member(node, key):
+    for m in node['members']:
+        if m['key'] == key: return m
+    return None
+
+try:
+    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+except FileExistsError:
+    out('Workflow is locked by another operation; retry.')
+except OSError as e:
+    out('The workflow lock could not be taken: %s' % e.strerror)
+try:
+    os.write(fd, b'stipulate-extensions'); os.close(fd)
+    dest = req['config']
+    if os.path.islink(dest):
+        out('The project config is a symlink.')
+    try:
+        with open(dest, 'rb') as f: text = f.read().decode('utf-8')
+        mode = os.stat(dest).st_mode & 0o7777
+    except FileNotFoundError:
+        out('The project config .workflow/config.json is missing; set Stip up again with /stip-bootstrap.')
+    except (OSError, UnicodeDecodeError) as e:
+        out('The project config could not be read: %s' % e)
+    if hashlib.sha256(text.encode('utf-8')).hexdigest() != req['revision']:
+        out('The project config changed elsewhere; reload before saving.')
+    bom = 1 if text.startswith('﻿') else 0
+    try:
+        doc = json.loads(text[bom:])
+        root = value(text, bom)
+        if skip(text, root['end']) != len(text): raise Bad('extra text after the document')
+    except (ValueError, Bad) as e:
+        out('The project config is not valid JSON (%s); fix .workflow/config.json first.' % str(e).split('\\n')[0])
+    if not isinstance(doc, dict) or not isinstance(doc.get('extensions'), dict) or root['kind'] != 'object':
+        out('The project config has no extensions object.')
+    ident = req['id']
+    enabled = bool(req['enabled'])
+    if not enabled:
+        users = []
+        changes = req['changes']
+        for name in sorted(os.listdir(changes)) if os.path.isdir(changes) else []:
+            try:
+                with open(os.path.join(changes, name, 'state.json'), 'rb') as f: state = json.loads(f.read().decode('utf-8'))
+            except (OSError, ValueError):
+                continue
+            selected = state.get('extensions') if isinstance(state, dict) else None
+            if isinstance(selected, list) and state.get('phase') != 'archived' and ident in selected:
+                users.append(name)
+        if users:
+            out('in use', users=users)
+
+    # The file's own spelling of what is inserted: its line break, colon and indent unit.
+    nl = '\\r\\n' if '\\r\\n' in text else '\\n'
+    exts = member(root, 'extensions')
+    if exts is None or exts['value']['kind'] != 'object':
+        out('The project config has no extensions object.')
+    colon = text[exts['kend']:exts['value']['start']]
+    colon = colon.replace('\\r', '').replace('\\n', '')
+    if ':' not in colon: colon = ': '
+    def indent_of(pos):
+        line = text.rfind('\\n', 0, pos) + 1
+        lead = text[line:pos]
+        return lead if lead.strip() == '' else None
+    key_indent = indent_of(exts['kstart'])
+    obj = exts['value']
+    multiline = key_indent is not None and '\\n' in text[root['start']:root['end']]
+    def first_indent(node):
+        return indent_of(node['members'][0]['kstart']) if node['members'] else None
+    unit = None
+    if multiline:
+        unit = key_indent if key_indent else '  '
+        inner = first_indent(obj)
+        if inner is not None and inner.startswith(key_indent) and len(inner) > len(key_indent): unit = inner[len(key_indent):]
+    def spans_lines(node):
+        return '\\n' in text[node['start']:node['end']]
+    def insert(node, pairs, own_indent, multi):
+        """Where and what to add so object node ends with pairs, spelled like its members."""
+        texts = [json.dumps(k) + colon + v for k, v in pairs]
+        if node['members']:
+            last = node['members'][-1]
+            if len(node['members']) > 1:
+                gap = text[node['members'][-2]['value']['end']:last['kstart']]
+            else:
+                lead = text[node['start'] + 1:last['kstart']]
+                gap = ',' + lead if '\\n' in lead else (', ' if colon.endswith(' ') else ',')
+            return last['value']['end'], ''.join(gap + t for t in texts)
+        if multi and unit is not None:
+            inner = nl + own_indent + unit
+            return node['start'] + 1, inner + (',' + inner).join(texts) + nl + own_indent
+        return node['start'] + 1, (', ' if colon.endswith(' ') else ',').join(texts)
+    entry = member(obj, ident)
+    flag = 'true' if enabled else 'false'
+    path_text = json.dumps(req['path'])
+    edits = []
+    if entry is not None and entry['value']['kind'] == 'object':
+        node = entry['value']
+        en = member(node, 'enabled')
+        if en is not None:
+            edits.append((en['value']['start'], en['value']['end'], flag))
+        pairs = ([] if en is not None else [('enabled', flag)]) + ([('path', path_text)] if enabled and member(node, 'path') is None else [])
+        if pairs:
+            at, add = insert(node, pairs, indent_of(entry['kstart']) or '', spans_lines(obj))
+            edits.append((at, at, add))
+    elif enabled:
+        # A new entry: laid out like a sibling entry object when there is one, else like the file.
+        own = (indent_of(obj['members'][0]['kstart']) if obj['members'] else None)
+        if own is None: own = (key_indent or '') + (unit or '')
+        sibling = next((m['value'] for m in obj['members'] if m['value']['kind'] == 'object'), None)
+        multi = spans_lines(sibling) if sibling is not None else (spans_lines(obj) if obj['members'] else multiline)
+        empty = {'start': 0, 'members': []}
+        obj_text = '{' + insert(empty, [('enabled', 'true'), ('path', path_text)], own, multi and unit is not None)[1] + '}'
+        if entry is not None:
+            edits.append((entry['value']['start'], entry['value']['end'], obj_text))
+        else:
+            at, add = insert(obj, [(ident, obj_text)], key_indent or '', spans_lines(obj) or multiline)
+            edits.append((at, at, add))
+    else:
+        print(json.dumps({'saved': False, 'path': dest})); sys.exit(0)
+    new = text
+    for start, end, repl in sorted(edits, key=lambda e: e[0], reverse=True):
+        new = new[:start] + repl + new[end:]
+
+    # The edit must be exactly the intended change, or nothing is written.
+    expected = json.loads(text[bom:])
+    e = expected['extensions'].get(ident)
+    if isinstance(e, dict):
+        e['enabled'] = enabled
+        if enabled and 'path' not in e: e['path'] = req['path']
+    else:
+        expected['extensions'][ident] = {'enabled': True, 'path': req['path']}
+    try:
+        if json.loads(new[bom:]) != expected: raise Bad('mismatch')
+    except (ValueError, Bad):
+        out('The project config could not be edited in place; change extensions.%s by hand.' % ident)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(dest), prefix='.stip-config-')
+    with os.fdopen(fd, 'w', encoding='utf-8', newline='') as f: f.write(new)
+    os.chmod(tmp, mode)
+    os.replace(tmp, dest)
+    print(json.dumps({'saved': True, 'path': dest}))
+except SystemExit:
+    raise
+except Exception as e:
+    out('The extension setting could not be saved: %s: %s' % (type(e).__name__, str(e).split('\\n')[0]))
+finally:
+    try: os.unlink(lock)
+    except (NameError, FileNotFoundError): pass
+`

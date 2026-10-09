@@ -1,6 +1,7 @@
-// Ledger states and motion (AC-35..AC-38): every pane state as ledger-states.html draws it, on the
-// terminal and the desktop; the motion setting (auto, calm, off), one-shots once per event, the
-// running clock and review pulse, the typing hold; + New; plain titles, the glyph ruler, no em dash.
+// Ledger states and motion (AC-35..AC-38): every pane state as ledger-states.html draws it (bound
+// states with the change's extension chips under the header, AC-44), on the terminal and the
+// desktop; the motion setting (auto, calm, off), one-shots once per event, the running clock and
+// review pulse, the typing hold; + New; plain titles, the glyph ruler, no em dash.
 import { describe, expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
@@ -218,11 +219,11 @@ type State = { name: string; setup?: (w: World) => void; to: ($: any, w: World) 
 const STATES: State[] = [
   { name: 'Setup', setup: bare, to: start, order: ['head', 'setup', 'found'], has: [/Stip isn't set up here yet/, /Set up Stip/, /starts \/stip-bootstrap in your prompt/, /Python, tests with pytest/, /AGENTS\.md is kept as it is/] },
   { name: 'New change', setup: unbound, to: start, order: ['head', 'start', 'followups', 'specs'], has: [/Start a change/, /Describe a change/, /Follow-ups from earlier reviews/, /Upload read timeout/, /Accepted specs/, /presigned-uploads-quotas/, /commit c0e4c6c/] },
-  { name: 'Explore', to: toExplore, order: ['head', 'stages', 'problem', 'findings', 'helpers', 'decisions'], has: [/Problem/, /A stalled upload holds/, /Confirmed/, /Open/, /Research/, /Slow-client timeouts/, /Decisions for you/, /Recommended: 30 s, configurable/, /Answer in your prompt\./] },
-  { name: 'Validate', to: toValidate, order: ['head', 'stages', 'approval', 'graph'], has: [/Ready for your approval/, /Approve/, /2 criteria and 3 tasks/, /Plan and assignees/] },
-  { name: 'Apply', to: toApply, order: ['head', 'stages', 'waiting', 'who', 'graph', 'criteria'], has: [/Waiting for you/, /Tasks/, /claude-test · ○ low · editing api\.py/, /Reading api\.py · Reading storage\.py · Editing api\.py/, /Plan/, /Criteria/] },
-  { name: 'Check', to: toCheck, order: ['head', 'stages', 'review', 'criteria'], has: [/Independent review/, /AC-1 ✓/, /slow client got 408 after 30\.0 s/, /AC-6 ◌/, /waiting on docs/] },
-  { name: 'Docs', to: toDocs, order: ['head', 'stages', 'docs', 'criteria'], has: [/Documentation/, /Edits README\.md/, /5 of 6/, /AC-6: Criterion number 6 holds, waiting on docs/] },
+  { name: 'Explore', to: toExplore, order: ['head', 'ext-chips', 'stages', 'problem', 'findings', 'helpers', 'decisions'], has: [/Problem/, /A stalled upload holds/, /Confirmed/, /Open/, /Research/, /Slow-client timeouts/, /Decisions for you/, /Recommended: 30 s, configurable/, /Answer in your prompt\./] },
+  { name: 'Validate', to: toValidate, order: ['head', 'ext-chips', 'stages', 'approval', 'graph'], has: [/Ready for your approval/, /Approve/, /2 criteria and 3 tasks/, /Plan and assignees/] },
+  { name: 'Apply', to: toApply, order: ['head', 'ext-chips', 'stages', 'waiting', 'who', 'graph', 'criteria'], has: [/Waiting for you/, /Tasks/, /claude-test · ○ low · editing api\.py/, /Reading api\.py · Reading storage\.py · Editing api\.py/, /Plan/, /Criteria/] },
+  { name: 'Check', to: toCheck, order: ['head', 'ext-chips', 'stages', 'review', 'criteria'], has: [/Independent review/, /AC-1 ✓/, /slow client got 408 after 30\.0 s/, /AC-6 ◌/, /waiting on docs/] },
+  { name: 'Docs', to: toDocs, order: ['head', 'ext-chips', 'stages', 'docs', 'criteria'], has: [/Documentation/, /Edits README\.md/, /5 of 6/, /AC-6: Criterion number 6 holds, waiting on docs/] },
   { name: 'Archive', to: toArchive, order: ['head', 'stages', 'archived-line', 'archived', 'models', 'archive-followups', 'archive-cta'], has: [/✓ demo/, /archived, commit 4f2a9c1/, /2 of 2 passed/, /3, one needed a correction/, /38 min from explore to archive/, /Models used/, /Fable 5\.1/, /Limit concurrent uploads per bucket/, /Start next change/] },
 ]
 

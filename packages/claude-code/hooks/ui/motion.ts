@@ -1,6 +1,7 @@
 // Motion (AC-36), pure: which one-shot animations are playing, which frame each is on, and when the
 // pane needs its next frame. One-shots play once per event (phase change, approval seal, verdict,
-// hand-off, unblocked task, changed criteria, archive fold, outdated evidence, entering lines);
+// hand-off, unblocked task, changed criteria, archive fold, outdated evidence, entering lines, an
+// extension chip joining the selection, AC-45);
 // only the running clock and the criterion under review repeat. `calm` drops in-between frames
 // (one-shots jump to their end), `off` shows final states and stops the repeating ones too. While
 // the person types, one-shots that have not started wait, and nothing repeats; they play after.
@@ -15,7 +16,7 @@ import { MARK_GLYPH, elapsed, markTone, outdatedProofs, paneView, railIndex } fr
 /** One frame of a one-shot: 10 a second, within the terminal's 30 and the desktop's 10. */
 export const FRAME_MS = 100
 
-export type MotionKind = 'seal' | 'phase' | 'verdict' | 'unblock' | 'settle' | 'fold' | 'handoff' | 'outdated' | 'enter' | 'scan' | 'step'
+export type MotionKind = 'seal' | 'phase' | 'verdict' | 'unblock' | 'settle' | 'fold' | 'handoff' | 'outdated' | 'enter' | 'scan' | 'step' | 'chip'
 
 /** How long each one-shot lasts (ms), its frames included. */
 export const LENGTH: Record<MotionKind, number> = {
@@ -41,10 +42,12 @@ export const LENGTH: Record<MotionKind, number> = {
   scan: 1200,
   // The newest step of a trail comes in bold.
   step: 200,
+  // AC-45: an extension that joins the selection lights its chip, then it settles.
+  chip: 600,
 }
 
 /** Kinds whose in-between frames need a redraw each frame (the others only start and end). */
-const FRAMED: ReadonlySet<MotionKind> = new Set(['seal', 'phase', 'verdict', 'unblock', 'settle', 'fold', 'handoff', 'outdated', 'enter', 'scan', 'step'])
+const FRAMED: ReadonlySet<MotionKind> = new Set(['seal', 'phase', 'verdict', 'unblock', 'settle', 'fold', 'handoff', 'outdated', 'enter', 'scan', 'step', 'chip'])
 
 /** The hand-off marker types its command at this pace, then stays put. */
 export const TYPE_MS_PER_CHAR = 25
@@ -201,6 +204,13 @@ export function observe(prev: Snap | null | undefined, next: Snap | null | undef
     const seen = new Set([...prev.explore.findings.map(f => f.text), ...prev.explore.decisions.map(d => d.text)])
     for (const f of [...next.explore.findings, ...next.explore.decisions]) if (!seen.has(f.text)) begin('enter', `explore:${findingKey(change, f.text)}`, now)
   }
+
+  // AC-45: an extension that joined the bound change's selection lights its chip once.
+  // One that left may join again later: it lights again then.
+  const had = new Set(prev.extensions ?? [])
+  const has = new Set(next.extensions ?? [])
+  for (const id of had) if (!has.has(id)) state.played.delete(`chip:${change}:${id}`)
+  for (const id of has) if (!had.has(id)) begin('chip', `${change}:${id}`, now)
 
   const lastStep = new Map(prev.workers.map(w => [`${w.taskId}#${w.attempt}`, w.steps?.at(-1)?.at ?? 0]))
   for (const w of next.workers) {

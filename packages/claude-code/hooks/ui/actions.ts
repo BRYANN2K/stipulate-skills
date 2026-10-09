@@ -199,14 +199,82 @@ async function handOff($: EngineInterface, action: StipAction & { action: 'setup
   $.ui.invalidate('ui.render')
 }
 
+/**
+ * AC-49: a press counts as the person's only when the engine raised it (a click, a hotkey, a tap).
+ * A press another plugin or a surface module raised (`next.origin` names it) does not.
+ */
+export const isPersonPress = (origin: { plugin: string; tier: string } | undefined | null): boolean => origin?.plugin === 'engine' && origin.tier === 'core'
+
+/** The keys that change a change's extensions or the project's (AC-46, AC-47): a person's press only. */
+export const EXTENSION_KEYS = /^(ext-add|ext-more|ext-remove|ext-pick|ext-toggle)(:|$)/
+
+export const NOT_PERSON = 'Extensions change only from your own press'
+
+/**
+ * AC-46: replaces the bound change's selection through the engine's `select` while it explores, and
+ * keeps the engine's reply (or refusal) to show under the chips. Outside exploring, nothing happens.
+ */
+async function selectExtensions($: EngineInterface, next: (current: string[]) => string[]) {
+  const snapshot = await read($, snapshotAtom)
+  if (!snapshot?.changeId || snapshot.phase !== 'exploring') return
+  const extensions = [...new Set(next(snapshot.extensions))]
+  const reply = await act($, { action: 'extensions-select', change_id: snapshot.changeId, extensions }, true)
+  // The reply is about one selection: the new one, or (refused) the one that stayed. Another
+  // selection later (the coordinator's `select`) hides it.
+  const now = reply.ok ? ((reply.value ?? {}) as { extensions?: string[] }).extensions ?? extensions : snapshot.extensions
+  const text = reply.ok ? `Engine: ${snapshot.changeId} selects ${now.length ? now.join(', ') : 'no extension'}; any approval is withdrawn.` : `Engine refused: ${reply.error}`
+  if (!reply.ok) await toast($, 'refused:extensions-select', `Refused · ${reply.error}`)
+  await setUi($, () => ({ extAdd: false, extReply: text, extReplyFor: JSON.stringify(now) }))
+}
+
+/** AC-47, AC-48: turns one project extension on or off at the config revision the Settings tab drew. */
+async function setExtension($: EngineInterface, id: string) {
+  const view = await read($, settingsAtom)
+  const ext = view?.extensions?.find(x => x.id === id)
+  if (!view || !ext) return
+  const d = await currentDraft($)
+  const reply = await act($, { action: 'extension-set', id, enabled: !ext.enabled, revision: view.configRevision ?? '' }, true)
+  // The toggle rewrote config.json (the project scope's file): the draft keeps its unsaved edits but
+  // takes the new revision, so its own Save is not refused as "changed elsewhere".
+  const saved = reply.ok ? (reply.value as StipSettingsView | null) : null
+  await update($, draftAtom, raw => ({
+    ...(asDraft(raw) ?? d),
+    ...(saved && typeof saved.revision === 'string' ? { revision: saved.revision } : {}),
+    extNotice: reply.ok ? `${id} ${ext.enabled ? 'disabled' : 'enabled'} in .workflow/config.json.` : null,
+    extError: reply.ok ? null : `Not saved: ${reply.error}`,
+  }))
+}
+
 /** Runs what an element key names; true when the key was one of the interface's actions. */
-async function onPress($: EngineInterface, key: string, surface: string): Promise<boolean> {
+async function onPress($: EngineInterface, key: string, surface: string, person = true): Promise<boolean> {
   const snapshot = await read($, snapshotAtom)
   const changeId = snapshot?.changeId ?? null
   const [verb, ...rest] = key.split(':')
   const arg = rest.join(':')
   const latestOf = (taskId: string) => snapshot?.tasks.find(t => t.id === taskId)?.latest ?? null
+  // AC-49: a selection or enable press that is not the person's own changes nothing.
+  if (EXTENSION_KEYS.test(key) && !person) {
+    await toast($, 'not-person', NOT_PERSON)
+    return true
+  }
   switch (verb) {
+    // --- Extensions (AC-46, AC-47): the bound change's selection; the project's enabled set ---
+    case 'ext-add':
+      if (snapshot?.changeId && snapshot.phase === 'exploring') await setUi($, u => ({ extAdd: !u.extAdd }))
+      return true
+    case 'ext-more':
+      // `+n`: the chips that did not fit, listed (removable while exploring, else to read), folded again by ▴.
+      if (snapshot?.changeId) await setUi($, u => ({ extAll: !u.extAll }))
+      return true
+    case 'ext-remove':
+      if (arg) await selectExtensions($, current => current.filter(id => id !== arg))
+      return true
+    case 'ext-pick':
+      if (arg) await selectExtensions($, current => [...current, arg])
+      return true
+    case 'ext-toggle':
+      if (arg) await setExtension($, arg)
+      return true
     // --- The interface's own state: pane tabs, band, toggles (keys are stable across redraws) ---
     case 'tab-plan':
     case 'plan':
@@ -387,7 +455,7 @@ export const registerActions: Register = on => {
     if (e.component === 'Pane' || e.component === 'AbovePrompt') {
       let answered = false
       try {
-        answered = await onPress($, e.element, e.surface)
+        answered = await onPress($, e.element, e.surface, isPersonPress(next.origin))
       } catch (err) {
         answered = true
         await toast($, 'error', err instanceof Error ? err.message : String(err)).catch(() => undefined)
