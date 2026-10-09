@@ -4,7 +4,6 @@ Four posts. Post 1 carries the native video and no link: links in the first post
 
 Before posting:
 
-- Push `main`, so `npx github:BRYANN2K/stipulate-skills` installs the Claude Code mod.
 - Use the film version with the original alert sound, not the Metal Gear Solid one (copyright).
 - Keep the music credit.
 
@@ -25,7 +24,7 @@ How it works ↓
 
 ## 3/
 
-How it works: you talk the change through with an orchestrator, and it writes a spec with acceptance criteria. Nothing gets built until you press Approve, and the model can't press it for you.
+You talk the change through with an orchestrator, and it writes a spec with acceptance criteria. Nothing gets built until you press Approve, and the model can't press it for you.
 
 ## 4/
 
