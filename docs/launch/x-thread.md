@@ -32,6 +32,18 @@ Then each task goes to a Claude model picked for the job, in its own git worktre
 
 Also works in Codex and OpenCode. Music: Better Days by Infraction
 
+## Relaunch (quote post of post 1)
+
+The account was shadowbanned on launch day. Quote post 1 once, so its video plays inside the quote; do not repost the same content again.
+
+You missed the best Claude Code mod for spec-driven development and orchestration.
+
+Not your fault: X shadowbanned me on launch day.
+
+You approve the spec, a crew of Claude models builds it, and the model can't approve its own work.
+
+When someone asks for proof of "the best", answer with the README screenshots: 11 of 11 criteria checked by a separate session, workers in isolated worktrees.
+
 ## After posting
 
 Answer every reply during the first hour: replies are the strongest ranking signal on X.
