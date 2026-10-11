@@ -31,7 +31,7 @@ class CompletePackageTests(unittest.TestCase):
 
     def test_portable_full_catalog_and_selective_exploration(self):
         result = self.setup_project()
-        self.assertEqual(len(result['added']), 28)
+        self.assertEqual(len(result['added']), 29)
         self.assertEqual(len(list(self.skills.glob('*/SKILL.md'))), 7)
         self.assertEqual(list((self.project / '.workflow/changes').iterdir()), [])
         subprocess.run(['git', 'init', '-q', str(self.project)], check=True)

@@ -5,7 +5,7 @@
 <br>
 
 [![Core skills](https://img.shields.io/badge/core_skills-7-A98BF5?style=flat-square)](#the-seven-skills)
-[![Domain extensions](https://img.shields.io/badge/domain_extensions-28-1D2027?style=flat-square)](#bring-the-right-expertise)
+[![Domain extensions](https://img.shields.io/badge/domain_extensions-29-1D2027?style=flat-square)](#bring-the-right-expertise)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square)](#quick-start)
 [![License](https://img.shields.io/badge/license-Apache--2.0-2563EB?style=flat-square)](LICENSE)
 [![X — @bryann2k_dev](https://img.shields.io/badge/%40bryann2k__dev-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/bryann2k_dev)
@@ -47,7 +47,7 @@ For **OpenCode v2**, run from your project directory:
 npx github:BRYANN2K/stipulate-skills
 ```
 
-This installs **all seven skills, all 28 bundled extensions, the seven `/stip-*` commands, and the native OpenCode plugin** in one run. The plugin adds the workflow sidebar, native worker tracking, and `/stip-settings`. For installation across projects:
+This installs **all seven skills, all 29 bundled extensions, the seven `/stip-*` commands, and the native OpenCode plugin** in one run. The plugin adds the workflow sidebar, native worker tracking, and `/stip-settings`. For installation across projects:
 
 ```sh
 npx github:BRYANN2K/stipulate-skills --global
@@ -82,7 +82,7 @@ $stip-bootstrap Adopt this repository. Preserve its conventions, map the project
 and identify the relevant domain extensions.
 ```
 
-For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it makes all 28 extensions available locally without choosing your stack or selecting domains for a change.
+For a new project, explain its intent and initialize Git first if necessary. Bootstrap prepares `AGENTS.md` and `.workflow/`; it makes all 29 extensions available locally without choosing your stack or selecting domains for a change.
 
 In Claude Code, Grok Build, and OpenCode v2, invoke `/stip-bootstrap` instead. For explicit OpenCode command files, follow [slash-command setup](docs/clients.md#explicit-opencode-slash-commands). Bootstrap also creates or extends `CLAUDE.md` with an import of `AGENTS.md`, so Claude uses the same project guidance.
 

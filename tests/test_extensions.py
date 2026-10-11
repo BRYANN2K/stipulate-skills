@@ -49,7 +49,7 @@ class ExtensionTests(unittest.TestCase):
 
     def test_catalogue_portability_and_cases(self):
         result=validate_extensions.validate()
-        self.assertEqual(result['packages'],28)
+        self.assertEqual(result['packages'],29)
         self.assertFalse(result['behavioral_evaluation_performed'])
 
     def test_bootstrap_installs_no_domain(self):

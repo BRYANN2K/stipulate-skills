@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extension": "security-bughunting",
+  "purpose": "Editorial cases for human or agent evaluation; structural tests do not establish these decisions.",
+  "cases": [
+    {
+      "id": "relevant",
+      "prompt": "add an endpoint that reads a user-supplied record id and returns the record.",
+      "expected": "select",
+      "reason": "Untrusted input reaches a query and an authorization decision; object-level access and injection are reachable in the change."
+    },
+    {
+      "id": "irrelevant",
+      "prompt": "rename an internal variable with no change to inputs, permissions, or data flow.",
+      "expected": "do-not-select",
+      "reason": "The change reaches no exploitable surface; document the reasoned non-selection."
+    },
+    {
+      "id": "existing",
+      "prompt": "the change adds a file-download path, and the repo already has authorization tests and a path allow-list.",
+      "expected": "inspect-and-reuse",
+      "reason": "Reuse the existing controls and tests; add only the negative tests the new path is missing."
+    },
+    {
+      "id": "insufficient",
+      "prompt": "a dependency scanner finished with no findings, taken as proof the change has no injection.",
+      "expected": "failed-or-unverified",
+      "reason": "A tool finishing is not evidence of behavior; a repeatable negative test on the change is required."
+    }
+  ]
+}

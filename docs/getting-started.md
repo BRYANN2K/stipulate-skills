@@ -16,7 +16,7 @@ From your application project directory:
 npx skills add BRYANN2K/stipulate-skills --skill '*' --agent codex
 ```
 
-This installs the seven core skills together, including the complete 28-extension catalog bundled inside `stip-bootstrap`. No repository clone or separate extension installation is required. Quote `'*'` to prevent shell expansion.
+This installs the seven core skills together, including the complete 29-extension catalog bundled inside `stip-bootstrap`. No repository clone or separate extension installation is required. Quote `'*'` to prevent shell expansion.
 
 For user-wide installation, add `--global`. Choose project-local or global installation; you do not need both. Check Codex's skill catalog and start a new conversation if needed. See the [skills CLI documentation](https://github.com/vercel-labs/skills) for supported agents and installer options.
 
@@ -50,7 +50,7 @@ For a new project, explain the intent in the same message. If it is not yet a Gi
 git init
 ```
 
-Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. The bundled setup installs all 28 extensions as available, preserving existing configured packages and disabled entries. It does not choose a stack, select domains for a change, or create a sample feature.
+Bootstrap adds the workflow structure and guidance, while the agent fills in the project map from actual evidence. The bundled setup installs all 29 extensions as available, preserving existing configured packages and disabled entries. It does not choose a stack, select domains for a change, or create a sample feature.
 
 Bootstrap adds an `@AGENTS.md` import to `CLAUDE.md` for Claude Code, preserving existing instructions. Restart Claude Code after first setup to load project instructions at session start.
 
@@ -139,7 +139,7 @@ The result is implemented code, evidence, updated documentation, an accepted spe
 
 ## Use the relevant extensions
 
-Bootstrap makes all 28 domain packages available in the project. There is no additional installation step. During exploration, ask for the domains that fit the work, or let the agent propose a selection:
+Bootstrap makes all 29 domain packages available in the project. There is no additional installation step. During exploration, ask for the domains that fit the work, or let the agent propose a selection:
 
 ```text
 $stip-explore Explore add-login using frontend-engineering and accessibility.
@@ -238,7 +238,7 @@ These repository tests are separate from the tests your application's acceptance
 - Archive rejects stale source evidence, a nonempty index, selected files already dirty at start, a changed HEAD, and concurrent changes to the target specification. It does not absorb unrelated work or push commits.
 - Snapshot schema v1 does not support submodules. Use the physical repository root. CI targets Linux and macOS; local delivery checks do not establish that remote CI has passed.
 
-Tests cover the engine, installation, and synthetic lifecycle runs for all 28 extensions. Evaluating Astra's behavior on real projects is a separate activity. Passing core tests does not certify a product as production-ready.
+Tests cover the engine, installation, and synthetic lifecycle runs for all 29 extensions. Evaluating Astra's behavior on real projects is a separate activity. Passing core tests does not certify a product as production-ready.
 
 [Core contract and commands](workflow.md) · [Extensions](extensions.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)
 

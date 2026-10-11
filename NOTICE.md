@@ -8,6 +8,11 @@ format, OpenAI's GPT-6 Astra guidance, and the concept of durable change specifi
 No OpenSpec or Spec Kit implementation code is bundled. Prior third-party notices remain
 in the archived revision with the corresponding resources; those resources are not shipped here.
 
+Inspiration for the `security-bughunting` extension: Claude-BugHunter by Sachin Sharma
+(https://github.com/elementalsouls/Claude-BugHunter), code under MIT and documentation
+under CC BY 4.0. The extension is authored from standard vulnerability-class sources and
+keeps a defensive, authorized scope; no skills from that project are copied or bundled.
+
 References:
 - https://agentskills.io/specification
 - https://developers.openai.com/api/docs/guides/latest-model

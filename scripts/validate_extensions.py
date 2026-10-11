@@ -11,7 +11,7 @@ def validate():
     catalog = json.loads((CATALOG/'catalog.json').read_text())
     assert catalog['schema_version'] == 1
     names = [entry['id'] for entry in catalog['extensions']]
-    assert len(names) == len(set(names)) == 28, 'Expected 28 unique extension ids'
+    assert len(names) == len(set(names)) == 29, 'Expected 29 unique extension ids'
     assert set(names) == {p.name for p in CATALOG.iterdir() if p.is_dir()}
     for name in names:
         base = package(name)

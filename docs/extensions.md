@@ -1,6 +1,6 @@
 # Domain extensions — interface v1 and local catalog
 
-The repository ships 28 domain packages, bundled as resources inside `stip-bootstrap`. The seven core skills remain the only Codex/Orca skill discovery entries; extensions are neither 28 additional skills nor executable plugins. The complete installation includes the catalog; normal `$stip-bootstrap` setup makes every package available in the project without selecting it for a change.
+The repository ships 29 domain packages, bundled as resources inside `stip-bootstrap`. The seven core skills remain the only Codex/Orca skill discovery entries; extensions are neither 29 additional skills nor executable plugins. The complete installation includes the catalog; normal `$stip-bootstrap` setup makes every package available in the project without selecting it for a change.
 
 Bootstrap maps existing foundations. **Selection for a change happens during stip-explore**, based on affected behavior and material unknowns. An available extension is not automatically selected; a cloud-only change does not activate UX/design. Every domain contributes to the same approved contract.
 
