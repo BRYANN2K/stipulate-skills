@@ -1,0 +1,21 @@
+# macOS leg on the Mac agent (local backend): python3 and Node 22 from PATH.
+when:
+  - event: [push, pull_request, manual]
+
+labels:
+  platform: darwin/arm64
+
+steps:
+  - name: test-macos
+    image: bash
+    commands:
+      - python3 --version && node --version
+      - python3 scripts/validate_skills.py
+      - python3 scripts/validate_extensions.py
+      - python3 -m unittest discover -s tests -v
+
+  - name: opencode-plugin-macos
+    image: bash
+    commands:
+      - cd packages/opencode && npm ci --ignore-scripts && npm run typecheck && cd ../..
+      - node --test packages/opencode/tests/*.test.mjs tests/*.mjs

@@ -1,0 +1,33 @@
+when:
+  - event: [push, pull_request, manual]
+
+variables:
+  - &python_checks
+    - python scripts/validate_skills.py
+    - python scripts/validate_extensions.py
+    - python -m unittest discover -s tests -v
+
+steps:
+  - name: test-python-3.10
+    image: docker.io/library/python:3.10-slim-bookworm@sha256:5be5aaecb962a41567bc8041f1e9e3432cb085b037fe057f9a562630b2e4b370
+    commands: *python_checks
+
+  - name: test-python-3.12
+    image: docker.io/library/python:3.12-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70
+    commands: *python_checks
+
+  - name: test-python-3.14
+    image: docker.io/library/python:3.14-slim-bookworm@sha256:945c2676dc2b18e0c1f16879244122c57c0ffede60006bf3df159c507a31bcae
+    commands: *python_checks
+
+  - name: opencode-plugin
+    image: docker.io/library/node:22.20.0-bookworm-slim@sha256:b21fe589dfbe5cc39365d0544b9be3f1f33f55f3c86c87a76ff65a02f8f5848e
+    backend_options:
+      kubernetes:
+        resources:
+          requests: {cpu: 250m, memory: 512Mi}
+          limits: {cpu: "2", memory: 2Gi}
+    commands:
+      - apt-get update -qq && apt-get install -y -qq --no-install-recommends python3 >/dev/null
+      - (cd packages/opencode && npm ci --ignore-scripts && npm run typecheck)
+      - node --test packages/opencode/tests/*.test.mjs tests/*.mjs

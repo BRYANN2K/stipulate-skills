@@ -1,5 +1,9 @@
 name: Core validation
-on: [push, pull_request]
+# Paused: GitHub Actions is blocked by billing. Woodpecker runs this as
+# .woodpecker/validate.yaml and validate-macos.yaml. Restore the triggers below to switch back.
+# on: [push, pull_request]
+on:
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
